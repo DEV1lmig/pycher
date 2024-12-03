@@ -1,0 +1,10 @@
+# Node.js
+/node_modules
+/pycher-frontend/node_modules
+
+# dotenv environment variables file
+.env
+
+# IDEs and editors
+.vscode/
+.DS_Store
