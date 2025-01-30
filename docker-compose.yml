@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./pycher-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - pycher-network
+
+  frontend:
+    build:
+      context: ./pycher-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:5000
+    depends_on:
+      - backend
+    networks:
+      - pycher-network
+
+networks:
+  pycher-network:
+    driver: bridge
