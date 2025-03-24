@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:14
+    volumes: ["pg-data:/var/lib/postgresql/data"]
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=pylearn
+    networks: ["backend-net"]
+
+  redis:
+    image: redis:7-alpine
+    volumes: ["redis-data:/data"]
+    networks: ["backend-net"]
+
+  api-gateway:
+    build: ./api-gateway
+    ports: ["8000:8000"]
+    depends_on: ["postgres", "redis"]
+    networks: ["backend-net", "frontend-net"]
+
+  user-service:
+    build: ./user-service
+    depends_on: ["postgres", "redis"]
+    networks: ["backend-net"]
+
+  content-service:
+    build: ./content-service
+    depends_on: ["postgres", "redis"]
+    networks: ["backend-net"]
+
+  execution-service:
+    build: ./execution-service
+    security_opt: ["no-new-privileges=true"]
+    networks: ["backend-net"]
+
+  ai-service:
+    build: ./ai-service
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    networks: ["backend-net"]
+
+networks:
+  backend-net:
+    driver: bridge
+  frontend-net:
+    driver: bridge
+
+volumes:
+  pg-data:
+  redis-data:
