@@ -2,52 +2,76 @@ version: '3'
 
 services:
   postgres:
-    image: postgres:14
-    env_file:
-      - .env.development
-    volumes: ["pg-data:/var/lib/postgresql/data"]
+    image: docker.io/library/postgres:14
     environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_DB=pylearn
-    networks: ["backend-net"]
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_DB: "${DB_NAME}"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks: ["pycher-network"]
 
   redis:
-    image: redis:7-alpine
+    image: docker.io/library/redis:7-alpine
     volumes: ["redis-data:/data"]
-    networks: ["backend-net"]
-
-  api-gateway:
-    build: ./api-gateway
-    ports: ["8000:8000"]
-    depends_on: ["postgres", "redis"]
-    networks: ["backend-net", "frontend-net"]
+    networks: ["pycher-network"]
 
   user-service:
-    build: ./user-service
-    depends_on: ["postgres", "redis"]
-    networks: ["backend-net"]
+    build: ./backend/user-service
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env.development
+    networks: ["pycher-network"]
 
   content-service:
-    build: ./content-service
-    depends_on: ["postgres", "redis"]
-    networks: ["backend-net"]
+    build: ./backend/content-service
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env.development
+    networks: ["pycher-network"]
+
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.development
+    networks: ["pycher-network"]
+    depends_on:
+      - user-service
+      - content-service
+      - execution-service
+      - ai-service
 
   execution-service:
-    build: ./execution-service
+    build:
+      context: ./backend/execution-service
     security_opt: ["no-new-privileges=true"]
-    networks: ["backend-net"]
+    networks: ["pycher-network"]
 
   ai-service:
-    build: ./ai-service
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-    networks: ["backend-net"]
+    build: ./backend/ai-service
+    env_file:
+      - .env.development
+    networks: ["pycher-network"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"  # Changed to 80 as that's the nginx port
+    networks: ["pycher-network"]
+    depends_on:
+      - api-gateway
 
 networks:
-  backend-net:
-    driver: bridge
-  frontend-net:
+  pycher-network:
     driver: bridge
 
 volumes:

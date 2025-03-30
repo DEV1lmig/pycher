@@ -1,3 +1,5 @@
 /.env.development
 /.env.production
 .python-version
+/backend/.env
+/node_modules
