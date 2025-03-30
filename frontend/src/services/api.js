@@ -10,6 +10,18 @@ export const apiClient = axios.create({
   },
 });
 
+// Add authentication interceptor
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Configure QueryClient with defaults
 export const queryClient = new QueryClient({
   defaultOptions: {

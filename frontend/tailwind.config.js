@@ -23,6 +23,18 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      colors: {
+        primary: {
+          DEFAULT: '#5f2dee', // Purple
+          light: '#9880f2',   // Light Purple
+        },
+        secondary: '#f2d231', // Yellow
+        dark: {
+          DEFAULT: '#160f30', // Dark Purple
+          light: '#312a56',   // Lighter Dark Purple
+          background: '#0e0f2d', // Background Dark
+        },
+      },
     },
   },
   plugins: [tailwindcssAnimate],
