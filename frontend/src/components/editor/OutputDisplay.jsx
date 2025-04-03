@@ -1,20 +1,17 @@
-// filepath: /home/dev1mig/Documents/projects/pycher/frontend/src/components/editor/OutputDisplay.jsx
-import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 export function OutputDisplay({ output = '', error = '' }) {
-  const [activeTab, setActiveTab] = useState('output');
-
   const hasError = Boolean(error);
 
+  // Automatically switch to error tab when there's an error
   return (
     <div className="border rounded-md overflow-hidden mt-4">
       <Tabs defaultValue={hasError ? 'error' : 'output'} className="w-full">
         <div className="bg-muted p-2">
           <TabsList>
             <TabsTrigger value="output">Output</TabsTrigger>
-            <TabsTrigger value="error" disabled={!hasError}>
-              {hasError && <span className="w-2 h-2 rounded-full bg-destructive mr-2"></span>}
+            <TabsTrigger value="error" disabled={!hasError} className={hasError ? "text-red-500 font-medium" : ""}>
+              {hasError && <span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span>}
               Errors
             </TabsTrigger>
           </TabsList>

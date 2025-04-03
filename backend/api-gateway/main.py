@@ -87,26 +87,9 @@ async def content_service(request: Request, path: str):
 
 @app.post("/api/v1/ai/{endpoint}")
 async def ai_service(endpoint: str, request: Request):
-    """Route AI requests to the AI service"""
-    if "ai-service" not in SERVICE_URLS:
-        raise HTTPException(status_code=503, detail="AI service not available")
-
-    # Forward the request to the AI service
     url = f"{SERVICE_URLS['ai-service']}/{endpoint}"
-
-    # Get the raw request body
     body = await request.json()
-
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                url,
-                json=body,
-                timeout=60.0  # AI responses might take longer
-            )
-            return response.json()
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"Error: {str(e)}")
+    # Forward to AI service and return response
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CodeEditor } from '../components/editor/CodeEditor';
 import { OutputDisplay } from '../components/editor/OutputDisplay';
 import { executeCode } from '../services/executionService';
@@ -14,29 +14,57 @@ export default function DemoPage() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [aiHelp, setAiHelp] = useState('');
   const [isLoadingAiHelp, setIsLoadingAiHelp] = useState(false);
+  const [executionTime, setExecutionTime] = useState(null);
+  const [errorSeverity, setErrorSeverity] = useState('none'); // 'none', 'syntax', 'runtime', 'logic'
+
+  // Reset AI help when code changes
+  useEffect(() => {
+    setAiHelp('');
+  }, [code]);
 
   // Handler for code execution
   const handleExecuteCode = async (codeToExecute) => {
     setIsExecuting(true);
     setAiHelp('');
+    setErrorSeverity('none');
+
+    // Log what's being executed for debugging
+    console.log("Executing code:", codeToExecute || code);
+
+    const startTime = performance.now();
 
     try {
+      // Make sure we're passing the correct code to execute
       const result = await executeCode(codeToExecute || code);
+      const endTime = performance.now();
 
-      // Always set the output
+      // Set execution time
+      setExecutionTime((endTime - startTime).toFixed(0));
+
+      // Set output regardless of error
       setOutput(result.output || '');
 
-      // Set error if present
-      setError(result.error || '');
+      // Process error if present
+      if (result.error) {
+        setError(result.error);
 
-      // If there's an error and it's not trivial, offer AI help
-      if (result.error && result.error.length > 10) {
-        // Show button to get AI help
+        // Determine error severity for better AI assistance
+        if (result.error.includes('SyntaxError')) {
+          setErrorSeverity('syntax');
+        } else if (result.error.includes('TypeError') ||
+                  result.error.includes('ValueError') ||
+                  result.error.includes('NameError')) {
+          setErrorSeverity('runtime');
+        } else {
+          setErrorSeverity('logic');
+        }
+      } else {
+        setError('');
       }
     } catch (err) {
       console.error('Error executing code:', err);
-      setError('Network error: Failed to execute code. Please try again.');
-      setOutput('');
+      setError(`Network error: ${err.message}`);
+      setErrorSeverity('network');
     } finally {
       setIsExecuting(false);
     }
@@ -51,14 +79,44 @@ export default function DemoPage() {
       const help = await getCodeHint({
         code: code,
         error: error,
-        instruction: "Fix the error in this code",
+        instruction: `Analyze the error below and provide a detailed explanation of its potential causes and suggestions for fixing it.
+
+Error: ${error}
+
+Consider the context of the provided code and explain what might be going wrong.`,
         difficulty: 'beginner'
       });
 
-      setAiHelp(help.hint || "Sorry, I couldn't generate a helpful hint at this time.");
+      setAiHelp(help.hint || "AI was unable to provide a detailed analysis of the error.");
     } catch (err) {
       console.error("Error getting AI help:", err);
-      setAiHelp("Unable to get AI assistance at this time.");
+      setAiHelp("Unable to get AI assistance right now. Please try again later.");
+    } finally {
+      setIsLoadingAiHelp(false);
+    }
+  };
+
+  // Function to apply AI suggestion directly to code editor
+  const applyAiSuggestion = async () => {
+    if (!error || !code) return;
+
+    setIsLoadingAiHelp(true);
+    try {
+      const suggestion = await getCodeHint({
+        code: code,
+        error: error,
+        instruction: "Fix this code by providing a corrected version. Only return the fixed code without explanations.",
+        difficulty: 'beginner'
+      });
+
+      if (suggestion.code) {
+        setCode(suggestion.code);
+        setAiHelp('');
+      } else {
+        setAiHelp("Couldn't generate a code fix automatically. Please review the error message and try to fix it manually.");
+      }
+    } catch (err) {
+      console.error("Error getting AI suggestion:", err);
     } finally {
       setIsLoadingAiHelp(false);
     }
@@ -69,47 +127,96 @@ export default function DemoPage() {
       <h1 className="text-2xl font-bold mb-6">Python Code Playground</h1>
 
       <div className="mb-6">
-        <CodeEditor
-          initialCode={DEFAULT_CODE}
-          onExecute={handleExecuteCode}
-        />
+        <div className="bg-gray-100 p-3 border-b flex justify-between items-center rounded-t-md">
+          <h2 className="font-medium">Editor</h2>
+          <div>
+            <Button
+              onClick={() => setCode(DEFAULT_CODE)}
+              variant="outline"
+              size="sm"
+              className="mr-2"
+            >
+              Reset Code
+            </Button>
+            <Button
+              onClick={() => handleExecuteCode(code)}
+              disabled={isExecuting}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isExecuting ? 'Running...' : 'Run Code'}
+            </Button>
+          </div>
+        </div>
 
-        <div className="mt-4 flex justify-end">
-          <Button
-            onClick={() => handleExecuteCode(code)}
-            disabled={isExecuting}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            {isExecuting ? 'Running...' : 'Run Code'}
-          </Button>
+        <div className="border rounded-b-md p-0">
+          <CodeEditor
+            initialCode={code} // Change from value to initialCode based on your component's API
+            onChange={setCode}  // Make sure this properly calls the state setter
+            language="python"
+            height="350px"
+            onExecute={() => handleExecuteCode(code)} // Add this to handle Ctrl+Enter execution
+          />
         </div>
       </div>
 
-      <OutputDisplay
-        output={output}
-        error={error}
-      />
-
-      {/* Show AI Help Button when there's an error */}
-      {error && !aiHelp && (
-        <div className="mt-4">
-          <Button
-            onClick={requestAiHelp}
-            disabled={isLoadingAiHelp}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {isLoadingAiHelp ? 'Getting Help...' : 'Get AI Help with Error'}
-          </Button>
+      <div className="mb-4">
+        <div className="bg-gray-100 p-3 border-b flex justify-between items-center rounded-t-md">
+          <h2 className="font-medium">Output</h2>
+          {executionTime && !isExecuting && (
+            <span className="text-sm text-gray-500">
+              Execution time: {executionTime}ms
+            </span>
+          )}
         </div>
-      )}
+        <OutputDisplay
+          output={output}
+          error={error}
+        />
+      </div>
 
-      {/* Display AI Help when available */}
-      {aiHelp && (
-        <div className="mt-4 p-4 bg-blue-50 rounded-md border border-blue-200">
-          <h3 className="font-bold mb-2">AI Suggestion:</h3>
-          <div className="whitespace-pre-wrap">{aiHelp}</div>
-        </div>
-      )}
+      {/* AI Help Section */}
+      <div className="mt-6">
+        {error && !aiHelp && (
+          <div className="flex justify-end">
+            <Button
+              onClick={requestAiHelp}
+              disabled={isLoadingAiHelp}
+              className="bg-blue-600 hover:bg-blue-700 text-white mr-2"
+            >
+              {isLoadingAiHelp ? 'Getting Help...' : 'Get AI Help'}
+            </Button>
+
+            <Button
+              onClick={applyAiSuggestion}
+              disabled={isLoadingAiHelp}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              Fix Code Automatically
+            </Button>
+          </div>
+        )}
+
+        {/* Display AI Help when available */}
+        {aiHelp && (
+          <div className="mt-4 p-4 bg-blue-50 rounded-md border border-blue-200">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-bold text-blue-800">AI Suggestion:</h3>
+              <Button
+                onClick={() => setAiHelp('')}
+                variant="ghost"
+                size="sm"
+                className="h-6 text-gray-500"
+              >
+                Dismiss
+              </Button>
+            </div>
+            <div className="whitespace-pre-wrap prose max-w-none">
+              {aiHelp}
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="mt-8 p-4 border rounded-md bg-blue-50">
         <h2 className="font-bold text-lg mb-2">Demo Mode</h2>
@@ -122,6 +229,34 @@ export default function DemoPage() {
           <li>AI-powered code explanations</li>
           <li>Learning progress tracking</li>
         </ul>
+      </div>
+
+      {/* Sample Error Buttons for Testing */}
+      <div className="mt-4 p-4 border border-dashed border-gray-300 rounded-md">
+        <h3 className="font-medium mb-2">Test Error Handling</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={() => setCode('print("Hello World"\nprint(10/0)')}
+            variant="outline"
+            size="sm"
+          >
+            Test Runtime Error
+          </Button>
+          <Button
+            onClick={() => setCode('print("Syntax Error Example"\nif True\n    print("Missing colon")')}
+            variant="outline"
+            size="sm"
+          >
+            Test Syntax Error
+          </Button>
+          <Button
+            onClick={() => setCode('print("Name Error Example")\nprint(undefined_variable)')}
+            variant="outline"
+            size="sm"
+          >
+            Test Name Error
+          </Button>
+        </div>
       </div>
     </div>
   );

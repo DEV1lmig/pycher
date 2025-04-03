@@ -14,12 +14,11 @@ export const executeCode = async (code, timeout = 5) => {
       timeout
     });
 
-    // Return standardized format with output, error and execution_time
+    // Standardize the response format
     return {
       output: response.data.output || '',
       error: response.data.error || '',
-      execution_time: response.data.execution_time || 0,
-      success: !response.data.error
+      execution_time: response.data.execution_time || 0
     };
   } catch (error) {
     // Handle API errors
@@ -27,17 +26,15 @@ export const executeCode = async (code, timeout = 5) => {
       return {
         output: error.response.data.output || '',
         error: error.response.data.error || error.response.data.detail || 'Execution error',
-        execution_time: error.response.data.execution_time || 0,
-        success: false
+        execution_time: 0
       };
     }
 
     // Handle network errors
     return {
       output: '',
-      error: 'Failed to connect to execution service',
-      execution_time: 0,
-      success: false
+      error: 'Network error: Failed to connect to execution service',
+      execution_time: 0
     };
   }
 };

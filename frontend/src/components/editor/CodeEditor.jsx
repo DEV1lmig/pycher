@@ -1,15 +1,15 @@
-// filepath: /home/dev1mig/Documents/projects/pycher/frontend/src/components/editor/CodeEditor.jsx
 import { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { Button } from '../ui/button';
 import { PlayIcon, RotateCwIcon } from 'lucide-react';
 
-export function CodeEditor({ initialCode = '', onExecute }) {
+export function CodeEditor({ initialCode = '', onExecute, onChange }) {
   const [code, setCode] = useState(initialCode);
   const [isExecuting, setIsExecuting] = useState(false);
 
   const handleEditorChange = (value) => {
-    setCode(value);
+    // Make sure this is calling the onChange prop with the new value
+    onChange(value);
   };
 
   const handleExecute = async () => {
