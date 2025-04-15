@@ -16,7 +16,7 @@ app.add_middleware(
 SERVICE_URLS = {
     "execution-service": "http://execution-service:8001",
     "content-service": "http://content-service:8002",
-    "ai-service": "http://ai-service:8004",
+    "ai-service": "http://ai-service:8005", # Verify hostname is 'ai-service' and port is '8005'
     "user-service": "http://user-service:8003",
     # Add other services as they're implemented
 }
@@ -87,9 +87,39 @@ async def content_service(request: Request, path: str):
 
 @app.post("/api/v1/ai/{endpoint}")
 async def ai_service(endpoint: str, request: Request):
-    url = f"{SERVICE_URLS['ai-service']}/{endpoint}"
-    body = await request.json()
-    # Forward to AI service and return response
+    """Route AI requests to the AI service"""
+    service_name = "ai-service" # Define service name
+    if service_name not in SERVICE_URLS:
+        raise HTTPException(status_code=503, detail=f"{service_name.replace('-', ' ').title()} not available")
+
+    url = f"{SERVICE_URLS[service_name]}/{endpoint}"
+    try:
+        body = await request.json()
+    except Exception:
+         # Handle cases where body might not be JSON or is empty if needed
+        body = None
+
+    # Forward the request to the AI service
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                url,
+                # Use json=body only if body is not None, otherwise use content=await request.body()
+                # Or handle based on expected content type
+                json=body,
+                timeout=60.0 # Increased timeout for potentially long AI calls
+            )
+            # Check if the AI service itself returned an error
+            response.raise_for_status() # Raises HTTPStatusError for 4xx/5xx responses
+            return response.json()
+        except httpx.RequestError as e:
+            # Error connecting to the AI service
+            raise HTTPException(status_code=503, detail=f"Error connecting to AI service: {str(e)}")
+        except httpx.HTTPStatusError as e:
+             # AI service returned an error status code (e.g., 4xx, 5xx)
+            # Log the error and forward a generic or specific error
+            # logger.error(f"AI service returned error: {e.response.status_code} - {e.response.text}")
+            raise HTTPException(status_code=e.response.status_code, detail=e.response.json() if e.response.content else "AI service error")
 
 if __name__ == "__main__":
     import uvicorn

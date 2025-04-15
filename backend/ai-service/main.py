@@ -1,14 +1,13 @@
 import os
 import logging
 from typing import List, Optional, Dict, Any
-
+from google.genai import types
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field # Added Field for default values
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-from google.api_core import exceptions as google_exceptions # Import specific exceptions
-import google.generativeai as genai
-# Removed: from google.generativeai import GenerativeModel (covered by genai.*)
+from google import genai
+import json
 
 # --- Configuration ---
 
@@ -21,8 +20,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable not set. Please set it.")
 
-# Configure the Gemini client globally
-genai.configure(api_key=GEMINI_API_KEY)
+# Remove global configuration if present
+# genai.configure(api_key=GEMINI_API_KEY) # Remove this line
 
 # Choose a standard model name
 # Examples: "gemini-1.5-flash-latest", "gemini-1.0-pro"
@@ -65,27 +64,66 @@ retry_decorator = retry(
 
 @retry_decorator
 async def generate_ai_response(prompt: str) -> Dict[str, Any]:
-    """
-    Generates a response from the Gemini model asynchronously with retry logic.
-    """
     try:
         logger.info(f"Sending prompt to Gemini model ({MODEL_NAME})...")
-        response = await genai.generate_text_async(prompt=prompt, model=MODEL_NAME)
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = await client.aio.models.generate_content(
+            model=MODEL_NAME,
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                system_instruction='you are a story teller for kids under 5 years old',
+            ),
+        )
+
         if not response or not response.text:
             logger.error("AI response generation failed or returned no text.")
             raise HTTPException(
                 status_code=500,
                 detail="Unable to get AI assistance right now. Please try again later."
             )
+
         logger.info("Successfully received response from Gemini.")
+        try:
+            # Log helpful attributes
+            print(f"RESPONSE TYPE: {type(response)}")
+            print(f"RESPONSE DIR: {dir(response)}")
+            print(f"- text: {response.text}")
+            # 'parts' may not exist, so remove or wrap in hasattr check:
+            # if hasattr(response, 'parts'):
+            #     print(f"- parts: {response.parts}")
+
+            if hasattr(response, "to_dict"):
+                print("FULL RESPONSE DICT:", response.to_dict())
+            if hasattr(response, "candidates"):
+                print("CANDIDATES:")
+                for i, candidate in enumerate(response.candidates):
+                    print(f"  Candidate {i}: {candidate.text if hasattr(candidate, 'text') else 'N/A'}")
+
+        except Exception as inspect_error:
+            print(f"Error inspecting response: {inspect_error}")
+
+        # Try to parse response text as JSON if it looks like JSON
+        trimmed_text = response.text.strip()
+        try:
+            if trimmed_text.startswith("{") and trimmed_text.endswith("}"):
+                parsed_json = json.loads(trimmed_text)
+                print("PARSED JSON:", parsed_json)
+                return parsed_json
+        except json.JSONDecodeError:
+            print("Response is not valid JSON")
+            # Return fallback dictionary
+            return {"content": response.text}
+
+        # FINAL FALLBACK: if it’s not JSON, just return a dict with the text
         return {"content": response.text}
 
-    except google_exceptions.GoogleAPIError as e:
-        logger.exception(f"Gemini API Error: {e}", exc_info=True)
-        raise HTTPException(status_code=502, detail=f"Gemini API Error: {str(e)}")
     except Exception as e:
-        logger.exception(f"An unexpected error occurred during AI generation: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"AI model interaction failed: {str(e)}")
+        if "google" in str(type(e)).lower() or "api" in str(type(e)).lower():
+            logger.exception(f"Gemini API Error: {e}", exc_info=True)
+            raise HTTPException(status_code=502, detail=f"Gemini API Error: {str(e)}")
+        else:
+            logger.exception(f"An unexpected error occurred: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"AI model interaction failed: {str(e)}")
 
 
 # --- FastAPI Application ---

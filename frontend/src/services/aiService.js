@@ -5,19 +5,21 @@ import { apiClient } from './api';
  *
  * @param {Object} params - The hint request parameters
  * @param {string} params.code - The user's code with errors
- * @param {string} params.error - The error message from code execution
- * @param {string} params.instruction - What the code is supposed to do
- * @param {string} params.difficulty - User's skill level (beginner, intermediate, advanced)
- * @returns {Promise<Object>} - The AI-generated hint
+ * @param {string} params.error - The error message from code execution (optional)
+ * @param {string} params.instruction - What the code is supposed to do (optional)
+ * @returns {Promise<Object>} - The AI-generated hint with content property
  */
-export const getCodeHint = async ({ code, error, instruction, difficulty = 'beginner' }) => {
+export const getCodeHint = async ({ code, error, instruction }) => {
   try {
+    // Only send the parameters the backend actually needs
     const response = await apiClient.post('/api/v1/ai/hint', {
       code,
       error,
-      instruction,
-      difficulty
+      instruction
     });
+
+    // Return the response data directly without modification
+    // This preserves the error_analysis and hint fields
     return response.data;
   } catch (error) {
     console.error('Error getting AI hint:', error);

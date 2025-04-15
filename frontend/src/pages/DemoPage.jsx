@@ -79,15 +79,29 @@ export default function DemoPage() {
       const help = await getCodeHint({
         code: code,
         error: error,
-        instruction: `Analyze the error below and provide a detailed explanation of its potential causes and suggestions for fixing it.
-
-Error: ${error}
-
-Consider the context of the provided code and explain what might be going wrong.`,
-        difficulty: 'beginner'
+        instruction: `Analyze the error below and provide a detailed explanation of its potential causes and suggestions for fixing it.`
       });
 
-      setAiHelp(help.hint || "AI was unable to provide a detailed analysis of the error.");
+      // Handle the new nested response structure
+      if (help.error_analysis && typeof help.error_analysis === 'object') {
+        // Extract the detailed error information
+        const { explanation, cause, hint } = help.error_analysis;
+
+        // Build a formatted response with all the useful information
+        let formattedHelp = '';
+        if (explanation) formattedHelp += `${explanation}\n\n`;
+        if (cause) formattedHelp += `Cause: ${cause}\n\n`;
+        if (hint) formattedHelp += `Hint: ${hint}`;
+
+        setAiHelp(formattedHelp || "AI was unable to analyze this error in detail.");
+      } else if (help.error_analysis || help.hint) {
+        // Fallback for the previous format (direct strings)
+        const analysis = help.error_analysis ? `${help.error_analysis}\n\n` : '';
+        const hint = help.hint || '';
+        setAiHelp(`${analysis}${hint}`);
+      } else {
+        setAiHelp("AI was unable to provide a detailed analysis of the error.");
+      }
     } catch (err) {
       console.error("Error getting AI help:", err);
       setAiHelp("Unable to get AI assistance right now. Please try again later.");
@@ -105,12 +119,19 @@ Consider the context of the provided code and explain what might be going wrong.
       const suggestion = await getCodeHint({
         code: code,
         error: error,
-        instruction: "Fix this code by providing a corrected version. Only return the fixed code without explanations.",
-        difficulty: 'beginner'
+        instruction: "Fix this code by providing a corrected version. Only return the fixed code without explanations."
       });
 
-      if (suggestion.code) {
-        setCode(suggestion.code);
+      // Look for suggestions in the new nested structure
+      if (suggestion.error_analysis?.corrected_code) {
+        setCode(suggestion.error_analysis.corrected_code);
+        setAiHelp('');
+      } else if (suggestion.error_analysis?.hint) {
+        // The hint might contain code suggestions
+        setAiHelp(suggestion.error_analysis.hint);
+      } else if (suggestion.hint || suggestion.error_analysis) {
+        // Fallback to previous format
+        setCode(suggestion.hint || suggestion.error_analysis);
         setAiHelp('');
       } else {
         setAiHelp("Couldn't generate a code fix automatically. Please review the error message and try to fix it manually.");
