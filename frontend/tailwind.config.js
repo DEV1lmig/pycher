@@ -25,15 +25,18 @@ export default {
       },
       colors: {
         primary: {
-          DEFAULT: '#5f2dee', // Purple
+          DEFAULT: '#8363f2', // Purple
           light: '#9880f2',   // Light Purple
+          opaque: '#6653c4', // Darker Purple
         },
         secondary: '#f2d231', // Yellow
+        tertiary: '#a5a5a5',  // Grey
         dark: {
           DEFAULT: '#160f30', // Dark Purple
           light: '#312a56',   // Lighter Dark Purple
           background: '#0e0f2d', // Background Dark
         },
+
       },
     },
   },
