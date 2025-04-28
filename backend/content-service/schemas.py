@@ -62,3 +62,48 @@ class ModuleSummary(BaseModel):
     level: str
     lesson_count: int
     image_url: Optional[str] = None
+
+# Course schemas
+class CourseBase(BaseModel):
+    title: str
+    description: str
+    level: str
+    duration_minutes: Optional[int]
+    total_modules: Optional[int]
+    rating: Optional[float]
+    students_count: Optional[int]
+    image_url: Optional[str]
+    color_theme: Optional[str]
+    is_active: Optional[bool] = True
+
+class CourseCreate(CourseBase):
+    pass
+
+class Course(CourseBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class UserCourseEnrollment(BaseModel):
+    id: int
+    user_id: int
+    course_id: int
+    enrollment_date: datetime
+    last_accessed: Optional[datetime]
+    is_completed: bool
+    progress_percentage: float
+    total_time_spent_minutes: int
+
+    class Config:
+        from_attributes = True
+
+class CourseRating(BaseModel):
+    id: int
+    user_id: int
+    course_id: int
+    rating: float
+
+    class Config:
+        from_attributes = True

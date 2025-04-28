@@ -3,6 +3,8 @@ import DemoPage from './pages/DemoPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import LandingPage from './pages/LandingPage'
+import DashboardPage from './pages/home/Dashboard';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const rootRoute = createRootRoute()
 
@@ -22,6 +24,16 @@ const registerRoute = createRoute({
   path : '/register',
   component: () => <RegisterPage />,
 })
+
+const homeRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/home',
+    component: () => (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    ),
+  });
 
 const moduleRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -50,6 +62,7 @@ const routeTree = rootRoute.addChildren([
   demoRoute,
   loginRoute,
   registerRoute,
+  homeRoute
 ])
 
 // Create the router using your route tree

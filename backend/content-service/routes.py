@@ -62,3 +62,44 @@ def create_lesson(lesson: schemas.LessonCreate, db: Session = Depends(get_db)):
 @router.post("/exercises", response_model=schemas.Exercise)
 def create_exercise(exercise: schemas.ExerciseCreate, db: Session = Depends(get_db)):
     return services.create_exercise(db=db, exercise=exercise)
+
+@router.post("/courses", response_model=schemas.Course)
+def create_course(course: schemas.CourseCreate, db: Session = Depends(get_db)):
+    return services.create_course(db, course)
+
+@router.get("/courses", response_model=List[schemas.Course])
+def list_courses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return services.get_courses(db, skip, limit)
+
+@router.get("/courses/{course_id}", response_model=schemas.Course)
+def get_course(course_id: int, db: Session = Depends(get_db)):
+    course = services.get_course(db, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return course
+
+@router.post("/courses/{course_id}/enroll", response_model=schemas.UserCourseEnrollment)
+def enroll_in_course(course_id: int, user_id: int, db: Session = Depends(get_db)):
+    """
+    Enroll a user in a course and increment students_count.
+    """
+    enrollment = services.enroll_user_in_course(db, user_id=user_id, course_id=course_id)
+    if not enrollment:
+        raise HTTPException(status_code=400, detail="Enrollment failed")
+    return enrollment
+
+@router.post("/courses/{course_id}/unenroll", response_model=dict)
+def unenroll_from_course(course_id: int, user_id: int, db: Session = Depends(get_db)):
+    """
+    Unenroll a user from a course and decrement students_count.
+    """
+    services.unenroll_user_from_course(db, user_id=user_id, course_id=course_id)
+    return {"detail": "Unenrolled successfully"}
+
+@router.post("/courses/{course_id}/rate", response_model=dict)
+def rate_course(course_id: int, user_id: int, rating: float, db: Session = Depends(get_db)):
+    """
+    Rate a course and update its average rating.
+    """
+    services.rate_course(db, user_id=user_id, course_id=course_id, rating=rating)
+    return {"detail": "Rating submitted"}

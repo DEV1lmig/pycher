@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from models import Module, Lesson, Exercise
+from sqlalchemy import func
+from models import Module, Lesson, Exercise, Course, UserCourseEnrollment, CourseRating
 from schemas import ModuleCreate, LessonCreate, ExerciseCreate
 import redis
 import os
@@ -201,3 +202,52 @@ def create_exercise(db: Session, exercise: ExerciseCreate):
     redis_client.delete(f"lesson:{exercise.lesson_id}:exercises")
 
     return db_exercise
+
+def create_course(db: Session, course_data):
+    course = Course(**course_data.dict())
+    db.add(course)
+    db.commit()
+    db.refresh(course)
+    return course
+
+def get_courses(db: Session, skip=0, limit=100):
+    return db.query(Course).offset(skip).limit(limit).all()
+
+def get_course(db: Session, course_id: int):
+    return db.query(Course).filter(Course.id == course_id).first()
+
+def enroll_user_in_course(db: Session, user_id: int, course_id: int):
+    # Create enrollment
+    enrollment = UserCourseEnrollment(user_id=user_id, course_id=course_id)
+    db.add(enrollment)
+    # Update students_count
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course:
+        course.students_count += 1
+    db.commit()
+    return enrollment
+
+def unenroll_user_from_course(db: Session, user_id: int, course_id: int):
+    enrollment = db.query(UserCourseEnrollment).filter_by(user_id=user_id, course_id=course_id).first()
+    if enrollment:
+        db.delete(enrollment)
+        course = db.query(Course).filter(Course.id == course_id).first()
+        if course and course.students_count > 0:
+            course.students_count -= 1
+        db.commit()
+
+def rate_course(db: Session, user_id: int, course_id: int, rating: float):
+    # Add or update user's rating
+    course_rating = db.query(CourseRating).filter_by(user_id=user_id, course_id=course_id).first()
+    if course_rating:
+        course_rating.rating = rating
+    else:
+        course_rating = CourseRating(user_id=user_id, course_id=course_id, rating=rating)
+        db.add(course_rating)
+    db.commit()
+    # Recalculate average
+    avg = db.query(func.avg(CourseRating.rating)).filter(CourseRating.course_id == course_id).scalar()
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course:
+        course.rating = avg
+        db.commit()

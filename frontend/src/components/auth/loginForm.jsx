@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { loginUser } from "@/services/userService"
 import { toast } from "react-hot-toast"
+import { useNavigate } from "@tanstack/react-router"
 
 export function LoginForm() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ export function LoginForm() {
     password: "",
     remember: false,
   })
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -23,9 +25,8 @@ export function LoginForm() {
         username: formData.username, // must match the key in your state
         password: formData.password,
       })
-      // Show success notification
       toast.success("Inicio de sesión exitoso.")
-      // Redirect to dashboard or home
+      navigate({ to: "/home"})
     } catch (error) {
       // Show error notification
       toast.error(

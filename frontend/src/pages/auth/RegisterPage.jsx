@@ -1,6 +1,6 @@
-import AuthLayout from "@/components/layout/AuthLayout"
-import { AuthTabs } from "@/components/modules/AuthTabs"
-import { RegisterForm } from "@/components/forms/registerForm"
+import AuthLayout from "@/components/auth/AuthLayout"
+import { AuthTabs } from "@/components/auth/AuthTabs"
+import { RegisterForm } from "@/components/auth/registerForm"
 
 export default function RegisterPage() {
   return (
