@@ -121,6 +121,35 @@ async def ai_service(endpoint: str, request: Request):
             # logger.error(f"AI service returned error: {e.response.status_code} - {e.response.text}")
             raise HTTPException(status_code=e.response.status_code, detail=e.response.json() if e.response.content else "AI service error")
 
+@app.api_route("/api/v1/users/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def user_service_proxy(request: Request, path: str):
+    """Proxy requests to the user service"""
+    if "user-service" not in SERVICE_URLS:
+        raise HTTPException(status_code=503, detail="User service not available")
+
+    url = f"{SERVICE_URLS['user-service']}/api/v1/users/{path}"
+
+    async with httpx.AsyncClient() as client:
+        try:
+            method = request.method.lower()
+            request_func = getattr(client, method)
+            headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'content-length']}
+            content = await request.body() if method != "get" else None
+
+            response = await request_func(
+                url,
+                headers=headers,
+                params=request.query_params,
+                content=content,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=503, detail=f"Error: {str(e)}")
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail=e.response.json() if e.response.content else "User service error")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

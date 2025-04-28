@@ -13,8 +13,19 @@ services:
 
   redis:
     image: docker.io/library/redis:7-alpine
+    command:
+      [
+        "redis-server",
+        "--requirepass", "${REDIS_PASSWORD}",
+        "--user", "${REDIS_USER}", "on", ">${REDIS_PASSWORD}", "~*", "+@all"
+      ]
+    environment:
+      REDIS_USER: "${REDIS_USER}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
     volumes: ["redis-data:/data"]
     networks: ["pycher-network"]
+    ports:
+      - "6379:6379"
 
   user-service:
     build: ./backend/user-service

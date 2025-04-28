@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { registerUser } from "@/services/userService";
+import { toast } from "react-hot-toast"
 
 export function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -16,11 +18,20 @@ export function RegisterForm() {
     confirmPassword: "",
     acceptTerms: false,
   })
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log("Register form submitted:", formData)
-    // Handle registration logic here
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await registerUser(formData);
+      toast.success("Registro exitoso. Ahora puedes iniciar sesión.");
+      // Optionally redirect to login page
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Error al registrar usuario.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleChange = (e) => {
@@ -135,8 +146,8 @@ export function RegisterForm() {
           Acepto los términos y Políticas de Privacidad
         </label>
       </div>
-      <Button type="submit" className="w-full bg-[#5f2dee] hover:bg-[#4f25c5] text-white">
-        Registrarse
+      <Button type="submit" className="w-full bg-[#5f2dee] hover:bg-[#4f25c5] text-white" disabled={loading}>
+        {loading ? "Registrando..." : "Registrarse"}
       </Button>
     </form>
   )

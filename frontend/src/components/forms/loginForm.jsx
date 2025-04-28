@@ -6,18 +6,33 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { loginUser } from "@/services/userService"
+import { toast } from "react-hot-toast"
 
 export function LoginForm() {
   const [formData, setFormData] = useState({
-    emailUsername: "",
+    username: "", // not emailUsername or anything else
     password: "",
     remember: false,
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log("Login form submitted:", formData)
-    // Handle login logic here
+    try {
+      await loginUser({
+        username: formData.username, // must match the key in your state
+        password: formData.password,
+      })
+      // Show success notification
+      toast.success("Inicio de sesión exitoso.")
+      // Redirect to dashboard or home
+    } catch (error) {
+      // Show error notification
+      toast.error(
+        error.response?.data?.detail ||
+        "Error al iniciar sesión. Verifica tus credenciales."
+      )
+    }
   }
 
   const handleChange = (e) => {
@@ -32,13 +47,13 @@ export function LoginForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <Label htmlFor="emailUsername" className="text-white">
+        <Label htmlFor="username" className="text-white">
           Username o Correo Electrónico
         </Label>
         <Input
-          id="emailUsername"
-          name="emailUsername"
-          value={formData.emailUsername}
+          id="username"
+          name="username"
+          value={formData.username}
           onChange={handleChange}
           placeholder="Tu username o correo electrónico"
           className="bg-[#1a1433] border-[#312a56] text-white"

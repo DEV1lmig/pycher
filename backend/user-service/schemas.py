@@ -20,6 +20,7 @@ class UserResponse(UserBase):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
 
 class TokenData(BaseModel):
@@ -46,3 +47,12 @@ class ModuleProgress(BaseModel):
     completed_lessons: int
     total_lessons: int
     percentage: float
+
+# Add these schemas
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+class PasswordReset(BaseModel):
+    token: str
+    new_password: str

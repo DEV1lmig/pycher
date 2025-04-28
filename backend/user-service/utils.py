@@ -15,8 +15,17 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Redis client for session management
 redis_host = os.getenv("REDIS_HOST", "redis")
-redis_port = os.getenv("REDIS_PORT", 6379)
-redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+redis_port = int(os.getenv("REDIS_PORT", 6379))
+redis_user = os.getenv("REDIS_USER")          # e.g. "pycher"
+redis_password = os.getenv("REDIS_PASSWORD")  # e.g. "3810"
+
+redis_client = redis.Redis(
+    host=redis_host,
+    port=redis_port,
+    username=redis_user,
+    password=redis_password,
+    decode_responses=True
+)
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -36,3 +45,21 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     return encoded_jwt
+
+def check_login_attempts(username: str):
+    """Check if a user has exceeded login attempts"""
+    key = f"login_attempts:{username}"
+    attempts = redis_client.get(key)
+
+    if attempts is None:
+        # First attempt
+        redis_client.setex(key, 3600, 1)  # 1 hour window
+        return True
+
+    attempts = int(attempts)  # <-- FIXED: removed .decode()
+    if attempts >= 5:  # Maximum 5 attempts per hour
+        return False
+
+    # Increment attempts
+    redis_client.incr(key)
+    return True
