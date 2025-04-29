@@ -17,7 +17,6 @@ export const loginUser = async (credentials) => {
     },
   });
 
-  // Store token in local storage
   localStorage.setItem('token', response.data.access_token);
   return response.data;
 };
@@ -26,7 +25,6 @@ export const logoutUser = () => {
   localStorage.removeItem('token');
 };
 
-// Progress tracking
 export const getUserProgress = async (userId, moduleId) => {
   const response = await apiClient.get(`/api/v1/users/progress/${userId}/${moduleId}`);
   return response.data;
