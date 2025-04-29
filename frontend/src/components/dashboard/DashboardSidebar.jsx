@@ -13,14 +13,14 @@ export function DashboardSidebar() {
   }
 
   const menuItems = [
-    { icon: Home, label: "Inicio", href: "/dashboard" },
-    { icon: BookOpen, label: "Mis Cursos", href: "/dashboard/courses" },
-    { icon: Code, label: "Ejercicios", href: "/dashboard/exercises" },
+    { icon: Home, label: "Inicio", href: "/home" },
+    { icon: BookOpen, label: "Mis Cursos", href: "/home/courses" },
+    { icon: Code, label: "Ejercicios", href: "/home/exercises" },
   ]
 
   const bottomMenuItems = [
-    { icon: Settings, label: "Configuración", href: "/dashboard/settings" },
-    { icon: HelpCircle, label: "Ayuda", href: "/dashboard/help" },
+    { icon: Settings, label: "Configuración", href: "/home/settings" },
+    { icon: HelpCircle, label: "Ayuda", href: "/home/help" },
     { icon: LogOut, label: "Cerrar Sesión", href: "/login" },
   ]
 
