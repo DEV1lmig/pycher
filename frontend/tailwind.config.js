@@ -31,11 +31,13 @@ export default {
         },
         secondary: '#f2d231', // Yellow
         tertiary: '#a5a5a5',  // Grey
+        blue: '#00B4D8',
         dark: {
-          DEFAULT: '#160f30', // Dark Purple
-          light: '#312a56',   // Lighter Dark Purple
-          background: '#0e0f2d', // Background Dark
+          DEFAULT: '#070113', // Dark Purple
+          light: '#302640',   // Lighter Dark Purple
+          background: '#0e051f', // Background Dark
         },
+        orange: '#FBC465', // Orange
 
       },
     },

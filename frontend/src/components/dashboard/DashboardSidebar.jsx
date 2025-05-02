@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import { Link } from "@tanstack/react-router";
 import { Home, BookOpen, Code, Settings, HelpCircle, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 

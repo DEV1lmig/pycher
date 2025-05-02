@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { Link } from "@tanstack/react-router";
 import { ArrowRight, Star } from "lucide-react"
 
 export function CourseCards() {
