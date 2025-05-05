@@ -1,12 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react";
 import { Bell, User } from "lucide-react"
 import { SearchBar } from "@/components/modules/SearchBar"
+import { getUserProfile } from "@/services/userService";
 
 export function DashboardHeader() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    getUserProfile().then(setUser);
+  }, []);
 
   return (
     <header className="bg-[#1a1433] border-b border-[#312a56] p-4 flex items-center justify-between">
@@ -54,14 +60,14 @@ export function DashboardHeader() {
             <div className="h-8 w-8 rounded-full bg-[#5f2dee] flex items-center justify-center">
               <User className="h-5 w-5 text-white" />
             </div>
-            <span className="hidden md:inline-block">Carlos Rodríguez</span>
+            <span className="hidden md:inline-block">{user ? `${user.first_name} ${user.last_name}` : "Carlos Rodríguez"}</span>
           </button>
 
           {showProfile && (
             <div className="absolute right-0 mt-2 w-48 bg-[#1a1433] border border-[#312a56] rounded-md shadow-lg z-10">
               <div className="p-3 border-b border-[#312a56]">
-                <p className="font-medium">Carlos Rodríguez</p>
-                <p className="text-xs text-gray-400">carlos@example.com</p>
+                <p className="font-medium">{user ? `${user.first_name} ${user.last_name}` : "Carlos Rodríguez"}</p>
+                <p className="text-xs text-gray-400">{user ? user.email : "carlos@example.com"}</p>
               </div>
               <ul>
                 <li className="p-2 hover:bg-[#312a56] cursor-pointer">Mi Perfil</li>

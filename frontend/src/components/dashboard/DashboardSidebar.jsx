@@ -1,27 +1,34 @@
 "use client"
 
 import { useState } from "react"
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router"
 import { Home, BookOpen, Code, Settings, HelpCircle, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { logout } from "@/lib/auth";
 
 export function DashboardSidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed)
   }
 
+  const handleLogout = () => {
+    logout();
+    navigate({ to: "/login" });
+  };
+
   const menuItems = [
-    { icon: Home, label: "Inicio", href: "/dashboard" },
-    { icon: BookOpen, label: "Mis Cursos", href: "/dashboard/courses" },
-    { icon: Code, label: "Ejercicios", href: "/dashboard/exercises" },
+    { icon: Home, label: "Inicio", href: "/home" },
+    { icon: BookOpen, label: "Mis Cursos", href: "/home/courses" },
+    { icon: Code, label: "Ejercicios", href: "/home/exercises" },
   ]
 
   const bottomMenuItems = [
-    { icon: Settings, label: "Configuración", href: "/dashboard/settings" },
-    { icon: HelpCircle, label: "Ayuda", href: "/dashboard/help" },
-    { icon: LogOut, label: "Cerrar Sesión", href: "/login" },
+    { icon: Settings, label: "Configuración", href: "/home/settings" },
+    { icon: HelpCircle, label: "Ayuda", href: "/home/help" },
+    { icon: LogOut, label: "Cerrar Sesión", onClick: handleLogout },
   ]
 
   return (
@@ -65,10 +72,13 @@ export function DashboardSidebar() {
         <ul className="space-y-2">
           {bottomMenuItems.map((item, index) => (
             <li key={index}>
-              <Link href={item.href} className="flex items-center p-2 rounded-md hover:bg-[#312a56] transition-colors">
+              <button
+                className="flex items-center p-2 rounded-md hover:bg-[#312a56] transition-colors w-full text-left"
+                onClick={item.onClick ? item.onClick : () => navigate({ to: item.href })}
+              >
                 <item.icon className="h-5 w-5 text-[#9980f2]" />
                 {!collapsed && <span className="ml-3">{item.label}</span>}
-              </Link>
+              </button>
             </li>
           ))}
         </ul>

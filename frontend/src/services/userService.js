@@ -1,8 +1,17 @@
 import { apiClient } from './api';
 
-// Authentication
 export const registerUser = async (userData) => {
-  const response = await apiClient.post('/api/v1/users/register', userData);
+
+  const payload = {
+    username: userData.username,
+    email: userData.email,
+    password: userData.password,
+    first_name: userData.firstName,
+    last_name: userData.lastName,
+    // ...add any other fields you need
+  };
+
+  const response = await apiClient.post('/api/v1/users/register', payload);
   return response.data;
 };
 
@@ -17,7 +26,6 @@ export const loginUser = async (credentials) => {
     },
   });
 
-  // Store token in local storage
   localStorage.setItem('token', response.data.access_token);
   return response.data;
 };
@@ -26,7 +34,6 @@ export const logoutUser = () => {
   localStorage.removeItem('token');
 };
 
-// Progress tracking
 export const getUserProgress = async (userId, moduleId) => {
   const response = await apiClient.get(`/api/v1/users/progress/${userId}/${moduleId}`);
   return response.data;
@@ -34,5 +41,14 @@ export const getUserProgress = async (userId, moduleId) => {
 
 export const updateLessonProgress = async (progressData) => {
   const response = await apiClient.post('/api/v1/users/progress', progressData);
+  return response.data;
+};
+
+export const getUserProfile = async () => {
+  const response = await apiClient.get('/api/v1/users/me', {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
   return response.data;
 };

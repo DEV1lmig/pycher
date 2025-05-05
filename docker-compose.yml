@@ -10,6 +10,8 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks: ["pycher-network"]
+    ports:
+      - "5432:5432"
 
   redis:
     image: docker.io/library/redis:7-alpine

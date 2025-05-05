@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from datetime import timedelta, datetime
 from database import get_db
 from jose import jwt, JWTError
-from models import engine, Progress
+from models import engine, Progress, User
 from schemas import UserCreate, UserResponse, Token, ProgressCreate, ProgressResponse, ModuleProgress
 from services import create_user, get_user_by_username, get_user_by_email, authenticate_user, get_user_progress, update_lesson_progress
 from utils import create_access_token, redis_client, get_password_hash, SECRET_KEY, ALGORITHM
@@ -198,3 +198,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user

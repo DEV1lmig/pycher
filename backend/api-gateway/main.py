@@ -73,13 +73,21 @@ async def content_service(request: Request, path: str):
             # Get body for non-GET requests
             content = await request.body() if method != "get" else None
 
-            response = await request_func(
-                url,
-                headers=headers,
-                params=request.query_params,
-                content=content,
-                timeout=30.0
-            )
+            if method == "get":
+                response = await request_func(
+                    url,
+                    headers=headers,
+                    params=request.query_params,
+                    timeout=30.0
+                )
+            else:
+                response = await request_func(
+                    url,
+                    headers=headers,
+                    params=request.query_params,
+                    content=content,
+                    timeout=30.0
+                )
 
             return response.json()
         except httpx.RequestError as e:
@@ -136,13 +144,22 @@ async def user_service_proxy(request: Request, path: str):
             headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'content-length']}
             content = await request.body() if method != "get" else None
 
-            response = await request_func(
-                url,
-                headers=headers,
-                params=request.query_params,
-                content=content,
-                timeout=30.0
-            )
+            if method == "get":
+                response = await request_func(
+                    url,
+                    headers=headers,
+                    params=request.query_params,
+                    timeout=30.0
+                )
+            else:
+                response = await request_func(
+                    url,
+                    headers=headers,
+                    params=request.query_params,
+                    content=content,
+                    timeout=30.0
+                )
+
             response.raise_for_status()
             return response.json()
         except httpx.RequestError as e:

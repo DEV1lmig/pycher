@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.sql import func
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/pycher")
+DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
@@ -16,6 +16,8 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    first_name = Column(String)   # Add this
+    last_name = Column(String)    # Add this
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

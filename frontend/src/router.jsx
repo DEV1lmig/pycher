@@ -1,10 +1,10 @@
-import { createRootRoute, createRouter, createRoute } from '@tanstack/react-router'
+import { createRootRoute, createRouter, createRoute,  } from '@tanstack/react-router'
 import DemoPage from './pages/DemoPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/home/Dashboard';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import { ProtectedLayout } from './components/auth/ProtectedLayout';
 
 const rootRoute = createRootRoute()
 
@@ -25,15 +25,19 @@ const registerRoute = createRoute({
   component: () => <RegisterPage />,
 })
 
+const protectedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'protected',
+  path: '',
+  beforeLoad: ProtectedLayout.beforeLoad,
+  component: ProtectedLayout.component,
+})
+
 const homeRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/home',
-    component: () => (
-      <ProtectedRoute>
-        <DashboardPage />
-      </ProtectedRoute>
-    ),
-  });
+  getParentRoute: () => protectedRoute,
+  path: '/home',
+  component: () => <DashboardPage />,
+})
 
 const moduleRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -62,7 +66,7 @@ const routeTree = rootRoute.addChildren([
   demoRoute,
   loginRoute,
   registerRoute,
-  homeRoute
+  protectedRoute.addChildren([homeRoute])
 ])
 
 // Create the router using your route tree
