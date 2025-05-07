@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 
 const LetterGlitch = ({
-  glitchColors = ['#f2d231', '#6653c4', '#FBC465'],
+  glitchColors = ['#9880f2', '#a5a5a5', '#f2d231'],
   glitchSpeed = 50,
   centerVignette = false,
   outerVignette = true,
@@ -201,7 +201,7 @@ const LetterGlitch = ({
   }, [glitchSpeed, smooth]);
 
   return (
-    <div className="relative w-[250px] h-[250px] md:w-[200px] md:h-[200px] cursor-pointer bg-dark overflow-hidden border-[5px] border-solid border-orange rounded-[30px] transition-all duration-300 ease-in-out hover:scale-95">
+    <div className="relative w-[250px] h-[250px] md:w-[200px] md:h-[200px] cursor-pointer bg-dark overflow-hidden border-[5px] border-solid border-tertiary rounded-[30px] transition-all duration-300 ease-in-out hover:scale-95">
     <div className="absolute inset-0 transition-opacity duration-300 ease-in-out hover:opacity-10">
       <canvas ref={canvasRef} className="block w-full h-full" />
       {outerVignette && (

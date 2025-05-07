@@ -1,4 +1,3 @@
-// filepath: /home/dev1mig/Documents/projects/pycher/frontend/tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 import tailwindcssAnimate from "tailwindcss-animate";
 
@@ -9,7 +8,17 @@ export default {
   ],
   theme: {
     extend: {
+      animation: {
+        'scroll-line': 'scroll-line 1.5s infinite ease-in-out', 
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
       keyframes: {
+        'scroll-line': {
+          '0%': { height: '8%', opacity: '1' }, 
+          '50%': { height: '0%', opacity: '0' },  
+          '100%': { height: '8%', opacity: '1' },
+        },
         "accordion-down": {
           from: { height: 0 },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -18,10 +27,6 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
       },
       colors: {
         primary: {
@@ -33,14 +38,13 @@ export default {
         tertiary: '#a5a5a5',  // Grey
         blue: '#00B4D8',
         dark: {
-          DEFAULT: '#070113', // Dark Purple
+          DEFAULT: '#160f30', // Dark Purple
           light: '#302640',   // Lighter Dark Purple
-          background: '#0e051f', // Background Dark
+          background: '#0e0f2d', // Background Dark
         },
         orange: '#FBC465', // Orange
-
       },
     },
   },
   plugins: [tailwindcssAnimate],
-}
+};

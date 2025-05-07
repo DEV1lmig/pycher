@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { Link } from '@tanstack/react-router';
 import NavBar from './landing/NavBar';
 import logo from '../assets/img/logo.png'; 
@@ -17,6 +17,24 @@ import CountUp from '../components/ui/count-up.jsx';
 import Aurora from '@/components/ui/aurora';
 
 export default function LandingPage() {
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        setShowScrollIndicator(false);
+      } else {
+        setShowScrollIndicator(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   const handleAnimationComplete = () => {
     console.log('Animation completed!');
   };
@@ -32,7 +50,7 @@ export default function LandingPage() {
           distance={100}
           direction="vertical"
           reverse={false}
-          config={{ tension: 60, friction: 20 }}
+          config={{ tension: 60, friction: 40 }}
           initialOpacity={0.2}
           animateOpacity
           scale={0.5}
@@ -40,19 +58,22 @@ export default function LandingPage() {
         >
           <div className="text-8xl md:text-[250px] font-bold text-white cursor-default">
             pycher
-            <span className="text-secondary">.</span>
+            <span className="text-primary">.</span>
           </div>
           
         </AnimatedContent>
     </div>
 
-    {/* Otros elementos con sus propias animaciones */}
-    <header className="relative container mx-auto px-4 py-36 text-center min-h-[500px] overflow-visible">
+      {showScrollIndicator && (
+    <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 w-[2px] bg-primary rounded-full animate-scroll-line"></div>
+  )}
+
+    <header className="relative container mx-auto px-4 pt-36 text-center min-h-[500px] overflow-visible">
       <AnimatedContent
         distance={100}
         direction="vertical"
         reverse={true}
-        config={{ tension: 60, friction: 20 }}
+        config={{ tension: 60, friction: 40 }}
         initialOpacity={0.2}
         animateOpacity
         scale={1.5}
@@ -78,11 +99,11 @@ export default function LandingPage() {
           </div>
 
           {/* Waves */}
-          <div className="relative z-10 w-[250px] h-[250px] md:w-[200px] md:h-[200px] bg-dark overflow-hidden border-[5px] border-solid border-blue rounded-[30px] transition-all duration-300 ease-in-out hover:scale-95">
+          <div className="relative z-10 w-[250px] h-[250px] md:w-[200px] md:h-[200px] bg-dark overflow-hidden border-[5px] border-solid border-tertiary rounded-[30px] transition-all duration-300 ease-in-out hover:scale-95">
             <div className="absolute inset-0 transition-opacity cursor-pointer duration-300 ease-in-out hover:opacity-10">
               <Waves
-                lineColor="#00B4D8"
-                backgroundColor="#070113"
+                lineColor="#a5a5a5"
+                backgroundColor="#160f30"
                 waveSpeedX={0.02}
                 waveSpeedY={0.01}
                 waveAmpX={40}
@@ -117,13 +138,13 @@ export default function LandingPage() {
           />
 
           {/* Squares */}
-          <div className="relative z-10 w-[250px] h-[250px] md:w-[200px] md:h-[200px] bg-dark overflow-hidden border-[5px] border-solid border-primary-light rounded-full transition-all duration-300 ease-in-out hover:scale-95">
+          <div className="relative z-10 w-[250px] h-[250px] md:w-[200px] md:h-[200px] bg-dark overflow-hidden border-[5px] border-solid border-secondary rounded-full transition-all duration-300 ease-in-out hover:scale-95">
             <div className="absolute inset-0 transition-opacity duration-300 ease-in-out hover:opacity-10">
               <Squares
-                speed={0.3}
-                squareSize={25}
+                speed={0.1}
+                squareSize={30}
                 direction="right"
-                borderColor="#8363f2"
+                borderColor="#f2d231"
                 hoverFillColor="#222"
               />
             </div>
@@ -131,14 +152,31 @@ export default function LandingPage() {
         </div>
       </AnimatedContent>
 
-      <div className='font-normal text-2xl'> 
-      <div className='w-full text-left mt-12 px-36'>
-  
-        Obtén guía personalizada <br />
-        Y feedback en <span className='text-primary'>tiempo real</span>
-      </div>
-      </div>
+      <div className="font-normal text-2xl flex justify-between items-center mt-12 px-36">
+
+      <FadeContent blur={true} duration={1600} easing="ease-out" initialOpacity={0}>
+        <div className="flex flex-col text-left">
+          <p>Obtén guía personalizada</p>
+          <p>Y feedback en <span className="text-primary">tiempo real</span></p>
+        </div>
+      </FadeContent>
+
+      <FadeContent blur={true} duration={1600} easing="ease-out" initialOpacity={0}>
+      <Link
+        to="/register"
+        className="flex items-center justify-center bg-dark border-tertiary border text-white font-medium h-[50px] w-[250px] md:h-[65px] md:w-[250px] rounded-3xl transition-colors"
+      >
+
+        <Magnet padding={30} disabled={false} magnetStrength={10}>
+          <h1 className="transition-transform ease-in-out cursor-pointer duration-300 hover:scale-130 font-medium text-sm md:text-lg">
+            Comienza YA!
+          </h1>
+        </Magnet>
+      </Link>
+      </FadeContent>
+    </div>
     </header>
+
       </div>
     
       {/* Courses Section */}
@@ -169,12 +207,12 @@ export default function LandingPage() {
             altText="Curso Básico"
             containerHeight="320px"
             containerWidth="320px"
-            imageHeight="250px"
-            imageWidth="250px"
+            imageHeight="270px"
+            imageWidth="270px"
             rotateAmplitude={12}
             scaleOnHover={1.2}
             showMobileWarning={false}
-            showTooltip={true}
+            showTooltip={false}
             displayOverlayContent={true}
             overlayContent={
               <p className="tilted-card-demo-text ml-6 mt-6 bg-black text-white rounded-2xl px-3 py-2 bg-opacity-35">
@@ -188,12 +226,12 @@ export default function LandingPage() {
 
       <section className="bg-dark py-24 flex justify-center items-center gap-12">
       <FadeContent blur={true} duration={1200} easing="ease-out" initialOpacity={0}>
-      <div className="relative w-[450px] h-[250px] bg-primary overflow-hidden border-none rounded-2xl ">
+      <div className="relative w-[465px] h-[250px] bg-primary overflow-hidden border-none rounded-2xl ">
           <div className="absolute inset-0">
             <Squares
               speed={0.3}
               squareSize={30}
-              direction="down" // up, down, left, right, diagonal
+              direction="down" 
               borderColor="#9880f2"
               hoverFillColor="#222"
             />
@@ -219,7 +257,7 @@ export default function LandingPage() {
           </FadeContent>
 
           <FadeContent blur={true} duration={1200} easing="ease-out" initialOpacity={0}>
-          <div className="relative w-[450px] h-[250px] overflow-hidden rounded-2xl border-[1px] border-primary">
+          <div className="relative w-[465px] h-[250px] overflow-hidden rounded-2xl border-[1px] border-primary">
 
           <div className="absolute inset-0">
             <Particles
@@ -258,7 +296,7 @@ export default function LandingPage() {
       <section className="relative bg-dark">
       <FadeContent blur={true} duration={1200} easing="ease-out" initialOpacity={1}>
       {/* Aurora como fondo absoluto */}
-      <div className='relative rounded-3xl mx-24 px-12 py-12 grid-cols-2 grid gap-8 items-center overflow-hidden'>
+      <div className='relative rounded-3xl mx-36 px-12 py-12 grid-cols-2 grid gap-8 items-center overflow-hidden'>
       <div className="absolute inset-0 z-0">
         <Aurora
           colorStops={["#8363f2", "#f2d231", "#a5a5a5"]}
@@ -270,9 +308,9 @@ export default function LandingPage() {
 
       {/* Contenido de "Registra tu cuenta" */}
       <div className="relative z-10">
-        <h2 className="text-3xl font-bold mb-4 text-white relative">
-          Registra tu <span className="relative z-10">Cuenta </span>
-          <span className="absolute inset-0 w-20 h-2 bg-primary top-6 left-48 z-0"></span>
+        <h2 className="text-2xl font-bold mb-4 text-white relative">
+          Registra tu <span className="relative z-15">Cuenta </span>
+         
           GRATIS para<br />
           acceder a <span className="text-secondary">300</span> cursos online
         </h2>
@@ -346,7 +384,7 @@ export default function LandingPage() {
 
 
       {/* Footer */}
-      <footer className="bg-dark py-6 text-center text-white font-semibold">
+      <footer className="bg-dark-background py-6 text-center text-white font-semibold">
         <p>© 2025 Pycher. Todos los derechos reservados.</p>
       </footer>
     </div>

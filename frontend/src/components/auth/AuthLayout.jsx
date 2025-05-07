@@ -3,6 +3,10 @@ import logo from "@/assets/img/logo.png";
 import { LoginForm } from "@/components/auth/loginForm";
 import { RegisterForm } from "@/components/auth/registerForm";
 
+import AnimatedContent from "../ui/animated-content";
+import TiltedCard from '../ui/tilted-card.jsx';
+import BlobCursor from "../ui/blob-cursor"; 
+
 export default function AuthLayout() {
   const [isRegister, setIsRegister] = useState(false); 
   const [showRegister, setShowRegister] = useState(false);
@@ -17,26 +21,59 @@ export default function AuthLayout() {
 
   return (
     <main className="relative flex min-h-screen overflow-hidden bg-dark">
+      
       <div
         className={`relative z-10 hidden md:flex md:w-1/2 bg-gradient-to-br from-[#160f30] via-[#312a56] to-[#312a56] items-center justify-center p-10 transition-all duration-700 ${
           isRegister ? "translate-x-full" : "translate-x-0"
         }`}
       >
+        <AnimatedContent
+          distance={150}
+          direction="vertical"
+          reverse={true}
+          config={{ tension: 60, friction: 20 }}
+          initialOpacity={0.2}
+          animateOpacity
+          scale={1.1}
+          threshold={0.2}
+        >
         <div className="text-center">
           <div className="text-white text-4xl font-bold mb-8 flex items-center justify-center">
-            <span className="mr-2">{"</ >"}</span> PyCher
+            <TiltedCard
+                        imageSrc={logo}
+                        altText="logo"
+                        containerHeight="320px"
+                        containerWidth="320px"
+                        imageHeight="270px"
+                        imageWidth="270px"
+                        rotateAmplitude={12}
+                        scaleOnHover={1.2}
+                        showMobileWarning={false}
+                        showTooltip={false}
+                        displayOverlayContent={false}
+                      />
           </div>
-          <div className="w-48 h-48 mx-auto flex items-center justify-center">
-            <img src={logo} alt="PyCher Logo" className="w-48 h-48 object-contain" />
-          </div>
+        
         </div>
+        </AnimatedContent>
       </div>
-
+      
       <div
         className={`w-full md:w-1/2 bg-[#160f30] flex items-center justify-center p-4 transition-all duration-700 ${
           isRegister ? "-translate-x-full" : "translate-x-0"
         }`}
       >
+        <AnimatedContent
+          distance={150}
+          direction="vertical"
+          reverse={false}
+          config={{ tension: 60, friction: 20 }}
+          initialOpacity={0.2}
+          animateOpacity
+          scale={1.1}
+          threshold={0.2}
+        >
+
         <div className="w-full max-w-md space-y-6">
           {/* Mobile Logo */}
           <div className="md:hidden text-center mb-8">
@@ -47,6 +84,7 @@ export default function AuthLayout() {
               <img src={logo} alt="PyCher Logo" className="w-24 h-24 object-contain" />
             </div>
           </div>
+          
 
           {showRegister ? (
             <>
@@ -86,7 +124,9 @@ export default function AuthLayout() {
             </>
           )}
         </div>
+        </AnimatedContent>
       </div>
     </main>
+
   );
 }
