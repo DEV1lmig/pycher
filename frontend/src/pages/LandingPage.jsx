@@ -40,9 +40,9 @@ export default function LandingPage() {
   };
 
   return (
-  <div className="relative group min-h-screen bg-white text-white py-">
+  <div className="relative group min-h-screen bg-white text-white ">
     <NavBar />
-    <div className="relative group overflow-hidden py-60">
+    <div className="relative group overflow-hidden pt-60 pb-48">
       <div className="absolute inset-0 bg-dark">
       </div>
        <div className="absolute top-2/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 mt-[4rem]">
@@ -379,9 +379,6 @@ export default function LandingPage() {
         </div>
         </FadeContent>
       </section>
-
-
-
 
       {/* Footer */}
       <footer className="bg-dark-background py-6 text-center text-white font-semibold">
