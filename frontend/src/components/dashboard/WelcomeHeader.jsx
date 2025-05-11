@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { getUserProfile } from "@/services/userService"
 
 export function WelcomeHeader() {
-  const [user, setUser] = useState("")
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     getUserProfile().then(setUser)
@@ -11,7 +11,7 @@ export function WelcomeHeader() {
   return (
     <div className="bg-gradient-to-r from-[#312a56] to-[#1a1433] rounded-lg p-6">
       <h1 className="text-3xl font-bold mb-2">
-        ¡Bienvenido de vuelta{user ? `, ${user.firstName}` : ""}!
+        ¡Bienvenido de vuelta {user ? `${user.first_name}` : "Carlos Rodríguez"}!
       </h1>
       <p className="text-gray-300 mb-4">
         Continúa tu viaje de aprendizaje en Python. Tienes 3 cursos en progreso.

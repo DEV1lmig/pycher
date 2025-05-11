@@ -45,10 +45,8 @@ class Lesson(Base):
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    video_url = Column(String)
     order_index = Column(Integer, nullable=False)
     duration_minutes = Column(Integer)
-    is_free = Column(Boolean, default=False)
     module = relationship("Module", back_populates="lessons")
     exercises = relationship("Exercise", back_populates="lesson")
 

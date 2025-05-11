@@ -32,3 +32,9 @@ export const getExerciseById = async (exerciseId) => {
   const response = await apiClient.get(`/api/v1/content/exercises/${exerciseId}`);
   return response.data;
 };
+
+// Courses
+export const getAllCourses = async () => {
+  const response = await apiClient.get('/api/v1/content/courses');
+  return response.data;
+};
