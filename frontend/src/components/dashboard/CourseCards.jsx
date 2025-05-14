@@ -37,7 +37,7 @@ export function CourseCards({ courses }) {
             <div className="flex items-center justify-between mt-4">
               <span className="text-sm text-gray-400">{course.students_count} estudiantes</span>
               <Link
-                href={`/dashboard/courses/${course.id}`}
+                href={`/courses/${course.id}`}
                 className="flex items-center text-[#5f2dee] hover:text-[#9980f2] transition-colors"
               >
                 Ver curso <ArrowRight className="h-4 w-4 ml-1" />

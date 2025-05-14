@@ -38,3 +38,14 @@ export const getAllCourses = async () => {
   const response = await apiClient.get('/api/v1/content/courses');
   return response.data;
 };
+
+export const getCourseById = async (courseId) => {
+  const response = await apiClient.get(`/api/v1/content/courses/${courseId}`);
+  return response.data;
+};
+
+export const getModulesByCourseId = async (courseId) => {
+  const response = await apiClient.get(`/api/v1/content/courses/${courseId}/modules`);
+  console.log(response.data);
+  return response.data;
+};

@@ -1,5 +1,9 @@
-/.env.development
-/.env.production
+.env.development
+.env.production
 .python-version
 /backend/.env
 /node_modules
+/frontend/node_modules
+/frontend/.pnpm-store
+/backend/user-service/__pycache__
+/backend/content-service/__pycache__

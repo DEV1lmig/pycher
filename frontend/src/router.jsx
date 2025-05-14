@@ -4,7 +4,9 @@ import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/home/Dashboard';
+import CoursesPage from './pages/courses/CoursesPage'
 import { ProtectedLayout } from './components/auth/ProtectedLayout';
+import CourseDetailPage from './pages/courses/CourseDetailPage';
 
 const rootRoute = createRootRoute()
 
@@ -51,7 +53,18 @@ const editorRoute = createRoute({
   component: ({ params }) => <div>Code Editor {params.exerciseId}</div>,
 })
 
-// Add this new route
+const coursesRoute = createRoute({
+    getParentRoute: () => protectedRoute,
+    path: '/courses',
+    component: () => <CoursesPage />,
+})
+
+const courseDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/courses/$courseId',
+  component: () => <CourseDetailPage />,
+});
+
 const demoRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/demo',
@@ -66,8 +79,10 @@ const routeTree = rootRoute.addChildren([
   demoRoute,
   loginRoute,
   registerRoute,
-  protectedRoute.addChildren([homeRoute])
+  protectedRoute.addChildren([homeRoute, coursesRoute, courseDetailRoute])
 ])
 
 // Create the router using your route tree
+export { courseDetailRoute }; // <-- Add this line
+
 export const router = createRouter({ routeTree })

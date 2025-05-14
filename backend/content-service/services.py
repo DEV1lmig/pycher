@@ -27,10 +27,10 @@ def get_modules(db: Session, skip: int = 0, limit: int = 100):
     for module in modules:
         lesson_count = db.query(Lesson).filter(Lesson.module_id == module.id).count()
         module_list.append({
-            "id": module.id,
-            "title": module.title,
-            "description": module.description,
-            "level": module.level,
+            "id": modules.id,
+            "title": modules.title,
+            "description": modules.description,
+            "level": modules.level,
             "lesson_count": lesson_count,
             "image_url": module.image_url
         })
@@ -251,3 +251,6 @@ def rate_course(db: Session, user_id: int, course_id: int, rating: float):
     if course:
         course.rating = avg
         db.commit()
+
+def get_modules_by_course(db: Session, course_id: int):
+    return db.query(Module).filter(Module.course_id == course_id).order_by(Module.order_index).all()

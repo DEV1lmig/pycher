@@ -12,4 +12,4 @@ COPY migrate.sh /app
 RUN chmod +x migrate.sh
 WORKDIR /app
 # Run the FastAPI application
-CMD ["./migrate.sh","uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]

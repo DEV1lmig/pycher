@@ -33,23 +33,38 @@ services:
     build: ./backend/user-service
     volumes:
       - ./backend/user-service:/app
+      - ./backend/shared:/app/shared:ro
     depends_on:
       - postgres
       - redis
+      - content-service  # Wait for migrations to complete
     env_file:
       - .env.development
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
     networks: ["pycher-network"]
 
   content-service:
     build: ./backend/content-service
     volumes:
       - ./backend/content-service:/app
+      - ./backend/shared:/app/shared:ro
     depends_on:
       - postgres
       - redis
     env_file:
       - .env.development
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
     networks: ["pycher-network"]
+    entrypoint: >
+      sh -c "
+        cd /app/shared &&
+        alembic upgrade head &&
+        python seed_db.py &&
+        cd /app &&
+        uvicorn main:app --host 0.0.0.0 --port 8000
+      "
 
   api-gateway:
     build:

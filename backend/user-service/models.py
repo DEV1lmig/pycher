@@ -1,38 +1,11 @@
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, Float, Table
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from sqlalchemy import create_engine
-from sqlalchemy.sql import func
+# Import models from shared location
 import os
+from sqlalchemy import create_engine
+from shared.models import Base, User, Progress
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL)
-Base = declarative_base()
+if DATABASE_URL:
+    engine = create_engine(DATABASE_URL)
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    first_name = Column(String)   # Add this
-    last_name = Column(String)    # Add this
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    progress = relationship("Progress", back_populates="user")
-
-class Progress(Base):
-    __tablename__ = "progress"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    module_id = Column(String, index=True)
-    lesson_id = Column(String, index=True)
-    completed = Column(Boolean, default=False)
-    completion_date = Column(DateTime(timezone=True), nullable=True)
-
-    # Relationships
-    user = relationship("User", back_populates="progress")
+# Re-export for backward compatibility
+__all__ = ['Base', 'User', 'Progress']
