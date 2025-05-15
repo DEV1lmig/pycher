@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "module_id": 1,
+    "title": "Introducción a Python",
+    "content": "Python es un lenguaje de programación moderno, multiplataforma, orientado a objetos e interpretado. Su objetivo es facilitar la escritura de código legible y eficiente.\nFue creado en 1991 por Guido van Rossum, y su nombre no proviene del animal sino del grupo cómico británico Monty Python.\n\nSe utiliza ampliamente en:\n\n*   Desarrollo web (Django, Flask)\n*   Ciencia de datos (NumPy, pandas)\n*   Inteligencia artificial (TensorFlow, PyTorch)\n*   Automatización y scripting\n*   Educación por su sintaxis sencilla",
+    "order_index": 1
+  },
+  {
+    "id": 2,
+    "module_id": 1,
+    "title": "Tu Primer Programa en Python",
+    "content": "Lección práctica:\n💻 Actividad 1.1: Escribe tu primer programa\n\n```python\nprint(\"¡Hola, mundo!\")\n```\n🔍 Explicación: `print()` es una función que permite mostrar mensajes en pantalla.\n✏️ Tarea 1.1: Cambia el mensaje para que diga “Hola, soy [Tu Nombre] y estoy aprendiendo Python”.",
+    "order_index": 2
+  },
+  {
+    "id": 3,
+    "module_id": 2,
+    "title": "Características Principales",
+    "content": "*   Simplicidad: Código limpio, legible y fácil de escribir.\n*   Interpretado: Se ejecuta línea por línea, ideal para pruebas rápidas.\n*   Multiparadigma: Soporta programación orientada a objetos, funcional y estructurada.",
+    "order_index": 1
+  },
+  {
+    "id": 4,
+    "module_id": 2,
+    "title": "Tipado, Portabilidad y Comunidad",
+    "content": "*   Tipado dinámico: No se necesita declarar el tipo de variable.\n*   Portabilidad: Funciona en Windows, macOS y Linux.\n*   Amplia comunidad y soporte: Gran cantidad de documentación, foros y recursos.",
+    "order_index": 2
+  },
+  {
+    "id": 5,
+    "module_id": 2,
+    "title": "Ejemplo Práctico de Características",
+    "content": "Lección práctica:\nActividad 2.1: Observa las características en un ejemplo\n\n```python\ndef saludar(nombre):\n    return f\"Hola, {nombre}!\"\n\nprint(saludar(\"Carlos\"))\n```\n🔍 Preguntas guía:\n¿La función necesita que se indique el tipo de la variable nombre?\n\n¿Notas lo clara que es la sintaxis?\n✏️ Tarea 2.1: Crea una función que multiplique dos números y devuelva el resultado.",
+    "order_index": 3
+  },
+  {
+    "id": 6,
+    "module_id": 3,
+    "title": "Ventajas de Python",
+    "content": "Ventajas:\n\n*   Sintaxis clara, ideal para principiantes.\n*   Código muy cercano al lenguaje humano.\n*   Bibliotecas para todo tipo de proyectos.\n*   Excelente para prototipado rápido.",
+    "order_index": 1
+  },
+  {
+    "id": 7,
+    "module_id": 3,
+    "title": "Desventajas de Python",
+    "content": "Desventajas:\n\n*   Menor rendimiento comparado con lenguajes compilados como C o C++.\n*   No ideal para aplicaciones móviles pesadas.\n*   El tipado dinámico puede causar errores inesperados en proyectos grandes.",
+    "order_index": 2
+  }
+]

@@ -6,7 +6,7 @@ import os
 Base = declarative_base()
 
 # Import all models to register them with Base
-from .content import Course, Module, Lesson
+from .content import Course, Module, Lesson, Exercise, UserCourseEnrollment, UserExerciseSubmission, UserLessonProgress, CourseRating
 from .user import User, Progress
 
 # Database connection (for standalone use)

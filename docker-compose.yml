@@ -56,15 +56,9 @@ services:
       - .env.development
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+    ports:
+      - "8002:8002"
     networks: ["pycher-network"]
-    entrypoint: >
-      sh -c "
-        cd /app/shared &&
-        alembic upgrade head &&
-        python seed_db.py &&
-        cd /app &&
-        uvicorn main:app --host 0.0.0.0 --port 8000
-      "
 
   api-gateway:
     build:

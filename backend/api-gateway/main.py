@@ -1,12 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
+from fastapi.responses import JSONResponse
+from fastapi.requests import Request
+from fastapi import status
 
 app = FastAPI(title="Python Learning Platform API Gateway")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with actual origins
+    allow_origins=["*"],  # Use specific origins in production!
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -166,6 +169,15 @@ async def user_service_proxy(request: Request, path: str):
             raise HTTPException(status_code=503, detail=f"Error: {str(e)}")
         except httpx.HTTPStatusError as e:
             raise HTTPException(status_code=e.response.status_code, detail=e.response.json() if e.response.content else "User service error")
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    # You can log the exception here if needed
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal server error"},
+        headers={"Access-Control-Allow-Origin": "*"}  # Add CORS header
+    )
 
 if __name__ == "__main__":
     import uvicorn

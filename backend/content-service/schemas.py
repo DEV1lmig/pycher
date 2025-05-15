@@ -39,12 +39,12 @@ class Lesson(LessonBase):
 
 # Module schemas
 class ModuleBase(BaseModel):
-    id: str
+    id: int
+    course_id: int
     title: str
     description: str
-    level: str
-    order: int
-    image_url: Optional[str] = None
+    order_index: int
+    duration_minutes: Optional[int] = None
 
 class ModuleCreate(ModuleBase):
     pass

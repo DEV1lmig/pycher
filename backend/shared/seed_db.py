@@ -3,7 +3,7 @@ import os
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from shared.models import Base, Course, Module, Lesson, User, Progress
+from models import Base, Course, Module, Lesson, User, Progress
 
 # Database connection
 DATABASE_URL = os.getenv("DATABASE_URL")

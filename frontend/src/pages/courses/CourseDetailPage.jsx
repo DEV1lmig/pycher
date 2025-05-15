@@ -3,7 +3,7 @@ import { useParams, Link } from "@tanstack/react-router";
 import { getCourseById, getModulesByCourseId } from "@/services/contentService";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Clock, Users, Star } from "lucide-react";
-import { ModuleCard } from "@/components/modules/ModuleCard";
+import { ModuleCard } from "@/components/courses/ModuleCard";
 import { courseDetailRoute } from "@/router";
 
 export default function CourseDetailPage() {
@@ -18,7 +18,12 @@ export default function CourseDetailPage() {
   useEffect(() => {
     if (!courseId) return;
     getModulesByCourseId(courseId)
-      .then(data => setModules(Array.isArray(data) ? data : []))
+      .then(data => {
+        // Always normalize to array
+        if (Array.isArray(data)) setModules(data);
+        else if (data) setModules([data]);
+        else setModules([]);
+      })
       .catch(() => setModules([]));
   }, [courseId]);
 
@@ -58,23 +63,15 @@ export default function CourseDetailPage() {
       </div>
 
       <h3 className="text-2xl font-bold text-white mb-4">Módulos del curso</h3>
-      {Array.isArray(modules) && modules.length === 0 ? (
+      {modules.length === 0 ? (
         <div className="text-gray-400">Este curso aún no tiene módulos.</div>
-      ) : Array.isArray(modules) && modules.length === 1 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <ModuleCard key={modules[0].id} module={modules[0]} />
-        </div>
-      ) : Array.isArray(modules) ? (
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {modules.map((module) => (
             <ModuleCard key={module.id} module={module} />
           ))}
         </div>
-      ) : modules && typeof modules === "object" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <ModuleCard key={modules.id} module={modules} />
-        </div>
-      ) : null}
+      )}
     </DashboardLayout>
   );
 }
