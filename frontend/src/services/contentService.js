@@ -11,7 +11,6 @@ export const getModuleById = async (moduleId) => {
   return response.data;
 };
 
-// Lessons
 export const getLessonsByModuleId = async (moduleId) => {
   const response = await apiClient.get(`/api/v1/content/modules/${moduleId}/lessons`);
   return response.data;

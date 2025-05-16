@@ -1,31 +1,31 @@
 import os
 import logging
 from typing import List, Optional, Dict, Any
-from google.genai import types
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field # Added Field for default values
+from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-from google import genai
-import json
+from azure.ai.inference import ChatCompletionsClient
+from azure.core.credentials import AzureKeyCredential
 
 # --- Configuration ---
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load API Key from environment variable
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable not set. Please set it.")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+if not GITHUB_TOKEN:
+    raise ValueError("GITHUB_TOKEN environment variable not set. Please set it.")
 
-# Remove global configuration if present
-# genai.configure(api_key=GEMINI_API_KEY) # Remove this line
+# Endpoint for GitHub Models API (see docs)
+GITHUB_MODELS_ENDPOINT = "https://models.github.ai/inference"
+MODEL_NAME = "openai/gpt-4.1-mini"  # Or the model you select in the GitHub Models Marketplace
 
-# Choose a standard model name
-# Examples: "gemini-1.5-flash-latest", "gemini-1.0-pro"
-MODEL_NAME = "gemini-2.5-pro-exp-03-25"
+client = ChatCompletionsClient(
+    endpoint=GITHUB_MODELS_ENDPOINT,
+    credential=AzureKeyCredential(GITHUB_TOKEN),
+    model=MODEL_NAME
+)
 
 # --- Pydantic Models ---
 
@@ -52,92 +52,44 @@ class AIResponse(BaseModel):
 
 # --- AI Interaction Logic ---
 
-# Define retry strategy for API calls
-# Retry on specific transient errors if needed, or general exceptions
 retry_decorator = retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    # Example: Add specific retryable exceptions if known
-    # retry=retry_if_exception_type((google_exceptions.ResourceExhausted, google_exceptions.ServiceUnavailable))
-    retry=retry_if_exception_type(Exception) # Retrying on general exception for now
+    retry=retry_if_exception_type(Exception)
 )
 
 @retry_decorator
 async def generate_ai_response(prompt: str) -> Dict[str, Any]:
     try:
-        logger.info(f"Sending prompt to Gemini model ({MODEL_NAME})...")
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        response = await client.aio.models.generate_content(
-            model=MODEL_NAME,
-            contents=[prompt],
-            config=types.GenerateContentConfig(
-                system_instruction='you are a story teller for kids under 5 years old',
-            ),
+        logger.info(f"Sending prompt to GitHub Models GPT-4.1 mini...")
+        response = client.complete(
+            messages=[
+                {"role": "system", "content": "You are a helpful programming tutor for Python learners."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=512,
+            temperature=0.7,
         )
-
-        if not response or not response.text:
-            logger.error("AI response generation failed or returned no text.")
-            raise HTTPException(
-                status_code=500,
-                detail="Unable to get AI assistance right now. Please try again later."
-            )
-
-        logger.info("Successfully received response from Gemini.")
-        try:
-            # Log helpful attributes
-            print(f"RESPONSE TYPE: {type(response)}")
-            print(f"RESPONSE DIR: {dir(response)}")
-            print(f"- text: {response.text}")
-            # 'parts' may not exist, so remove or wrap in hasattr check:
-            # if hasattr(response, 'parts'):
-            #     print(f"- parts: {response.parts}")
-
-            if hasattr(response, "to_dict"):
-                print("FULL RESPONSE DICT:", response.to_dict())
-            if hasattr(response, "candidates"):
-                print("CANDIDATES:")
-                for i, candidate in enumerate(response.candidates):
-                    print(f"  Candidate {i}: {candidate.text if hasattr(candidate, 'text') else 'N/A'}")
-
-        except Exception as inspect_error:
-            print(f"Error inspecting response: {inspect_error}")
-
-        # Try to parse response text as JSON if it looks like JSON
-        trimmed_text = response.text.strip()
-        try:
-            if trimmed_text.startswith("{") and trimmed_text.endswith("}"):
-                parsed_json = json.loads(trimmed_text)
-                print("PARSED JSON:", parsed_json)
-                return parsed_json
-        except json.JSONDecodeError:
-            print("Response is not valid JSON")
-            # Return fallback dictionary
-            return {"content": response.text}
-
-        # FINAL FALLBACK: if it’s not JSON, just return a dict with the text
-        return {"content": response.text}
-
+        content = response.choices[0].message.content.strip()
+        return {"content": content}
     except Exception as e:
-        if "google" in str(type(e)).lower() or "api" in str(type(e)).lower():
-            logger.exception(f"Gemini API Error: {e}", exc_info=True)
-            raise HTTPException(status_code=502, detail=f"Gemini API Error: {str(e)}")
-        else:
-            logger.exception(f"An unexpected error occurred: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail=f"AI model interaction failed: {str(e)}")
-
+        logger.exception(f"GitHub Models API Error: {e}", exc_info=True)
+        # Optionally, log the response if available
+        if hasattr(e, 'response') and e.response is not None:
+            logger.error(f"API response: {e.response.text}")
+        raise HTTPException(status_code=502, detail=f"GitHub Models API Error: {str(e)}")
 
 # --- FastAPI Application ---
 
 app = FastAPI(
     title="AI Code Assistant Service",
-    description="Provides hints, evaluation, feedback, and explanations for Python code using Gemini.",
-    version="1.0.0"
+    description="Provides hints, evaluation, feedback, and explanations for Python code using GitHub Models GPT-4.1 mini.",
+    version="2.0.0"
 )
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production!
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -262,7 +214,6 @@ async def get_code_feedback(request: CodeFeedbackRequest):
     response_data["suggestions"] = suggestions
     # Ensure the AIResponse model can handle the data
     return AIResponse(**response_data)
-
 
 @app.post("/explain", response_model=AIResponse, tags=["Code Assistance"])
 async def explain_code(request: CodeFeedbackRequest):

@@ -1,6 +1,6 @@
 // filepath: /home/dev1mig/Documents/projects/pycher/frontend/src/components/layout/MainLayout.jsx
 import { useState } from 'react';
-import { Link } from '@tanstack/router';
+import { Link } from '@tanstack/react-router';
 import { MoonIcon, SunIcon, CodeIcon, MenuIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import {

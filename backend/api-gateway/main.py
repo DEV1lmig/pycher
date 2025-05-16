@@ -115,8 +115,6 @@ async def ai_service(endpoint: str, request: Request):
         try:
             response = await client.post(
                 url,
-                # Use json=body only if body is not None, otherwise use content=await request.body()
-                # Or handle based on expected content type
                 json=body,
                 timeout=60.0 # Increased timeout for potentially long AI calls
             )
