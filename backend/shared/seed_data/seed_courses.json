@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "title": "Python Básico",
+    "description": "Curso introductorio de Python",
+    "level": "Básico",
+    "duration_minutes": 120,
+    "students_count": 0,
+    "rating": 5.0,
+    "image_url": null,
+    "color_theme": "#5f2dee",
+    "created_at": null,
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "title": "Python Intermedio",
+    "description": "Curso intermedio de Python",
+    "level": "Intermedio",
+    "duration_minutes": 180,
+    "students_count": 0,
+    "rating": 4.5,
+    "image_url": null,
+    "color_theme": "#5f2dee",
+    "created_at": null,
+    "is_active": true
+  },
+  {
+    "id": 3,
+    "title": "Python Avanzado",
+    "description": "Curso avanzado de Python",
+    "level": "Avanzado",
+    "duration_minutes": 240,
+    "students_count": 0,
+    "rating": 4.8,
+    "image_url": null,
+    "color_theme": "#5f2dee",
+    "created_at": null,
+    "is_active": true
+  }
+]

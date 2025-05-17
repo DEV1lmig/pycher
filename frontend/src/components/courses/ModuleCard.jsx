@@ -1,9 +1,8 @@
-// filepath: /home/dev1mig/Documents/projects/pycher/frontend/src/components/modules/ModuleCard.jsx
-import { Link } from '@tanstack/router';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Progress } from '../ui/progress';
-import { Button } from '../ui/button';
+import { Link } from '@tanstack/react-router';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@components/ui/card';
+import { Badge } from '@components/ui/badge';
+import { Progress } from '@components/ui/progress';
+import { Button } from '@components/ui/button';
 
 export function ModuleCard({ module, progress }) {
   const progressPercentage = progress?.percentage || 0;

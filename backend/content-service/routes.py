@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+import models
 from typing import List
 import services
 import schemas
@@ -103,3 +104,12 @@ def rate_course(course_id: int, user_id: int, rating: float, db: Session = Depen
     """
     services.rate_course(db, user_id=user_id, course_id=course_id, rating=rating)
     return {"detail": "Rating submitted"}
+
+@router.get("/courses/{course_id}/modules", response_model=List[schemas.Module])
+def get_modules_by_course(course_id: int, db: Session = Depends(get_db)):
+    # Optionally check if course exists
+    course = services.get_course(db, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    modules = services.get_modules_by_course(db, course_id)
+    return modules

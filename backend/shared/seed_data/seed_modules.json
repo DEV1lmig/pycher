@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "course_id": 1,
+    "title": "Conceptos Básicos de Python",
+    "description": "Introducción a Python, su historia, usos y tu primer programa.",
+    "order_index": 1,
+    "duration_minutes": 30
+  },
+  {
+    "id": 2,
+    "course_id": 1,
+    "title": "Características de Python",
+    "description": "Exploración de las características clave que hacen de Python un lenguaje popular.",
+    "order_index": 2,
+    "duration_minutes": 45
+  },
+  {
+    "id": 3,
+    "course_id": 1,
+    "title": "Ventajas y Desventajas de Python",
+    "description": "Un análisis equilibrado de los pros y contras de usar Python.",
+    "order_index": 3,
+    "duration_minutes": 20
+  }
+]
