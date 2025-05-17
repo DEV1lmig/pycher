@@ -6,8 +6,6 @@ import TiltedCard from "../ui/tilted-card.jsx";
 export default function AuthLayout({ children, isRegister }) {
   const [animateToRegister, setAnimateToRegister] = useState(isRegister);
 
-
-
   return (
     <main className="relative flex min-h-screen overflow-hidden bg-dark">
       <div

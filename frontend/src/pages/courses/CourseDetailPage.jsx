@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Clock, Users, Star } from "lucide-react";
 import { ModuleCard } from "@/components/courses/ModuleCard";
 import { courseDetailRoute } from "@/router";
+import FadeContent from "../../components/ui/fade-content.jsx";
 
 export default function CourseDetailPage() {
   const { courseId } = useParams({ from: courseDetailRoute.id });
@@ -31,7 +32,8 @@ export default function CourseDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="bg-gradient-to-r from-[#312a56] to-[#1a1433] rounded-lg p-8 mb-8 shadow-lg">
+      <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
+      <div className="bg-gradient-to-r from-[#312a56] to-[#1a1433] rounded-lg p-8 mb-8 shadow-lg m-6">
         <h2 className="text-4xl font-bold text-white mb-2">{course.title}</h2>
         <p className="text-gray-300 mb-4 text-lg">{course.description}</p>
         <div className="flex flex-wrap gap-6 mb-4">
@@ -55,23 +57,23 @@ export default function CourseDetailPage() {
         <div className="flex gap-4 mt-4">
           <Link
             to="/courses"
-            className="bg-[#5f2dee] hover:bg-[#4f25c5] text-white px-4 py-2 rounded-md"
+            className="bg-primary hover:bg-primary-opaque font-semibold text-dark px-4 py-2 rounded-md"
           >
             Volver a Cursos
           </Link>
         </div>
       </div>
 
-      <h3 className="text-2xl font-bold text-white mb-4">Módulos del curso</h3>
+      <h3 className="text-2xl font-bold text-white mb-4 mx-6">Cursos disponibles para ti</h3>
       {modules.length === 0 ? (
         <div className="text-gray-400">Este curso aún no tiene módulos.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-6 ">
           {modules.map((module) => (
             <ModuleCard key={module.id} module={module}>
               <Link
                 to={`/courses/${course.id}/modules/${module.id}`}
-                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark"
+                className="bg-primary text-white px-4 py-2 rounded  hover:bg-primary-dark"
               >
                 Ver lecciones
               </Link>
@@ -79,6 +81,7 @@ export default function CourseDetailPage() {
           ))}
         </div>
       )}
+      </FadeContent>
     </DashboardLayout>
   );
 }

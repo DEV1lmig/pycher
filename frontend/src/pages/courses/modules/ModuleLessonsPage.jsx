@@ -3,6 +3,7 @@ import { Link, useParams } from "@tanstack/react-router";
 import { getModuleById, getLessonsByModuleId } from "@/services/contentService";
 import { moduleLessonsRoute } from "@/router";
 import { MainLayout } from "@/components/layout/MainLayout";
+import FadeContent from '../../../components/ui/fade-content.jsx';
 
 export default function ModuleLessonsPage() {
   // Use useParams with the route context to get moduleId
@@ -27,6 +28,7 @@ export default function ModuleLessonsPage() {
 
   return (
     <MainLayout>
+      <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{module.title}</h1>
         <p className="text-gray-400 mb-4">{module.description}</p>
@@ -47,6 +49,7 @@ export default function ModuleLessonsPage() {
           ))
         )}
       </div>
+      </FadeContent>
     </MainLayout>
   );
 }
