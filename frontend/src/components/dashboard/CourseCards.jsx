@@ -4,12 +4,12 @@ import FadeContent from "@/components/ui/fade-content.jsx";
 
 export function CourseCards({ courses }) {
   return (
-    <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0} delay={700}>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <FadeContent blur={true} duration={100} easing="ease-out" initialOpacity={0} delay={0}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 cursor-default gap-6">
       {courses.map((course) => (
         <div
           key={course.id}
-          className="bg-[#1a1433] rounded-lg  border hover:bg-dark hover:scale-105 border-dark-light hover:border-primary transition-all ease-out duration-300 cursor-pointer shadow-lg"
+          className="bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-105 border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-default shadow-lg"
         >
           <div className={`h-3 bg-gradient-to-r ${course.color_theme}`}></div>
           <div className="p-5">

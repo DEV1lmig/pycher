@@ -42,29 +42,30 @@ export default function ModuleLessonsPage() {
 
   return (
     <DashboardLayout>
-      <div className="bg-gradient-to-r from-[#312a56] to-[#1a1433] rounded-lg p-8 mb-8 shadow-lg">
+      <div className="bg-primary/20 rounded-lg p-8 mb-8 shadow-lg m-6">
         <h1 className="text-3xl font-bold text-white mb-2">{module.title}</h1>
         <p className="text-gray-300 mb-4">{module.description}</p>
         <Link
           to={`/courses/${courseId}`}
-          className="inline-block bg-[#5f2dee] hover:bg-[#4f25c5] text-white px-4 py-2 rounded-md mt-2"
+          className="inline-block bg-primary hover:bg-primary-opaque text-white px-4 py-2 rounded-md mt-2"
         >
           Volver al curso
         </Link>
       </div>
-      <h2 className="text-2xl font-bold text-white mb-4">Lecciones del módulo</h2>
+      <h2 className="text-2xl font-bold text-white mb-4 mx-6">Lecciones del módulo</h2>
       <div className="space-y-4">
         {lessons.length === 0 ? (
-          <div className="text-gray-400">Este módulo no tiene lecciones.</div>
+          <div className="text-gray-400 mx-6">Este módulo no tiene lecciones.</div>
         ) : (
           lessons.map(lesson => (
             <Link
               key={lesson.id}
               to={`/lessons/${lesson.id}`}
-              className="block bg-white/80 rounded-lg shadow p-4 hover:bg-primary/10 transition"
+              className="block overflow-hidden border m-6 cursor-default transition-transform duration-300 ease-out 
+              hover:scale-105 border-dark-light hover:border-primary h-full rounded-2xl flex flex-col"
             >
-              <div className="font-semibold text-lg text-[#312a56]">{lesson.title}</div>
-              <div className="text-gray-600">{lesson.content?.slice(0, 80)}...</div>
+              <div className="font-semibold text-xl text-primary font-bold m-6">{lesson.title}</div>
+              <div className="text-white mx-6 mb-6 mt-4">{lesson.content?.slice(0, 80)}...</div>
             </Link>
           ))
         )}

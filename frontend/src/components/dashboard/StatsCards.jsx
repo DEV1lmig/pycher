@@ -7,7 +7,7 @@ export function StatsCards() {
       title: "Cursos Activos",
       value: "3",
       icon: BookOpen,
-      color: "bg-[#5f2dee]/10 text-[#9980f2]",
+      color: "bg-[#5f2dee]/10 text-primary",
     },
     {
       title: "Ejercicios Completados",
@@ -23,6 +23,13 @@ export function StatsCards() {
     },
   ]
 
+  const bgColors = [
+  "bg-[#5f2dee]/10",
+  "bg-[#f2d231]/10",
+  "bg-[#9980f2]/20"
+];
+
+
   return (
     <AnimatedContent
           distance={40}
@@ -37,7 +44,10 @@ export function StatsCards() {
         >
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {stats.map((stat, index) => (
-        <div key={index} className="bg-[#1a1433] rounded-lg p-4 border border-[#312a56] hover:scale-105 transition-transform duration-300">
+        <div
+          key={index}
+          className={`rounded-lg p-4 hover:scale-105 transition-transform duration-300 ${bgColors[index % bgColors.length]}`}
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-gray-400 text-sm">{stat.title}</p>

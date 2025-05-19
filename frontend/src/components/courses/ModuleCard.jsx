@@ -9,8 +9,9 @@ export function ModuleCard({ module, progress }) {
   const progressPercentage = progress?.percentage || 0;
 
   return (
-    <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0} delay={700}>
-    <Card className="overflow-hidden mt-6 cursor-default transition-transform duration-300 ease-out hover:scale-105 border-dark-light hover:border-primary h-full flex flex-col">
+    <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={200}>
+    <Card className="overflow-hidden mt-6 cursor-default transition-transform duration-300 ease-out hover:bg-dark hover:border-primary
+    hover:scale-105 bg-primary-opaque/10 border-dark-light border-primary-opaque/0 h-full flex flex-col">
         <CardHeader className="pb-3">
           <div className="flex justify-between">
             <Badge variant={
@@ -35,7 +36,7 @@ export function ModuleCard({ module, progress }) {
           </div>
         </CardContent>
         <CardFooter>
-          <Button asChild className="w-full hover:bg-primary-opaQUE">
+          <Button asChild className="w-full hover:bg-primary-opaque">
             <Link to={`/module/${module.id}`}>
               {progressPercentage > 0 ? 'Continuar Aprendiendo' : 'Comenzar Lección'}
             </Link>
