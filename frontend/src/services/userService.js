@@ -1,15 +1,6 @@
 import { apiClient } from './api';
 
-export const registerUser = async (userData) => {
-
-  const payload = {
-    username: userData.username,
-    email: userData.email,
-    password: userData.password,
-    first_name: userData.firstName,
-    last_name: userData.lastName,
-    // ...add any other fields you need
-  };
+export const registerUser = async (payload) => {
 
   const response = await apiClient.post('/api/v1/users/register', payload);
   return response.data;
@@ -30,7 +21,16 @@ export const loginUser = async (credentials) => {
   return response.data;
 };
 
-export const logoutUser = () => {
+export const logoutUser = async () => {
+  try {
+    await apiClient.post('/api/v1/users/logout', {}, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+  } catch (e) {
+    console.error('Logout failed:', e);
+  }
   localStorage.removeItem('token');
 };
 

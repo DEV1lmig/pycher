@@ -12,10 +12,11 @@ export default function RegisterPage() {
       navigate({ to: "/home" }); // or your home route
     }
   }, []);
+
   return (
-    <AuthLayout isRegister={true}>
+      <AuthLayout isRegister={true}>
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-white mb-2">Registro</h1>
+        <h1 className="text-2xl font-bold text-white mb-2">Registrarse</h1>
         <p className="text-sm text-gray-400">
           ¿Ya tienes una cuenta?{" "}
           <Link to="/login" className="text-[#9980f2] hover:underline">
@@ -23,7 +24,7 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
-      <RegisterForm />
+     <RegisterForm />
     </AuthLayout>
   );
 }

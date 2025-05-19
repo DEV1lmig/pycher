@@ -1,116 +1,103 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "@tanstack/react-router";
-import { MainLayout } from "@/components/layout/MainLayout";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { getLessonById } from "@/services/contentService";
 import { CodeEditor } from "@/components/editor/CodeEditor";
-import { getCodeHint } from "@/services/aiService";
-import { executeCode } from "@/services/executionService";
 import { Button } from "@/components/ui/button";
-import { LessonsWithCodeRoute } from "@/router";
+import { LessonWithCodeRoute } from "@/router";
 
 export default function LessonWithCodePage() {
-  const { lessonId } = useParams({ from: LessonsWithCodeRoute.id });
+  const { lessonId } = useParams({ from: LessonWithCodeRoute.id });
   const [lesson, setLesson] = useState(null);
-  const [loadingLesson, setLoadingLesson] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [lessonError, setLessonError] = useState(null);
-
+  console.log("LessonWithCodePage - lessonId:", lessonId);
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
   const [execLoading, setExecLoading] = useState(false);
 
-  const [aiHelp, setAiHelp] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-
-  // Fetch lesson data
   useEffect(() => {
-    setLoadingLesson(true);
+    console.log("LessonWithCodePage - lessonId:", lessonId);
+    setLoading(true);
     setLessonError(null);
-    fetch(`/api/v1/content/lessons/${lessonId}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Lesson not found");
-        return res.json();
-      })
+    getLessonById(lessonId)
       .then(data => {
+        console.log("Lesson data from backend:", data);
         setLesson(data);
-        setCode(data.starterCode || "");
       })
       .catch(err => setLessonError(err.message))
-      .finally(() => setLoadingLesson(false));
+      .finally(() => setLoading(false));
   }, [lessonId]);
 
-  // Handle code execution
   const handleExecute = async () => {
     setExecLoading(true);
     setOutput("");
     try {
-      const result = await executeCode({ code, language: "python" });
-      setOutput(result.output || result.error || "No output.");
+      // Replace with your actual code execution logic
+      // const result = await executeCode(code);
+      // setOutput(result.output || result.error || "No output.");
+      setOutput("Código ejecutado (simulado).");
     } catch (err) {
       setOutput("Execution failed.");
     }
     setExecLoading(false);
   };
 
-  // Handle AI help
-  const handleAiHelp = async () => {
-    setAiLoading(true);
-    setAiHelp("");
-    try {
-      const result = await getCodeHint({
-        code,
-        instruction: lesson?.instruction || lesson?.title || "Give a hint for this code."
-      });
-      setAiHelp(result.content || "No suggestion available.");
-    } catch (err) {
-      setAiHelp("Unable to get AI help at this time.");
-    }
-    setAiLoading(false);
-  };
-
-  if (loadingLesson) {
-    return <MainLayout><div className="p-8 text-center">Loading lesson...</div></MainLayout>;
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center min-h-[40vh] text-lg text-white">
+          Cargando lección...
+        </div>
+      </DashboardLayout>
+    );
   }
+
   if (lessonError) {
-    return <MainLayout><div className="p-8 text-center text-red-600">{lessonError}</div></MainLayout>;
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center min-h-[40vh] text-lg text-red-400">
+          {lessonError}
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (
-    <MainLayout>
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Lesson Section */}
-        <section className="md:w-1/2 bg-white/80 rounded-lg shadow p-6 prose max-w-none">
-          <h2 className="font-bold text-xl mb-2">{lesson.title}</h2>
-          <div dangerouslySetInnerHTML={{ __html: lesson.body.replace(/\n/g, "<br/>") }} />
-        </section>
-
-        {/* Code Editor Section */}
-        <section className="md:w-1/2 flex flex-col gap-4">
+    <DashboardLayout>
+      <div className="bg-gradient-to-r from-[#312a56] to-[#1a1433] rounded-lg p-8 mb-8 shadow-lg border border-[#312a56]">
+        <h1 className="text-3xl font-bold text-white mb-2">{lesson.title}</h1>
+        <p className="text-gray-300 mb-4">{lesson.description || ""}</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Lesson Content Card */}
+        <div className="bg-[#1a1433] rounded-lg shadow border border-[#312a56] p-6 flex flex-col">
+          <h2 className="font-bold text-xl text-white mb-2">{lesson.title}</h2>
+          <div className="prose max-w-none text-gray-200 whitespace-pre-line">
+            {lesson.content}
+          </div>
+        </div>
+        {/* Code Editor Card */}
+        <div className="bg-[#1a1433] rounded-lg shadow border border-[#312a56] p-6 flex flex-col gap-4">
+          <div className="font-semibold text-lg text-white mb-2">Editor de Código</div>
           <CodeEditor
             initialCode={code}
             onChange={setCode}
             onExecute={handleExecute}
           />
-          <div className="flex gap-2">
-            <Button onClick={handleExecute} disabled={execLoading}>
-              {execLoading ? "Running..." : "Run Code"}
-            </Button>
-            <Button onClick={handleAiHelp} disabled={aiLoading}>
-              {aiLoading ? "Getting AI Help..." : "Get AI Help"}
+          <div className="flex gap-2 mt-2">
+            <Button onClick={handleExecute} disabled={execLoading} className="bg-[#5f2dee] hover:bg-[#4f25c5] text-white">
+              {execLoading ? "Ejecutando..." : "Ejecutar Código"}
             </Button>
           </div>
           {output && (
-            <div className="bg-gray-900 text-green-200 rounded p-3 mt-2 font-mono text-sm">
-              <strong>Output:</strong>
+            <div className="bg-gray-900 text-green-200 rounded p-3 mt-2 font-mono text-sm border border-gray-700">
+              <strong>Salida:</strong>
               <pre className="whitespace-pre-wrap">{output}</pre>
             </div>
           )}
-          {aiHelp && (
-            <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-2 text-blue-900">
-              <strong>AI Suggestion:</strong>
-              <div className="mt-1 whitespace-pre-line">{aiHelp}</div>
-            </div>
-          )}
-        </section>
+        </div>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 }

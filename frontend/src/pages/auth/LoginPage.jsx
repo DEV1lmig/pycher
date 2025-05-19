@@ -13,11 +13,6 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    console.log("Iniciando sesión...");
-  };
-
   return (
     <AuthLayout isRegister={false}>
       <div className="text-center">

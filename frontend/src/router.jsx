@@ -63,10 +63,10 @@ const courseDetailRoute = createRoute({
   component: () => <CourseDetailPage />,
 });
 
-const LessonsWithCodeRoute = createRoute({
-  getParentRoute: () => moduleLessonsRoute,
+const LessonWithCodeRoute = createRoute({
+  getParentRoute: () => protectedRoute,
   path: '/lessons/$lessonId',
-  component: () => <LessonsWithCodePage />,
+  component: () => <LessonWithCodePage />,
 });
 
 const demoRoute = createRoute({
@@ -99,11 +99,11 @@ const routeTree = rootRoute.addChildren([
     helpRoute,
     coursesRoute,
     courseDetailRoute,
-    LessonsWithCodeRoute,
+    LessonWithCodeRoute,
     moduleLessonsRoute,
   ])
 ])
 
 const router = createRouter({ routeTree })
 
-export { router, courseDetailRoute, LessonWithCodePage, moduleLessonsRoute, LessonsWithCodeRoute };
+export { router, courseDetailRoute, LessonWithCodePage, moduleLessonsRoute, LessonWithCodeRoute };

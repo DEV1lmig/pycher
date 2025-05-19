@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import logo from "@/assets/img/logo.png";
-import AnimatedContent from "../ui/animated-content";
-import TiltedCard from "../ui/tilted-card.jsx";
+import AnimatedContent from "@/components/ui/animated-content";
+import TiltedCard from "@/components/ui/tilted-card.jsx";
 
 export default function AuthLayout({ children, isRegister }) {
   const [animateToRegister, setAnimateToRegister] = useState(isRegister);
