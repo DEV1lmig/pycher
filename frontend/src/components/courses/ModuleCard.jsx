@@ -10,7 +10,7 @@ export function ModuleCard({ module, progress }) {
   const progressPercentage = progress?.percentage || 0;
 
   return (
-    <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0} delay={500}>
+    <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0} delay={1200}>
     <Card className="overflow-hidden mt-6 cursor-default transition-transform duration-300 ease-out hover:scale-105 border-dark-light hover:border-primary">
       <CardHeader className="pb-3">
         <div className="flex justify-between">
@@ -36,7 +36,7 @@ export function ModuleCard({ module, progress }) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full hover:bg-primary-dark">
+        <Button asChild className="w-full hover:bg-primary-opaQUE">
           <Link to={`/module/${module.id}`}>
             {progressPercentage > 0 ? 'Continuar Aprendiendo' : 'Comenzar Lección'}
           </Link>

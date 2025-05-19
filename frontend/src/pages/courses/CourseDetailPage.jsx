@@ -71,7 +71,7 @@ export default function CourseDetailPage() {
         <div className="flex gap-4 mt-4">
           <Link
             to="/courses"
-            className="bg-[#5f2dee] hover:bg-[#4f25c5] text-white px-4 py-2 rounded-md"
+            className="bg-primary hover:bg-primary-opaque text-white px-4 py-2 rounded-md"
           >
             Volver a Cursos
           </Link>
@@ -94,7 +94,7 @@ export default function CourseDetailPage() {
       {modules.length === 0 ? (
         <div className="text-gray-400 mx-6 mt-6">Este curso aún no tiene módulos.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-6">
           {modules.map((module) => (
             <ModuleCard key={module.id} module={module}>
               <Link
