@@ -99,7 +99,8 @@ export default function CourseDetailPage() {
       </FadeContent>
 
       {modules.length === 0 ? (
-        <div className="text-gray-400 mx-6 mt-6">Este curso aún no tiene módulos.</div>
+        <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100} >
+        <div className="flex justify-center p-32 text-gray-400 mx-6 mt-6">¡Oh no!, este curso aún no cuenta con módulos :( </div></FadeContent>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-6 items-stretch">
           {modules.map((module) => (
