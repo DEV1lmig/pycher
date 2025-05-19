@@ -1,43 +1,41 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
-import { getModuleById, getLessonsByModuleId } from "@/services/contentService";
+import { getCourseById, getModuleById, getLessonsByModuleId } from "@/services/contentService";
 import { moduleLessonsRoute } from "@/router";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Waves from "@/components/ui/waves";
 import FadeContent from "@/components/ui/fade-content";
 import AnimatedContent from "@/components/ui/animated-content";
+import { BookOpen, Home } from "lucide-react";
+import Breadcrumbs from "@/components/ui/breadcrumbs";
 
 export default function ModuleLessonsPage() {
   const { moduleId, courseId } = useParams({ from: moduleLessonsRoute.id });
+  const [course, setCourse] = useState(null);
   const [module, setModule] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      getModuleById(moduleId),
-      getLessonsByModuleId(moduleId)
-    ]).then(([mod, lessons]) => {
+  setLoading(true);
+  getModuleById(moduleId)
+    .then((mod) => {
       setModule(mod);
-      setLessons(lessons);
-    }).finally(() => setLoading(false));
-  }, [moduleId]);
+      return getCourseById(mod.course_id).then((course) => {
+        setCourse(course);
+      });
+    })
+    .then(() => getLessonsByModuleId(moduleId).then((lessons) => {
+      setLessons(Array.isArray(lessons) ? lessons : []);
+    }))
+    .finally(() => setLoading(false));
+}, [moduleId]);
 
-  if (loading) {
+  if (loading || !course || !module) {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center min-h-[40vh] text-lg text-white">
           Cargando módulo...
-        </div>
-      </DashboardLayout>
-    );
-  }
-  if (!module) {
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center min-h-[40vh] text-lg text-red-400">
-          Módulo no encontrado
         </div>
       </DashboardLayout>
     );
@@ -55,6 +53,17 @@ export default function ModuleLessonsPage() {
           scale={1}
           threshold={0.2}
         >
+      <div className="my-4 mx-6">
+        <Breadcrumbs
+        items={[
+          { label: "Inicio", href: "/home", icon: <Home size={16} /> },
+          { label: "Cursos", href: "/courses", icon: <BookOpen size={16} /> },
+          { label: course.title, href: `/courses/${course.id}` },
+          { label: module.title },
+        ].filter(Boolean)}
+      />
+      
+      </div>
       <div className="relative rounded-lg p-8 mb-8 shadow-2xl m-6">
       <div className="absolute rounded-3xl overflow-hidden inset-0 z-10">
         <Waves
@@ -75,11 +84,11 @@ export default function ModuleLessonsPage() {
         <h1 className="text-3xl font-bold text-white mb-2">{module.title}</h1>
         <p className="text-gray-300 mb-4">{module.description}</p>
         <Link
-          to={`/courses/${courseId}`}
-          className="inline-block bg-primary hover:bg-primary-opaque text-white px-4 py-2 rounded-md mt-2"
-        >
-          Volver al curso
-        </Link>
+        to={`/courses/${course?.id}`}
+        className="inline-block bg-primary hover:bg-primary-opaque text-white px-4 py-2 rounded-md mt-2"
+      >
+        Volver al curso
+      </Link>
       </div>
       </div>
       </AnimatedContent>
@@ -107,4 +116,6 @@ export default function ModuleLessonsPage() {
       </FadeContent>
     </DashboardLayout>
   );
+
+  
 }

@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { getCourseById, getModulesByCourseId } from "@/services/contentService";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { BookOpen, Clock, Users, Star } from "lucide-react";
+import { BookOpen, Clock, Users, Star, Home } from "lucide-react";
 import { ModuleCard } from "@/components/courses/ModuleCard";
 import { courseDetailRoute } from "@/router";
 import AnimatedContent from '../../components/ui/animated-content';
 import  FadeContent from "@/components/ui/fade-content";
 import Waves from "@/components/ui/waves";
+import Breadcrumbs from "@/components/ui/breadcrumbs";
 
 export default function CourseDetailPage() {
   const { courseId } = useParams({ from: courseDetailRoute.id });
@@ -44,6 +45,15 @@ export default function CourseDetailPage() {
           scale={1}
           threshold={0.2}
         >
+        <div className="my-4 mx-6">
+          <Breadcrumbs
+          items={[
+            { label: "Inicio", href: "/home", icon: <Home size={16} /> },
+            { label: "Cursos", href: "/courses", icon: <BookOpen size={16} /> },
+            { label: course.title }, 
+          ]}
+        />
+        </div>
       <div className="bg-dark rounded-3xl relative p-8 mb-8 shadow-3xl border-primary/5 border m-6">
         <div className="absolute rounded-3xl overflow-hidden inset-0 z-10">
         <Waves
