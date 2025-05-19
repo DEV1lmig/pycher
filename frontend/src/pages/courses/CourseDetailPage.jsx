@@ -5,11 +5,17 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Clock, Users, Star } from "lucide-react";
 import { ModuleCard } from "@/components/courses/ModuleCard";
 import { courseDetailRoute } from "@/router";
+import AnimatedContent from '../../components/ui/animated-content';
+import SplitText from "../../components/ui/split-text";
 
 export default function CourseDetailPage() {
   const { courseId } = useParams({ from: courseDetailRoute.id });
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
+
+  const handleAnimationComplete = () => {
+  console.log('All letters have animated!');
+};
 
   useEffect(() => {
     getCourseById(courseId).then(setCourse);
@@ -31,7 +37,17 @@ export default function CourseDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="bg-gradient-to-r from-[#312a56] to-[#1a1433] rounded-lg p-8 mb-8 shadow-lg">
+      <AnimatedContent
+          distance={40}
+          direction="vertical"
+          reverse={true}
+          config={{ tension: 100, friction: 20 }}
+          initialOpacity={0.2}
+          animateOpacity
+          scale={1}
+          threshold={0.2}
+        >
+      <div className="bg-gradient-to-r from-[#312a56] to-[#1a1433] rounded-lg p-8 mb-8 shadow-lg m-6">
         <h2 className="text-4xl font-bold text-white mb-2">{course.title}</h2>
         <p className="text-gray-300 mb-4 text-lg">{course.description}</p>
         <div className="flex flex-wrap gap-6 mb-4">
@@ -61,10 +77,22 @@ export default function CourseDetailPage() {
           </Link>
         </div>
       </div>
+      </AnimatedContent>
 
-      <h3 className="text-2xl font-bold text-white mb-4">Módulos del curso</h3>
+      <SplitText
+        text="Cursos disponibles para ti"
+        className="text-2xl font-bold text-white mx-6 mb-4"
+        delay={20}
+        animationFrom={{ opacity: 0, transform: 'translate3d(0,0,0)' }}
+        animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
+        easing="easeInOutCubic"
+        threshold={0}
+        rootMargin="-100px"
+        onLetterAnimationComplete={handleAnimationComplete}
+      />
+
       {modules.length === 0 ? (
-        <div className="text-gray-400">Este curso aún no tiene módulos.</div>
+        <div className="text-gray-400 mx-6 mt-6">Este curso aún no tiene módulos.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {modules.map((module) => (
@@ -79,6 +107,7 @@ export default function CourseDetailPage() {
           ))}
         </div>
       )}
+      
     </DashboardLayout>
   );
 }

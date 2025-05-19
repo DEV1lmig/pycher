@@ -1,13 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Star } from "lucide-react";
+import FadeContent from "@/components/ui/fade-content.jsx";
 
 export function CourseCards({ courses }) {
   return (
+    <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0} delay={700}>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {courses.map((course) => (
         <div
           key={course.id}
-          className="bg-[#1a1433] rounded-lg overflow-hidden border border-[#312a56] hover:border-[#5f2dee] transition-all hover:shadow-lg hover:shadow-[#5f2dee]/20"
+          className="bg-[#1a1433] rounded-lg  border hover:bg-dark hover:scale-105 border-dark-light hover:border-primary transition-all ease-out duration-300 cursor-pointer shadow-lg"
         >
           <div className={`h-3 bg-gradient-to-r ${course.color_theme}`}></div>
           <div className="p-5">
@@ -38,7 +40,7 @@ export function CourseCards({ courses }) {
               <span className="text-sm text-gray-400">{course.students_count} estudiantes</span>
               <Link
                 href={`/courses/${course.id}`}
-                className="flex items-center text-[#5f2dee] hover:text-[#9980f2] transition-colors"
+                className="flex items-center text-primary hover:text-[#9980f2] transition-colors"
               >
                 Ver curso <ArrowRight className="h-4 w-4 ml-1" />
               </Link>
@@ -47,5 +49,6 @@ export function CourseCards({ courses }) {
         </div>
       ))}
     </div>
+    </FadeContent>
   );
 }

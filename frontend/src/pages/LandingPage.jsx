@@ -15,9 +15,18 @@ import FadeContent from '../components/ui/fade-content.jsx';
 import Particles from '../components/ui/particles.jsx';
 import CountUp from '../components/ui/count-up.jsx';
 import Aurora from '@/components/ui/aurora';
+import FaqCarousel from "../components/ui/carousel";
 
 export default function LandingPage() {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+
+  const Items = [
+    { title: "¿Cómo me registro?", content: "Haz clic en 'Registrarse', completa el formulario y listo." },
+    { title: "¿Olvidé mi contraseña?", content: "Utiliza la opción '¿Olvidaste tu contraseña?' en la pantalla de inicio de sesión." },
+      { title: "¿Cómo me registro?", content: "Haz clic en 'Registrarse', completa el formulario y listo." },
+    { title: "¿Olvidé mi contraseña?", content: "Utiliza la opción '¿Olvidaste tu contraseña?' en la pantalla de inicio de sesión." },
+  
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,7 +49,7 @@ export default function LandingPage() {
   };
 
   return (
-  <div className="relative group min-h-screen bg-white text-white ">
+  <div className="relative group min-h-screen bg-dark text-white ">
     <NavBar />
     <div className="relative group overflow-hidden pt-60 pb-48">
       <div className="absolute inset-0 bg-dark">
@@ -293,7 +302,7 @@ export default function LandingPage() {
       </section>
 
       {/* Registration Section */}
-      <section className="relative bg-dark">
+      <section className=" bg-dark">
       <FadeContent blur={true} duration={1200} easing="ease-out" initialOpacity={1}>
       {/* Aurora como fondo absoluto */}
       <div className='relative rounded-3xl mx-36 px-12 py-12 grid-cols-2 grid gap-8 items-center overflow-hidden'>
@@ -379,6 +388,30 @@ export default function LandingPage() {
         </div>
         </FadeContent>
       </section>
+
+      <FadeContent blur={true} duration={1600} easing="ease-out" initialOpacity={0}>
+      <section className='bg-dark'>
+        <div className="flex flex-col items-center justify-center mt-12 "> 
+            <h1 className="text-5xl font-bold text-white">Esto es lo que dicen nuestros usuarios</h1>
+            <p className="mt-3 text-xl text-secondary">Ellos piensan que nuestros cursos son increíbles, tú también puedes pensarlo!</p>
+        </div>
+        <div className="relative w-full max-w-7xl mx-auto py-8">
+        {/* Fade left */}
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-24 z-20"
+            style={{
+                background: "linear-gradient(to right, #160f30 60%, transparent 100%)"
+            }}
+        />
+        {/* Fade right */}
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-24 z-20"
+            style={{
+                background: "linear-gradient(to left, #160f30 60%, transparent 100%)"
+            }}
+        />
+        <FaqCarousel items={Items} />
+        </div>
+        </section>
+        </FadeContent>
 
       {/* Footer */}
       <footer className="bg-dark-background py-6 text-center text-white font-semibold">
