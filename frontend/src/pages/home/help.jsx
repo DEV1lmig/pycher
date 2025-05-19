@@ -43,7 +43,7 @@ export default function HelpPage() {
     <DashboardLayout>
       <div className="flex flex-col">
       <section>
-        <FadeContent blur={true} duration={700} easing="ease-out" initialOpacity={1}>
+        <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={1}>
         <div className="flex items-center justify-center my-10 gap-4">
             <div className="relative w-full max-w-2xl h-44 flex items-center justify-center rounded-3xl overflow-hidden">
             <Iridescence
@@ -63,12 +63,12 @@ export default function HelpPage() {
           distance={100}
           direction="vertical"
           reverse={false}
-          config={{ tension: 60, friction: 30 }}
+          config={{ tension: 90, friction: 20 }}
           initialOpacity={0}
           animateOpacity
           scale={1}
           threshold={0.2}
-          delay={500}
+          delay={100}
         >
         <Accordion items={faqItems} /></AnimatedContent>
         </section>

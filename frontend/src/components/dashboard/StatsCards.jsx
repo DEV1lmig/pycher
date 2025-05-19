@@ -33,11 +33,11 @@ export function StatsCards() {
           animateOpacity
           scale={1}
           threshold={0.2}
-          delay={350}
+          delay={150}
         >
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {stats.map((stat, index) => (
-        <div key={index} className="bg-[#1a1433] rounded-lg p-4 border border-[#312a56]">
+        <div key={index} className="bg-[#1a1433] rounded-lg p-4 border border-[#312a56] hover:scale-105 transition-transform duration-300">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-gray-400 text-sm">{stat.title}</p>

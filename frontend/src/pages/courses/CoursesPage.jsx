@@ -20,7 +20,7 @@ export default function CoursesPage() {
       <SplitText
         text="Cursos disponibles para ti" 
         className="text-2xl font-bold text-white"
-        delay={20}
+        delay={0}
         animationFrom={{ opacity: 0, transform: 'translate3d(0,0,0)' }}
         animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
         easing="easeInOutCubic"

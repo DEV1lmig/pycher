@@ -14,7 +14,7 @@ export function WelcomeHeader() {
           distance={40}
           direction="vertical"
           reverse={true}
-          config={{ tension: 100, friction: 20 }}
+          config={{ tension: 100, friction: 10 }}
           initialOpacity={0.2}
           animateOpacity
           scale={1}
