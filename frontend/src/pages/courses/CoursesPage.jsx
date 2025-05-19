@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { CourseCards } from "@/components/dashboard/CourseCards";
 import { getAllCourses } from "@/services/contentService";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import SplitText from "../../components/ui/split-text";
+import FadeContent from "@/components/ui/fade-content";
+import Breadcrumbs from "@/components/ui/breadcrumbs";
+import { Home, BookOpen } from "lucide-react";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
-  const handleAnimationComplete = () => {
-    console.log('All letters have animated!');
-  };
 
   useEffect(() => {
     getAllCourses().then(setCourses);
@@ -17,18 +16,18 @@ export default function CoursesPage() {
   return (
     <DashboardLayout>
       <div className="m-6">
-      <SplitText
-        text="Cursos disponibles para ti" 
-        className="text-2xl font-bold text-white"
-        delay={20}
-        animationFrom={{ opacity: 0, transform: 'translate3d(0,0,0)' }}
-        animationTo={{ opacity: 1, transform: 'translate3d(0,0,0)' }}
-        easing="easeInOutCubic"
-        threshold={0}
-        rootMargin="-100px"
-        onLetterAnimationComplete={handleAnimationComplete}
-      />
-      <div className="my-6"><CourseCards courses={courses} /></div>
+        <FadeContent blur={true} duration={500} easing="ease-out" initialOpacity={0} delay={100}>
+          <Breadcrumbs
+          items={[
+            { label: "Inicio", href: "/home", icon: <Home size={16} /> },
+            { label: "Cursos", icon: <BookOpen size={16} /> },
+          ]}
+        />
+          <h3 className="text-2xl font-bold text-white">Cursos disponibles para ti</h3>
+        </FadeContent>
+        <div className="my-6">
+          <CourseCards courses={courses} />
+        </div>
       </div>
     </DashboardLayout>
   );

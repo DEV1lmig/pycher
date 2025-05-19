@@ -58,7 +58,7 @@ export function DashboardHeader() {
             onClick={() => setShowProfile(!showProfile)}
             className="flex items-center space-x-2 p-2 rounded-md hover:bg-[#312a56]"
           >
-            <div className="h-8 w-8 rounded-full bg-[#5f2dee] flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
               <User className="h-5 w-5 text-white" />
             </div>
             <span className="hidden md:inline-block">{user ? `${user.first_name} ${user.last_name}` : "Carlos Rodríguez"}</span>

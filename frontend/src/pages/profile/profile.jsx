@@ -19,7 +19,7 @@ export default function ProfilePage() {
   return (
     <DashboardLayout>
     <div className="relative w-full min-h-[calc(100vh-4rem)]"> 
-        <FadeContent blur={true} duration={700} easing="ease-out" initialOpacity={1}>
+        <FadeContent blur={true} duration={300} easing="ease-out" initialOpacity={1}>
         <div className="relative w-full h-80 min-w-0">
             <Iridescence
             color={[0.5, 0.4, 1]}

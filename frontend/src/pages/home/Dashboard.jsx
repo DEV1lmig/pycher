@@ -18,13 +18,14 @@ export default function DashboardPage() {
         <WelcomeHeader />
         <StatsCards />
         <section>
-          <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0} delay={1000}>
+          <FadeContent blur={true} duration={500} easing="ease-out" initialOpacity={0} delay={250}>
           <h2 className="text-2xl font-bold text-white mb-4">Nuestros Cursos</h2>
           <p className="text-gray-300 mb-6">
             Selecciona el curso que deseas estudiar y comienza tu viaje en el mundo de Python
           </p>
-          <CourseCards courses={courses} />
           </FadeContent>
+          <CourseCards courses={courses} />
+          
         </section>
       </div>
     </DashboardLayout>
