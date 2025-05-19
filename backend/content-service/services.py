@@ -6,12 +6,17 @@ import redis
 import os
 import json
 from typing import List, Dict, Any, Optional
+import logging
 
 # Redis client for caching
 redis_host = os.getenv("REDIS_HOST", "redis")
 redis_port = os.getenv("REDIS_PORT", 6379)
-redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+redis_user = os.getenv("REDIS_USER", None)
+redis_password = os.getenv("REDIS_PASSWORD", None)
+redis_client = redis.Redis(host=redis_host, username=redis_user, password=redis_password, port=redis_port, decode_responses=True)
 CACHE_TTL = 3600  # 1 hour
+
+logger = logging.getLogger("content-service")
 
 def get_modules(db: Session, skip: int = 0, limit: int = 100):
     # Try to get from cache
@@ -59,42 +64,26 @@ def get_lessons(db: Session, module_id: str):
         return json.loads(cached)
 
     # Get from DB if not cached
-    lessons = db.query(Lesson).filter(Lesson.module_id == module_id).order_by(Lesson.order).all()
+    lessons = db.query(Lesson).filter(Lesson.module_id == module_id).order_by(Lesson.order_index).all()
 
     lesson_list = [{
         "id": lesson.id,
         "title": lesson.title,
         "module_id": lesson.module_id,
-        "order": lesson.order,
+        "order_index": lesson.order_index,
         "content": lesson.content,
-        "type": lesson.type
     } for lesson in lessons]
 
     redis_client.setex(f"module:{module_id}:lessons", CACHE_TTL, json.dumps(lesson_list))
     return lesson_list
 
-def get_lesson(db: Session, lesson_id: str):
-    # Try to get from cache
-    cached = redis_client.get(f"lesson:{lesson_id}")
-    if cached:
-        return json.loads(cached)
-
-    # Get from DB if not cached
+def get_lesson(db: Session, lesson_id):
+    logger.info(f"Fetching lesson with id={lesson_id}")
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
+        logger.warning(f"Lesson {lesson_id} not found in DB")
         return None
-
-    lesson_data = {
-        "id": lesson.id,
-        "title": lesson.title,
-        "module_id": lesson.module_id,
-        "order": lesson.order,
-        "content": lesson.content,
-        "type": lesson.type
-    }
-
-    redis_client.setex(f"lesson:{lesson_id}", CACHE_TTL, json.dumps(lesson_data))
-    return lesson_data
+    return lesson
 
 def get_exercises(db: Session, lesson_id: str):
     # Try to get from cache
@@ -109,7 +98,7 @@ def get_exercises(db: Session, lesson_id: str):
         "id": exercise.id,
         "title": exercise.title,
         "lesson_id": exercise.lesson_id,
-        "order": exercise.order,
+        "order_index": exercise.order_index,
         "description": exercise.description,
         "starter_code": exercise.starter_code,
         "solution_code": exercise.solution_code,
@@ -135,7 +124,7 @@ def get_exercise(db: Session, exercise_id: str):
         "id": exercise.id,
         "title": exercise.title,
         "lesson_id": exercise.lesson_id,
-        "order": exercise.order,
+        "order_index": exercise.order_index,
         "description": exercise.description,
         "starter_code": exercise.starter_code,
         "solution_code": exercise.solution_code,
@@ -152,7 +141,7 @@ def create_module(db: Session, module: ModuleCreate):
         title=module.title,
         description=module.description,
         level=module.level,
-        order=module.order,
+        order_index=module.order_index,
         image_url=module.image_url
     )
     db.add(db_module)
@@ -169,9 +158,8 @@ def create_lesson(db: Session, lesson: LessonCreate):
         id=lesson.id,
         title=lesson.title,
         module_id=lesson.module_id,
-        order=lesson.order,
+        order_index=lesson.order_index,
         content=lesson.content,
-        type=lesson.type
     )
     db.add(db_lesson)
     db.commit()
@@ -187,7 +175,7 @@ def create_exercise(db: Session, exercise: ExerciseCreate):
         id=exercise.id,
         title=exercise.title,
         lesson_id=exercise.lesson_id,
-        order=exercise.order,
+        order_index=exercise.order_index,
         description=exercise.description,
         starter_code=exercise.starter_code,
         solution_code=exercise.solution_code,

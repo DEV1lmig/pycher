@@ -23,17 +23,18 @@ class Exercise(ExerciseBase):
 
 # Lesson schemas
 class LessonBase(BaseModel):
-    id: str
     title: str
-    module_id: str
-    order: int
     content: str
-    type: str
+    order_index: int
+    duration_minutes: Optional[int] = None
+    module_id: int
 
 class LessonCreate(LessonBase):
     pass
 
 class Lesson(LessonBase):
+    id: int
+
     class Config:
         from_attributes = True
 

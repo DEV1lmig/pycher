@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -8,7 +9,7 @@ from datetime import timedelta, datetime
 from database import get_db
 from jose import jwt, JWTError
 from models import engine, Progress, User
-from schemas import UserCreate, UserResponse, Token, ProgressCreate, ProgressResponse, ModuleProgress
+from schemas import UserCreate, UserResponse, Token, ProgressCreate, ProgressResponse, ModuleProgress, UserLogin
 from services import create_user, get_user_by_username, get_user_by_email, authenticate_user, get_user_progress, update_lesson_progress
 from utils import create_access_token, redis_client, get_password_hash, SECRET_KEY, ALGORITHM
 from auth import get_current_user
@@ -32,13 +33,13 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         logger.warning(f"Registration failed - Username already exists: {user.username}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
+            detail="Nombre de usuario ya registrado"
         )
     db_email = get_user_by_email(db, user.email)
     if db_email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Email ya registrado"
         )
 
     logger.info(f"User registered successfully - Username: {user.username}")
@@ -48,6 +49,23 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # Manual validation to match UserLogin schema
+    username = form_data.username
+    password = form_data.password
+
+    # Username: 3-64 chars, allowed chars
+    if not re.fullmatch(r"^[a-zA-Z0-9_.@-]{3,64}$", username):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Formato de usuario inválido"
+        )
+    # Password: 8-64 chars
+    if not (8 <= len(password) <= 64):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La contraseña debe tener entre 8 y 64 caracteres"
+        )
+
     # Log the login attempt (omit password)
     logger.info(f"Login attempt - Username: {form_data.username}")
 
@@ -56,7 +74,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         logger.warning(f"Login blocked: Too many attempts - Username: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many failed login attempts. Try again later."
+            detail="Demasiados intentos de inicio de sesión. Inténtalo más tarde.",
         )
 
     user = authenticate_user(db, form_data.username, form_data.password)
@@ -64,7 +82,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         logger.warning(f"Login failed: Invalid credentials - Username: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Usuario o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -111,7 +129,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 def logout_user(current_user = Depends(get_current_user)):
     # Remove token from Redis
     redis_client.delete(f"token:{current_user.username}")
-    return {"detail": "Successfully logged out"}
+    return {"detail": "Desconectado correctamente"}
 
 # Add this endpoint
 
@@ -119,7 +137,7 @@ def logout_user(current_user = Depends(get_current_user)):
 def refresh_access_token(refresh_token: str, db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="No se pudo validar el token de actualización",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:

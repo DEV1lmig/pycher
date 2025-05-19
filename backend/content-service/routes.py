@@ -5,6 +5,10 @@ from typing import List
 import services
 import schemas
 from database import get_db
+from models import Lesson
+import logging
+
+logger = logging.getLogger("content-service")
 
 router = APIRouter()
 
@@ -30,9 +34,9 @@ def get_lessons(module_id: str, db: Session = Depends(get_db)):
     return lessons
 
 @router.get("/lessons/{lesson_id}", response_model=schemas.Lesson)
-def get_lesson(lesson_id: str, db: Session = Depends(get_db)):
-    lesson = services.get_lesson(db, lesson_id=lesson_id)
-    if lesson is None:
+def get_lesson(lesson_id: int, db: Session = Depends(get_db)):
+    lesson = services.get_lesson(db, lesson_id)
+    if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
     return lesson
 

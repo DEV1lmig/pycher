@@ -99,7 +99,7 @@ export default function CourseDetailPage() {
             <ModuleCard key={module.id} module={module}>
               <Link
                 to={`/courses/${course.id}/modules/${module.id}`}
-                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark"
+                className="bg-primary text-white px-4 py-2 rounded  hover:bg-primary-dark"
               >
                 Ver lecciones
               </Link>
@@ -107,7 +107,6 @@ export default function CourseDetailPage() {
           ))}
         </div>
       )}
-      
     </DashboardLayout>
   );
 }

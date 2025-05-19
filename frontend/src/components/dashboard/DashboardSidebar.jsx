@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils"
 import { logout } from "@/lib/auth";
   
 
+import { VscHome, VscArchive, VscAccount, VscSettingsGear } from "react-icons/vsc";
+  
+
 export function DashboardSidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate();

@@ -1,6 +1,7 @@
 // filepath: /home/dev1mig/Documents/projects/pycher/frontend/src/services/api.js
 import axios from 'axios';
 import { QueryClient } from '@tanstack/react-query';
+import { logoutUser } from './userService'; 
 
 // Create API client with base URL
 export const apiClient = axios.create({
@@ -20,6 +21,18 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Response interceptor to handle 401 and 403 errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      logoutUser();
+      window.location.href = "/login"; // or use your router
+    }
+    return Promise.reject(error);
+  }
 );
 
 // Configure QueryClient with defaults

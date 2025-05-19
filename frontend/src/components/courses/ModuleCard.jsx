@@ -5,7 +5,6 @@ import { Progress } from '@components/ui/progress';
 import { Button } from '@components/ui/button';
 import FadeContent from '../ui/fade-content.jsx';
 
-
 export function ModuleCard({ module, progress }) {
   const progressPercentage = progress?.percentage || 0;
 

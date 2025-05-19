@@ -18,7 +18,7 @@ export const getLessonsByModuleId = async (moduleId) => {
 
 export const getLessonById = async (lessonId) => {
   const response = await apiClient.get(`/api/v1/content/lessons/${lessonId}`);
-  return response.data;
+ return response.data;
 };
 
 // Exercises
