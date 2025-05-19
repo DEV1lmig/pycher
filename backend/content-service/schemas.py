@@ -4,15 +4,16 @@ from datetime import datetime
 
 # Exercise schemas
 class ExerciseBase(BaseModel):
-    id: str
+    id: int
     title: str
-    lesson_id: str
-    order: int
     description: str
-    starter_code: str
-    solution_code: str
-    test_code: Optional[str] = None
-    hints: Optional[List[str]] = None
+    starter_code: Optional[str] = None
+    solution_code: Optional[str] = None
+    test_cases: Optional[str] = None
+    hints: Optional[str] = None
+    lesson_id: Optional[int] = None
+    module_id: Optional[int] = None
+    order_index: int  # <-- Add this line
 
 class ExerciseCreate(ExerciseBase):
     pass

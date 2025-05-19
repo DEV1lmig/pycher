@@ -3,7 +3,7 @@ import os
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, Course, Module, Lesson, User, Progress
+from models import Base, Course, Module, Lesson, User, Progress, Exercise  # Add Exercise import
 
 # Database connection
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -42,6 +42,22 @@ def seed_lessons():
         session.commit()
     session.close()
 
+def seed_exercises():
+    session = SessionLocal()
+    with open(os.path.join(os.path.dirname(__file__), "seed_data/seed_exercises.json"), encoding="utf-8") as f:
+        exercises = json.load(f)
+        for exercise_data in exercises:
+            # Remove id if not present (optional, for autoincrement)
+            exercise_id = exercise_data.get("id")
+            if exercise_id is not None:
+                exists = session.query(Exercise).filter_by(id=exercise_id).first()
+            else:
+                exists = None
+            if not exists:
+                session.add(Exercise(**exercise_data))
+        session.commit()
+    session.close()
+
 def seed_users():
     # Similar implementation for users
     pass
@@ -50,4 +66,5 @@ if __name__ == "__main__":
     seed_courses()
     seed_modules()
     seed_lessons()
+    seed_exercises()  # <-- Add this line
     seed_users()

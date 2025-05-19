@@ -117,3 +117,17 @@ def get_modules_by_course(course_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Course not found")
     modules = services.get_modules_by_course(db, course_id)
     return modules
+
+@router.get("/lessons/{lesson_id}/exercise", response_model=schemas.Exercise)
+def get_lesson_exercise(lesson_id: int, db: Session = Depends(get_db)):
+    exercise = services.get_exercise_for_lesson(db, lesson_id)
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    return exercise
+
+@router.get("/modules/{module_id}/final-exercise", response_model=schemas.Exercise)
+def get_module_final_exercise(module_id: int, db: Session = Depends(get_db)):
+    exercise = services.get_module_final_exercise(db, module_id)
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Final exercise not found")
+    return exercise

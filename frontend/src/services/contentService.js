@@ -24,11 +24,13 @@ export const getLessonById = async (lessonId) => {
 // Exercises
 export const getExercisesByLessonId = async (lessonId) => {
   const response = await apiClient.get(`/api/v1/content/lessons/${lessonId}/exercises`);
+  console.log(response.data);
   return response.data;
 };
 
 export const getExerciseById = async (exerciseId) => {
   const response = await apiClient.get(`/api/v1/content/exercises/${exerciseId}`);
+  console.log(response.data);
   return response.data;
 };
 

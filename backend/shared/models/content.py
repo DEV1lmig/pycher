@@ -51,16 +51,18 @@ class Lesson(Base):
 class Exercise(Base):
     __tablename__ = "exercises"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=False)
+    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
+    module_id = Column(Integer, ForeignKey("modules.id"), nullable=True)
+    order_index = Column(Integer, nullable=False, default=1)  # <-- Add this line
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     instructions = Column(Text)
     starter_code = Column(Text)
     solution_code = Column(Text)
     test_cases = Column(Text)
-    difficulty = Column(String)
-    points = Column(Integer)
+    hints = Column(Text)
     lesson = relationship("Lesson", back_populates="exercises")
+    # Optionally, add: module = relationship("Module")
 
 class UserCourseEnrollment(Base):
     __tablename__ = "user_course_enrollments"

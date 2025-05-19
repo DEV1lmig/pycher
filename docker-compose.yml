@@ -58,6 +58,8 @@ services:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
     ports:
       - "8002:8002"
+    command: >
+      sh -c "export PYTHONPATH=/app:/app/shared && alembic -c /app/shared/alembic.ini upgrade head && python /app/shared/seed_db.py && uvicorn main:app --host 0.0.0.0 --port 8002 --reload"
     networks: ["pycher-network"]
 
   api-gateway:

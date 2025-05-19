@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "lesson_id": 1,
+    "module_id": 1,
+    "order_index": 1,
+    "title": "Ejercicio: Introducción a Python",
+    "description": "Escribe un programa que imprima '¡Hola, Python!' en pantalla.",
+    "instructions": "Utiliza la función print().",
+    "starter_code": "print()",
+    "solution_code": "print('¡Hola, Python!')",
+    "test_cases": "[{\"input\": \"\", \"output\": \"¡Hola, Python!\\n\"}]"
+  },
+  {
+    "id": 2,
+    "lesson_id": 2,
+    "module_id": 1,
+    "order_index": 1,
+    "title": "Ejercicio: Tu Primer Programa",
+    "description": "Modifica el siguiente código para que imprima tu nombre.",
+    "instructions": "Cambia el mensaje dentro de print().",
+    "starter_code": "print('¡Hola, mundo!')",
+    "solution_code": "print('Hola, soy [Tu Nombre] y estoy aprendiendo Python')",
+    "test_cases": "[{\"input\": \"\", \"output\": \"Hola, soy [Tu Nombre] y estoy aprendiendo Python\\n\"}]"
+  },
+  {
+    "id": 3,
+    "lesson_id": null,
+    "module_id": 1,
+    "order_index": 99,
+    "title": "Test Final: Conceptos Básicos de Python",
+    "description": "Escribe una función que reciba un nombre y devuelva 'Hola, <nombre>!'",
+    "instructions": "Define una función llamada saludar(nombre).",
+    "starter_code": "def saludar(nombre):\n    # Tu código aquí",
+    "solution_code": "def saludar(nombre):\n    return f'Hola, {nombre}!'",
+    "test_cases": "[{\"input\": \"Carlos\", \"output\": \"Hola, Carlos!\"}]"
+  }
+]

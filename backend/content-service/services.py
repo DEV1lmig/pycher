@@ -86,13 +86,13 @@ def get_lesson(db: Session, lesson_id):
     return lesson
 
 def get_exercises(db: Session, lesson_id: str):
-    # Try to get from cache
+    lesson_id = int(lesson_id)  # Ensure lesson_id is an integer
     cached = redis_client.get(f"lesson:{lesson_id}:exercises")
     if cached:
         return json.loads(cached)
 
     # Get from DB if not cached
-    exercises = db.query(Exercise).filter(Exercise.lesson_id == lesson_id).order_by(Exercise.order).all()
+    exercises = db.query(Exercise).filter(Exercise.lesson_id == lesson_id).order_by(Exercise.order_index).all()
 
     exercise_list = [{
         "id": exercise.id,
@@ -102,7 +102,7 @@ def get_exercises(db: Session, lesson_id: str):
         "description": exercise.description,
         "starter_code": exercise.starter_code,
         "solution_code": exercise.solution_code,
-        "test_code": exercise.test_code,
+        "test_cases": exercise.test_cases,  # <-- fix here
         "hints": exercise.hints
     } for exercise in exercises]
 
@@ -242,3 +242,12 @@ def rate_course(db: Session, user_id: int, course_id: int, rating: float):
 
 def get_modules_by_course(db: Session, course_id: int):
     return db.query(Module).filter(Module.course_id == course_id).order_by(Module.order_index).all()
+
+def get_exercise_for_lesson(db: Session, lesson_id: int):
+    return db.query(Exercise).filter(Exercise.lesson_id == lesson_id).first()
+
+def get_module_final_exercise(db: Session, module_id: int):
+    return db.query(Exercise).filter(
+        Exercise.module_id == module_id,
+        Exercise.lesson_id == None
+    ).first()
