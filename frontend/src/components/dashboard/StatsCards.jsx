@@ -35,12 +35,12 @@ export function StatsCards() {
           distance={40}
           direction="vertical"
           reverse={true}
-          config={{ tension: 100, friction: 20 }}
+          config={{ tension: 100, friction: 10 }}
           initialOpacity={0}
           animateOpacity
           scale={1}
           threshold={0.2}
-          delay={150}
+          delay={100}
         >
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {stats.map((stat, index) => (

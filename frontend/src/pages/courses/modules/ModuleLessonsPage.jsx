@@ -3,6 +3,9 @@ import { Link, useParams } from "@tanstack/react-router";
 import { getModuleById, getLessonsByModuleId } from "@/services/contentService";
 import { moduleLessonsRoute } from "@/router";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import Waves from "@/components/ui/waves";
+import FadeContent from "@/components/ui/fade-content";
+import AnimatedContent from "@/components/ui/animated-content";
 
 export default function ModuleLessonsPage() {
   const { moduleId, courseId } = useParams({ from: moduleLessonsRoute.id });
@@ -42,7 +45,33 @@ export default function ModuleLessonsPage() {
 
   return (
     <DashboardLayout>
-      <div className="bg-primary/20 rounded-lg p-8 mb-8 shadow-lg m-6">
+      <AnimatedContent
+          distance={40}
+          direction="vertical"
+          reverse={true}
+          config={{ tension: 100, friction: 20 }}
+          initialOpacity={0.2}
+          animateOpacity
+          scale={1}
+          threshold={0.2}
+        >
+      <div className="relative rounded-lg p-8 mb-8 shadow-2xl m-6">
+      <div className="absolute rounded-3xl overflow-hidden inset-0 z-10">
+        <Waves
+        lineColor="rgba(152, 128, 242, 0.4)"
+        backgroundColor="#160f30"
+        waveSpeedX={0.02}
+        waveSpeedY={0.01}
+        waveAmpX={70}
+        waveAmpY={20}
+        friction={0.9}
+        tension={0.01}
+        maxCursorMove={60}
+        xGap={5}
+        yGap={36}
+      />
+      </div>
+      <div className="relative z-20">
         <h1 className="text-3xl font-bold text-white mb-2">{module.title}</h1>
         <p className="text-gray-300 mb-4">{module.description}</p>
         <Link
@@ -52,6 +81,10 @@ export default function ModuleLessonsPage() {
           Volver al curso
         </Link>
       </div>
+      </div>
+      </AnimatedContent>
+        
+      <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100}>
       <h2 className="text-2xl font-bold text-white mb-4 mx-6">Lecciones del módulo</h2>
       <div className="space-y-4">
         {lessons.length === 0 ? (
@@ -61,15 +94,17 @@ export default function ModuleLessonsPage() {
             <Link
               key={lesson.id}
               to={`/lessons/${lesson.id}`}
-              className="block overflow-hidden border m-6 cursor-default transition-transform duration-300 ease-out 
-              hover:scale-105 border-dark-light hover:border-primary h-full rounded-2xl flex flex-col"
+              className="block mx-6 bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-101 
+              border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-default 
+              shadow-lg"
             >
-              <div className="font-semibold text-xl text-primary font-bold m-6">{lesson.title}</div>
-              <div className="text-white mx-6 mb-6 mt-4">{lesson.content?.slice(0, 80)}...</div>
+              <div className="font-semibold hover:text-secondary text-xl text-white font-bold p-6">{lesson.title}
+              <p className="text-gray-400 text-base mt-4">{lesson.content?.slice(0, 80)}...</p></div>
             </Link>
           ))
         )}
       </div>
+      </FadeContent>
     </DashboardLayout>
   );
 }

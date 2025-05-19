@@ -22,10 +22,10 @@ export function CodeEditor({ initialCode = '', onExecute, onChange }) {
   };
 
   return (
-    <div className="border rounded-md overflow-hidden">
+    <div className="border border-primary-opaque/50 rounded-md overflow-hidden">
       <div className="bg-muted p-2 flex justify-between items-center">
-        <div className="font-medium">Python Editor</div>
-        <div className="flex gap-2">
+        <div className="font-medium mx-6">Python Editor</div>
+        <div className="flex mx-2 gap-2">
           <Button
             onClick={handleExecute}
             disabled={isExecuting}

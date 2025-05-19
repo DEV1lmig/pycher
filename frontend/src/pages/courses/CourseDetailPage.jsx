@@ -51,7 +51,7 @@ export default function CourseDetailPage() {
         backgroundColor="#160f30"
         waveSpeedX={0.02}
         waveSpeedY={0.01}
-        waveAmpX={20}
+        waveAmpX={70}
         waveAmpY={20}
         friction={0.9}
         tension={0.01}
@@ -94,7 +94,7 @@ export default function CourseDetailPage() {
       </div>
       </AnimatedContent>
 
-      <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={200} >
+      <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100} >
       <h3 className="text-2xl font-bold text-white mx-6">Cursos disponibles para ti</h3>
       </FadeContent>
 

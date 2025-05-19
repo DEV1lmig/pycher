@@ -5,6 +5,9 @@ import { getLessonById } from "@/services/contentService";
 import { CodeEditor } from "@/components/editor/CodeEditor";
 import { Button } from "@/components/ui/button";
 import { LessonWithCodeRoute } from "@/router";
+import Waves from "@/components/ui/waves";
+import AnimatedContent from "@/components/ui/animated-content";
+import FadeContent from "@/components/ui/fade-content";
 
 export default function LessonWithCodePage() {
   const { lessonId } = useParams({ from: LessonWithCodeRoute.id });
@@ -65,28 +68,60 @@ export default function LessonWithCodePage() {
 
   return (
     <DashboardLayout>
-      <div className="bg-gradient-to-r from-[#312a56] to-[#1a1433] rounded-lg p-8 mb-8 shadow-lg border border-[#312a56]">
+      <AnimatedContent
+          distance={40}
+          direction="vertical"
+          reverse={true}
+          config={{ tension: 100, friction: 20 }}
+          initialOpacity={0.2}
+          animateOpacity
+          scale={1}
+          threshold={0.2}
+        >
+      <div className="relative rounded-lg p-8 mx-6 my-6 shadow-2xl border border-primary-opaque/0">
+        <div className="absolute rounded-3xl overflow-hidden inset-0 z-10">
+        <Waves
+        lineColor="rgba(152, 128, 242, 0.4)"
+        backgroundColor="#160f30"
+        waveSpeedX={0.02}
+        waveSpeedY={0.01}
+        waveAmpX={70}
+        waveAmpY={20}
+        friction={0.9}
+        tension={0.01}
+        maxCursorMove={60}
+        xGap={12}
+        yGap={36}
+        />
+        </div>
+      <div className="relative z-20">
         <h1 className="text-3xl font-bold text-white mb-2">{lesson.title}</h1>
-        <p className="text-gray-300 mb-4">{lesson.description || ""}</p>
+        <p className="text-gray-400 mb-4">{lesson.description || ""}</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      </div>
+      </AnimatedContent>
+
+      <FadeContent blur={true} duration={300} easing="ease-out" initialOpacity={0} delay={100} >
+      <div className="grid grid-cols-1 md:grid-cols-2 mx-6 gap-6">
         {/* Lesson Content Card */}
-        <div className="bg-[#1a1433] rounded-lg shadow border border-[#312a56] p-6 flex flex-col">
-          <h2 className="font-bold text-xl text-white mb-2">{lesson.title}</h2>
-          <div className="prose max-w-none text-gray-200 whitespace-pre-line">
+        <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow p-6 flex flex-col">
+          <h2 className="font-bold text-xl text-secondary mb-2">{lesson.title}</h2>
+          <hr className="mb-4 border-primary/40" />
+          <div className="prose text-justify max-w-none text-gray-200 whitespace-pre-line">
             {lesson.content}
           </div>
         </div>
         {/* Code Editor Card */}
-        <div className="bg-[#1a1433] rounded-lg shadow border border-[#312a56] p-6 flex flex-col gap-4">
-          <div className="font-semibold text-lg text-white mb-2">Editor de Código</div>
+        <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow p-6 flex flex-col gap-4">
+          <div className="font-semibold text-lg text-secondary mb-2">Editor de Código</div>
+          
           <CodeEditor
             initialCode={code}
             onChange={setCode}
             onExecute={handleExecute}
           />
           <div className="flex gap-2 mt-2">
-            <Button onClick={handleExecute} disabled={execLoading} className="bg-[#5f2dee] hover:bg-[#4f25c5] text-white">
+            <Button onClick={handleExecute} disabled={execLoading} className="bg-primary hover:bg-primary-opaque text-white">
               {execLoading ? "Ejecutando..." : "Ejecutar Código"}
             </Button>
           </div>
@@ -98,6 +133,7 @@ export default function LessonWithCodePage() {
           )}
         </div>
       </div>
+      </FadeContent>
     </DashboardLayout>
   );
 }

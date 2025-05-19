@@ -14,8 +14,8 @@ export default function CoursesPage() {
   return (
     <DashboardLayout>
       <div className="m-6">
-      <FadeContent blur={true} duration={200} easing="ease-out" initialOpacity={0} delay={200} >
-      <h3 className="text-2xl font-bold text-white mx-6">Cursos disponibles para ti</h3>
+      <FadeContent blur={true} duration={500} easing="ease-out" initialOpacity={0} delay={100}>
+      <h3 className="text-2xl font-bold text-white">Cursos disponibles para ti</h3>
       </FadeContent>
 
       <div className="my-6"><CourseCards courses={courses} /></div>

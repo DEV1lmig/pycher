@@ -4,7 +4,7 @@ import FadeContent from "@/components/ui/fade-content.jsx";
 
 export function CourseCards({ courses }) {
   return (
-    <FadeContent blur={true} duration={100} easing="ease-out" initialOpacity={0} delay={0}>
+    <FadeContent blur={true} duration={500} easing="ease-out" initialOpacity={0} delay={250}>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 cursor-default gap-6">
       {courses.map((course) => (
         <div

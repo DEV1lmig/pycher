@@ -9,7 +9,7 @@ export function ModuleCard({ module, progress }) {
   const progressPercentage = progress?.percentage || 0;
 
   return (
-    <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={200}>
+    <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100}>
     <Card className="overflow-hidden mt-6 cursor-default transition-transform duration-300 ease-out hover:bg-dark hover:border-primary
     hover:scale-105 bg-primary-opaque/10 border-dark-light border-primary-opaque/0 h-full flex flex-col">
         <CardHeader className="pb-3">
