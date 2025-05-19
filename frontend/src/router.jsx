@@ -9,6 +9,8 @@ import CourseDetailPage from '@/pages/courses/CourseDetailPage';
 import LessonWithCodePage from '@/pages/courses/lessons/LessonWithCodePage';
 import { ProtectedLayout } from '@/components/auth/ProtectedLayout';
 import ModuleLessonsPage from '@/pages/courses/modules/ModuleLessonsPage';
+import HelpPage from './pages/home/help'
+import ProfilePage from './pages/profile/profile'
 
 const rootRoute = createRootRoute()
 
@@ -43,6 +45,12 @@ const homeRoute = createRoute({
   component: () => <DashboardPage />,
 })
 
+const helpRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/home/help',
+  component: () => <HelpPage />,
+})
+
 const coursesRoute = createRoute({
     getParentRoute: () => protectedRoute,
     path: '/courses',
@@ -73,14 +81,22 @@ const moduleLessonsRoute = createRoute({
   component: () => <ModuleLessonsPage />,
 })
 
+const ProfileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/profile',
+  component: () => <ProfilePage />,
+})
+
 // Create the route tree using your routes
 const routeTree = rootRoute.addChildren([
   landingRoute,
   demoRoute,
   loginRoute,
   registerRoute,
+  ProfileRoute,
   protectedRoute.addChildren([
     homeRoute,
+    helpRoute,
     coursesRoute,
     courseDetailRoute,
     LessonsWithCodeRoute,

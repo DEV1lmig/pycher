@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Bell, User } from "lucide-react"
 import { SearchBar } from "@/components/modules/SearchBar"
 import { getUserProfile } from "@/services/userService";
+import { Link } from '@tanstack/react-router';
 
 export function DashboardHeader() {
   const [showNotifications, setShowNotifications] = useState(false)
@@ -70,9 +71,17 @@ export function DashboardHeader() {
                 <p className="text-xs text-gray-400">{user ? user.email : "carlos@example.com"}</p>
               </div>
               <ul>
-                <li className="p-2 hover:bg-[#312a56] cursor-pointer">Mi Perfil</li>
-                <li className="p-2 hover:bg-[#312a56] cursor-pointer">Configuración</li>
-                <li className="p-2 hover:bg-[#312a56] cursor-pointer border-t border-[#312a56]">Cerrar Sesión</li>
+                <li>
+                  <Link
+                    to="/profile"
+                    className="block p-2 hover:bg-[#312a56] cursor-pointer w-full text-base font-semibold hover:text-primary"
+                  >
+                    Mi Perfil
+                  </Link>
+                </li>
+                <li className="p-2 hover:bg-[#312a56] cursor-pointer border-t border-[#312a56]">
+                  Cerrar Sesión
+                </li>
               </ul>
             </div>
           )}

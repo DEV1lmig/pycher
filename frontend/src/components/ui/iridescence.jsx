@@ -136,7 +136,7 @@ export default function Iridescence({
   return (
     <div
       ref={ctnDom}
-      className="w-full h-full"
+      className="w-full h-64"
       {...rest}
     />
   );
