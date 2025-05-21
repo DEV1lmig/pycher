@@ -7,9 +7,10 @@ export function CourseCards({ courses }) {
     <FadeContent blur={true} duration={500} easing="ease-out" initialOpacity={0} delay={250}>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 cursor-default gap-6">
       {courses.map((course) => (
-        <div
+        <Link
           key={course.id}
-          className="bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-105 border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-default shadow-lg"
+          to={`/courses/${course.id}`}
+          className="bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-105 border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-pointer shadow-lg"
         >
           <div className={`h-3 bg-gradient-to-r ${course.color_theme}`}></div>
           <div className="p-5">
@@ -38,15 +39,14 @@ export function CourseCards({ courses }) {
             </div>
             <div className="flex items-center justify-between mt-4">
               <span className="text-sm text-gray-400">{course.students_count} estudiantes</span>
-              <Link
-                href={`/courses/${course.id}`}
+              <div
                 className="flex items-center text-primary hover:text-[#9980f2] transition-colors"
               >
                 Ver curso <ArrowRight className="h-4 w-4 ml-1" />
-              </Link>
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
     </FadeContent>

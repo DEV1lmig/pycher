@@ -63,7 +63,7 @@ export default function FaqCarousel({ items = [], speed = 30 }) {
             onMouseLeave={() => setHovered(null)}
             style={{ pointerEvents: "auto" }}
           >
-            <div className="bg-dark rounded-2xl shadow-lg p-8 h-40 flex flex-col items-center border border-[#312a56]">
+            <div className="bg-dark rounded-2xl h-48 shadow-lg p-8 h-40 flex flex-col items-center border border-[#312a56]">
               <h5 className="text-lg font-bold text-primary text-center mb-4">{item.title}</h5>
               <p className="text-gray-200 text-center text-base">{item.content}</p>
             </div>

@@ -126,28 +126,31 @@ export default function LessonWithCodePage() {
       </AnimatedContent>
 
       <FadeContent blur={true} duration={300} easing="ease-out" initialOpacity={0} delay={100} >
-        <div className="grid grid-cols-1 md:grid-cols-2 mx-6 gap-6">
-          {/* Lesson Content Card */}
-          <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow p-6 flex flex-col">
-            <h2 className="font-bold text-xl text-secondary mb-2">{lesson?.title}</h2>
-            <hr className="mb-4 border-primary/40" />
-            <div className="prose text-justify max-w-none text-gray-200 whitespace-pre-line">
-              {lesson?.content}
-            </div>
-            {exercise && (
-              <>
-                <h3 className="font-semibold text-lg text-secondary mt-6 mb-2">{exercise.title}</h3>
-                <div className="text-gray-300">{exercise.description}</div>
-              </>
-            )}
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 mx-6 gap-6 custom-scroll"
+        style={{ maxHeight: "580px", overflowY: "auto" }}
+      >
+        {/* Lesson Content Card */}
+        <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow p-6 flex flex-col">
+          <h2 className="font-bold text-xl text-secondary mb-2">{lesson?.title}</h2>
+          <hr className="mb-4 border-primary/40" />
+          <div className="prose text-justify max-w-none text-gray-200 whitespace-pre-line">
+            {lesson?.content}
           </div>
-          {/* Code Editor Card */}
-          <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow p-6 flex flex-col gap-4">
-            <div className="font-semibold text-lg text-secondary mb-2">Editor de Código</div>
-            <LessonCodeExecutor initialCode={initialCode} />
-          </div>
+          {exercise && (
+            <>
+              <h3 className="font-semibold text-lg text-secondary mt-6 mb-2">{exercise.title}</h3>
+              <div className="text-gray-300">{exercise.description}</div>
+            </>
+          )}
         </div>
-      </FadeContent>
+        {/* Code Editor Card */}
+        <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow p-6 flex flex-col gap-4">
+          <div className="font-semibold text-lg text-secondary mb-2">Editor de Código</div>
+          <LessonCodeExecutor initialCode={initialCode} />
+        </div>
+      </div>
+    </FadeContent>
       <LessonChatbot />
     </DashboardLayout>
   );

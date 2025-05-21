@@ -5,6 +5,8 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { Home, BookOpen, Code, Settings, HelpCircle, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { logout } from "@/lib/auth";
+import logo from "@/assets/img/logo-pycher.png"
+import logo2 from "@/assets/img/logo.png"
   
 
 import { VscHome, VscArchive, VscAccount, VscSettingsGear } from "react-icons/vsc";
@@ -41,11 +43,9 @@ export function DashboardSidebar() {
       <div className="p-4 flex items-center justify-between border-b border-[#312a56] h-[81px]">
         <div className={cn("flex items-center", collapsed && "justify-center w-full ")}>
           {!collapsed && (
-            <span className="text-xl font-bold text-white ml-2">
-              <span className="text-[#f2d231]">Py</span>Cher
-            </span>
+              <img src={logo} alt="logo" className="w-36 h-auto cursor-pointer" />
           )}
-          {collapsed && <span className="text-xl font-bold text-[#f2d231]">P</span>}
+          {collapsed && <span><img src={logo2} alt="logo2" className="w-4 cursor-pointer" /></span>}
         </div>
         <button onClick={toggleSidebar} className="text-gray-400 hover:text-white">
           {collapsed ? "→" : "←"}

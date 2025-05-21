@@ -43,6 +43,7 @@ export default {
         secondary: '#f2d231', // Yellow
         tertiary: '#a5a5a5',  // Grey
         blue: '#00B4D8',
+        red: '#FF6F61',
         dark: {
           DEFAULT: '#160f30', // Dark Purple
           light: '#302640',   // Lighter Dark Purple

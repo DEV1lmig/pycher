@@ -85,7 +85,7 @@ export default function ModuleLessonsPage() {
         <p className="text-gray-300 mb-4">{module.description}</p>
         <Link
         to={`/courses/${course?.id}`}
-        className="inline-block bg-primary hover:bg-primary-opaque text-white px-4 py-2 rounded-md mt-2"
+        className="inline-block bg-secondary hover:bg-secondary/90 text-dark font-semibold px-4 py-2 rounded-md mt-2"
       >
         Volver al curso
       </Link>
@@ -95,25 +95,66 @@ export default function ModuleLessonsPage() {
         
       <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100}>
       <h2 className="text-2xl font-bold text-white mb-4 mx-6">Lecciones del módulo</h2>
-      <div className="space-y-4">
+      <div
+        className="mx-6 bg-dark-light/10 rounded-lg p-4 custom-scroll"
+        style={{ maxHeight: "450px", overflowY: "auto" }} 
+      >
         {lessons.length === 0 ? (
-          <div className="text-gray-400 mx-6">Este módulo no tiene lecciones.</div>
+          <div className="text-gray-400">Este módulo no tiene lecciones.</div>
         ) : (
           lessons.map(lesson => (
             <Link
               key={lesson.id}
               to={`/lessons/${lesson.id}`}
-              className="block mx-6 bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-101 
+              className="block bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-101 
               border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-default 
-              shadow-lg"
+              shadow-lg mb-4"
             >
-              <div className="font-semibold hover:text-secondary text-xl text-white font-bold p-6">{lesson.title}
-              <p className="text-gray-400 text-base mt-4">{lesson.content?.slice(0, 80)}...</p></div>
+              <div className="font-semibold hover:text-secondary text-xl text-white font-bold p-6">
+                {lesson.title}
+                <p className="text-gray-400 text-base mt-4">{lesson.content?.slice(0, 80)}...</p>
+              </div>
+            </Link>
+          ))
+        )}
+        {lessons.length === 0 ? (
+          <div className="text-gray-400">Este módulo no tiene lecciones.</div>
+        ) : (
+          lessons.map(lesson => (
+            <Link
+              key={lesson.id}
+              to={`/lessons/${lesson.id}`}
+              className="block bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-101 
+              border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-default 
+              shadow-lg mb-4"
+            >
+              <div className="font-semibold hover:text-secondary text-xl text-white font-bold p-6">
+                {lesson.title}
+                <p className="text-gray-400 text-base mt-4">{lesson.content?.slice(0, 80)}...</p>
+              </div>
+            </Link>
+          ))
+        )}
+        {lessons.length === 0 ? (
+          <div className="text-gray-400">Este módulo no tiene lecciones.</div>
+        ) : (
+          lessons.map(lesson => (
+            <Link
+              key={lesson.id}
+              to={`/lessons/${lesson.id}`}
+              className="block bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-101 
+              border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-default 
+              shadow-lg mb-4"
+            >
+              <div className="font-semibold hover:text-secondary text-xl text-white font-bold p-6">
+                {lesson.title}
+                <p className="text-gray-400 text-base mt-4">{lesson.content?.slice(0, 80)}...</p>
+              </div>
             </Link>
           ))
         )}
       </div>
-      </FadeContent>
+    </FadeContent>
     </DashboardLayout>
   );
 

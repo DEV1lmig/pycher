@@ -21,10 +21,10 @@ export default function LandingPage() {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
 
   const Items = [
-    { title: "¿Cómo me registro?", content: "Haz clic en 'Registrarse', completa el formulario y listo." },
-    { title: "¿Olvidé mi contraseña?", content: "Utiliza la opción '¿Olvidaste tu contraseña?' en la pantalla de inicio de sesión." },
-      { title: "¿Cómo me registro?", content: "Haz clic en 'Registrarse', completa el formulario y listo." },
-    { title: "¿Olvidé mi contraseña?", content: "Utiliza la opción '¿Olvidaste tu contraseña?' en la pantalla de inicio de sesión." },
+    { title: "Increíble experiencia", content: "Perfecto para empezar. Cubre Python básico y aplicaciones simples de IA. Ejercicios útiles y claros." },
+    { title: "Curso rápido y directo", content: "Enseña algoritmos esenciales (regresión, clasificación) con proyectos reales. Ideal para quienes tienen prisa." },
+      { title: "Conocimiento de Programación", content: "No se requiere de conocimiento de programación para empezar, una maravilla!" },
+    { title: "Aprender Python", content: "Para aquellas personas que les interesa aprender Python, échenle un ojo a esto!" },
   
   ];
 
@@ -301,99 +301,11 @@ export default function LandingPage() {
         </FadeContent>
       </section>
 
-      {/* Registration Section */}
-      <section className=" bg-dark">
-      <FadeContent blur={true} duration={1200} easing="ease-out" initialOpacity={1}>
-      {/* Aurora como fondo absoluto */}
-      <div className='relative rounded-3xl mx-36 px-12 py-12 grid-cols-2 grid gap-8 items-center overflow-hidden'>
-      <div className="absolute inset-0 z-0">
-        <Aurora
-          colorStops={["#8363f2", "#f2d231", "#a5a5a5"]}
-          blend={0.5}
-          amplitude={1.0}
-          speed={1}
-        />
-      </div>
-
-      {/* Contenido de "Registra tu cuenta" */}
-      <div className="relative z-10">
-        <h2 className="text-2xl font-bold mb-4 text-white relative">
-          Registra tu <span className="relative z-15">Cuenta </span>
-         
-          GRATIS para<br />
-          acceder a <span className="text-secondary">300</span> cursos online
-        </h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <img src={logo} alt="logo" className="w-12 h-auto" />
-          <p>
-            Aprende a manejar Python con Inteligencia Artificial en un solo paso.
-          </p>
-        </div>
-      </div>
-
-        {/* Formulario */}
-        <div className="relative z-10 text-black p-6 rounded-lg shadow-md bg-dark">
-          <form>
-            <div className="mb-4">
-              <label className="block text-white font-bold text-2xl mb-4">
-                Completa tu Registro
-              </label>
-              <label className="block text-white text-sm font-medium mb-1">
-                Tu Nombre Completo
-              </label>
-              <input
-                type="text"
-                className="w-full border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="Ingresa tu nombre completo"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-white text-sm font-medium mb-1">
-                Teléfono
-              </label>
-              <input
-                type="text"
-                className="w-full border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="Ingresa tu teléfono"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-white text-sm font-medium mb-1">
-                Correo Electrónico
-              </label>
-              <input
-                type="email"
-                className="w-full border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="xxxxx@gmail.com"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-white text-sm font-medium mb-1">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                className="w-full border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="●●●●●●●●"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary-light text-white font-medium py-2 px-4 rounded-md"
-            >
-              Registrarse
-              </button>
-          </form>
-        </div>
-        </div>
-        </FadeContent>
-      </section>
-
       <FadeContent blur={true} duration={1600} easing="ease-out" initialOpacity={0}>
       <section className='bg-dark'>
         <div className="flex flex-col items-center justify-center mt-12 "> 
-            <h1 className="text-5xl font-bold text-white">Esto es lo que dicen nuestros usuarios</h1>
-            <p className="mt-3 text-xl text-secondary">Ellos piensan que nuestros cursos son increíbles, tú también puedes pensarlo!</p>
+            <h1 className="text-4xl font-bold text-white">Esto es lo que dicen nuestros usuarios</h1>
+            <p className="mt-3 text-lg text-secondary">Ellos piensan que nuestros cursos son increíbles, tú también puedes pensarlo!</p>
         </div>
         <div className="relative w-full max-w-7xl mx-auto py-8">
         {/* Fade left */}

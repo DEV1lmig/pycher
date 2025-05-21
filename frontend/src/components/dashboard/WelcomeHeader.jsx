@@ -27,28 +27,28 @@ export function WelcomeHeader() {
               particleColors={['#8363f2', '#8363f2']}
               particleCount={300}
               particleSpread={5}
-              speed={0.2}
+              speed={0.3}
               particleBaseSize={70}
-              moveParticlesOnHover={false}
+              moveParticlesOnHover={true}
               alphaParticles={false}
               disableRotation={true}
             />
     </div>
-    <div className="relative z-20">
+    <div className="relative z-0">
       <h1 className="text-3xl font-bold mb-2  relative text-white">
-        ¡Bienvenido de vuelta, {user ? `${user.first_name}` : "Carlos Rodríguez"}!
+        ¡Bienvenido(a) de vuelta, {user ? `${user.first_name}` : "Carlos Rodríguez"}!
       </h1>
       <p className="text-gray-300 mb-4">
         Continúa tu viaje de aprendizaje en Python. Tienes 3 cursos en progreso.
       </p>
-      <div className="flex flex-wrap gap-4 mt-4">
+      </div>
+      <div className="inline-flex flex-wrap gap-4 relative z-10 mt-4">
         <button className="bg-primary hover:bg-primary-opaque transition ease-out duration-300 text-white px-4 py-2 rounded-md flex items-center">
           Continuar aprendiendo
         </button>
         <button className="bg-secondary text-dark  px-4 py-2 rounded-md hover:bg-secondary hover:text-dark transition ease-out duration-300">
           Ver mi progreso
         </button>
-      </div>
       </div>
     </div>
     </AnimatedContent>

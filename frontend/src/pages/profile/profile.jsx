@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getUserProfile } from "../../services/userService";
 import { Input } from "../../components/ui/input";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import Iridescence from "@/components/ui/iridescence";
+import Waves from "@/components/ui/waves";
 import { FiUser, FiEye, FiEyeOff } from "react-icons/fi";
 import { Link } from '@tanstack/react-router';
 import FadeContent from "../../components/ui/fade-content.jsx";
@@ -21,12 +21,18 @@ export default function ProfilePage() {
     <div className="relative w-full min-h-[calc(100vh-4rem)]"> 
         <FadeContent blur={true} duration={300} easing="ease-out" initialOpacity={1}>
         <div className="relative w-full h-80 min-w-0">
-            <Iridescence
-            color={[0.5, 0.4, 1]}
-            mouseReact={false}
-            amplitude={0.1}
-            speed={1.0}
-            className="absolute inset-0 w-full h-full z-0"
+            <Waves
+              lineColor="rgba(152, 128, 242, 0.5)"
+              backgroundColor="#160f30"
+              waveSpeedX={0.02}
+              waveSpeedY={0.01}
+              waveAmpX={70}
+              waveAmpY={20}
+              friction={0.9}
+              tension={0.01}
+              maxCursorMove={60}
+              xGap={12}
+              yGap={36}
             />
             <div className="relative flex items-center justify-center w-full h-80">
             <h2 className="z-10 opacity-80 text-4xl font-bold text-center px-2 mb-12 mix-blend-lighten">

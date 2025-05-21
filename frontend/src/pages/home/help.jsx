@@ -1,8 +1,8 @@
 import DashboardLayout from "@/components/dashboard/DashboardLayout"
 import Accordion from "../../components/ui/accordion";
-import  Iridescence  from "../../components/ui/iridescence";
 import FadeContent from "../../components/ui/fade-content.jsx";
 import AnimatedContent from "../../components/ui/animated-content.jsx";
+import Waves from "@/components/ui/waves";
 
 export default function HelpPage() {
   const faqItems = [
@@ -44,16 +44,24 @@ export default function HelpPage() {
       <div className="flex flex-col">
       <section>
         <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={1}>
-        <div className="flex items-center justify-center my-10 gap-4">
-            <div className="relative w-full max-w-2xl h-44 flex items-center justify-center rounded-3xl overflow-hidden">
-            <Iridescence
-                color={[0.5, 0.4, 1]}
-                mouseReact={false}
-                amplitude={0.1}
-                speed={1.0}
-                className="absolute inset-0 w-full h-full z-0"
+        <div className="bg-dark rounded-3xl relative p-8 mb-8 shadow-3xl border-primary/5 border h-32">
+            <div className="absolute inset-0 z-10">
+              <Waves
+              lineColor="rgba(152, 128, 242, 0.4)"
+              backgroundColor="#160f30"
+              waveSpeedX={0.02}
+              waveSpeedY={0.01}
+              waveAmpX={70}
+              waveAmpY={20}
+              friction={0.9}
+              tension={0.01}
+              maxCursorMove={60}
+              xGap={12}
+              yGap={36}
             />
-            <h2 className="relative z-10 opacity-60 text-4xl font-bold text-center px-2 mix-blend-lighten"
+            </div>
+            <div className="relative z-20">
+            <h2 className="relative z-10 text-4xl font-bold text-center px-2 mix-blend-lighten"
             >Preguntas Frecuentes</h2>
             </div>
         </div>
