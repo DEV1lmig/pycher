@@ -117,42 +117,6 @@ export default function ModuleLessonsPage() {
             </Link>
           ))
         )}
-        {lessons.length === 0 ? (
-          <div className="text-gray-400">Este módulo no tiene lecciones.</div>
-        ) : (
-          lessons.map(lesson => (
-            <Link
-              key={lesson.id}
-              to={`/lessons/${lesson.id}`}
-              className="block bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-101 
-              border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-default 
-              shadow-lg mb-4"
-            >
-              <div className="font-semibold hover:text-secondary text-xl text-white font-bold p-6">
-                {lesson.title}
-                <p className="text-gray-400 text-base mt-4">{lesson.content?.slice(0, 80)}...</p>
-              </div>
-            </Link>
-          ))
-        )}
-        {lessons.length === 0 ? (
-          <div className="text-gray-400">Este módulo no tiene lecciones.</div>
-        ) : (
-          lessons.map(lesson => (
-            <Link
-              key={lesson.id}
-              to={`/lessons/${lesson.id}`}
-              className="block bg-primary-opaque/10 rounded-lg border hover:bg-dark hover:scale-101 
-              border-primary-opaque/0 hover:border-primary transition-all ease-out duration-300 cursor-default 
-              shadow-lg mb-4"
-            >
-              <div className="font-semibold hover:text-secondary text-xl text-white font-bold p-6">
-                {lesson.title}
-                <p className="text-gray-400 text-base mt-4">{lesson.content?.slice(0, 80)}...</p>
-              </div>
-            </Link>
-          ))
-        )}
       </div>
     </FadeContent>
     </DashboardLayout>
