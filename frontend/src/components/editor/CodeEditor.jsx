@@ -10,8 +10,7 @@ export function CodeEditor({ initialCode = '', onChange }) {
 
   return (
     <div className="border border-primary-opaque/50 rounded-md overflow-hidden">
-      <div className="bg-muted p-2 flex justify-between items-center">
-        <div className="font-medium">Python Editor</div>
+      <div className="bg-muted flex justify-between items-center">
       </div>
       <Editor
         height="400px"

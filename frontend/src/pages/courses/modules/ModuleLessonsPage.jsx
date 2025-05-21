@@ -97,7 +97,7 @@ export default function ModuleLessonsPage() {
       <h2 className="text-2xl font-bold text-white mb-4 mx-6">Lecciones del módulo</h2>
       <div
         className="mx-6 bg-dark-light/10 rounded-lg p-4 custom-scroll"
-        style={{ maxHeight: "450px", overflowY: "auto" }} 
+        style={{ maxHeight: "400px", overflowY: "auto" }} 
       >
         {lessons.length === 0 ? (
           <div className="text-gray-400">Este módulo no tiene lecciones.</div>
