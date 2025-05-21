@@ -11,15 +11,13 @@ import { apiClient } from './api';
  */
 export const getCodeHint = async ({ code, error, instruction }) => {
   try {
-    // Only send the parameters the backend actually needs
+    // Ensure instruction is always in Spanish
+    const fullInstruction = (instruction ? instruction + " " : "") + "Responde en español.";
     const response = await apiClient.post('/api/v1/ai/hint', {
       code,
       error,
-      instruction
+      instruction: fullInstruction
     });
-
-    // Return the response data directly without modification
-    // This preserves the error_analysis and hint fields
     return response.data;
   } catch (error) {
     console.error('Error getting AI hint:', error);
@@ -39,11 +37,12 @@ export const getCodeHint = async ({ code, error, instruction }) => {
  */
 export const evaluateCode = async ({ code, expected_output, actual_output, description }) => {
   try {
+    const fullDescription = (description ? description + " " : "") + "Responde en español.";
     const response = await apiClient.post('/api/v1/ai/evaluate', {
       code,
       expected_output,
       actual_output,
-      description
+      description: fullDescription
     });
     return response.data;
   } catch (error) {
