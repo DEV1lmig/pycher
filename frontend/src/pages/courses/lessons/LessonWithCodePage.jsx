@@ -9,6 +9,7 @@ import AnimatedContent from "@/components/ui/animated-content";
 import FadeContent from "@/components/ui/fade-content";
 import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { Home, BookOpen } from "lucide-react";
+import LessonChatbot from "@/components/ai/LessonChatbot";
 
 export default function LessonWithCodePage() {
   const { lessonId } = useParams({ from: LessonWithCodeRoute.id });
@@ -147,6 +148,7 @@ export default function LessonWithCodePage() {
           </div>
         </div>
       </FadeContent>
+      <LessonChatbot />
     </DashboardLayout>
   );
 }

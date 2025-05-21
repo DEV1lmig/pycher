@@ -9,6 +9,9 @@ import { apiClient } from './api';
  * @param {string} params.instruction - What the code is supposed to do (optional)
  * @returns {Promise<Object>} - The AI-generated hint with content property
  */
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export const getCodeHint = async ({ code, error, instruction }) => {
   try {
     // Ensure instruction is always in Spanish
@@ -114,4 +117,25 @@ export const getNextLearningStep = async ({ user_progress, current_topic }) => {
     console.error('Error getting learning path recommendation:', error);
     throw new Error('Unable to generate learning recommendations at this time');
   }
-};
+}
+
+// Stream chat with the AI (returns an async generator)
+export async function* streamChat({ code, instruction = "" }) {
+  const response = await fetch(`${API_URL}/api/v1/ai/chat/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      code,
+      instruction: instruction + " Responde en español."
+    }),
+  });
+  if (!response.body) throw new Error("No stream");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let done = false;
+  while (!done) {
+    const { value, done: doneReading } = await reader.read();
+    if (value) yield decoder.decode(value);
+    done = doneReading;
+  }
+}

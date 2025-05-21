@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from azure.ai.inference import ChatCompletionsClient
 from azure.core.credentials import AzureKeyCredential
+from fastapi.responses import StreamingResponse
+import asyncio
 
 # --- Configuration ---
 
@@ -236,6 +238,39 @@ async def explain_code(request: CodeFeedbackRequest):
     """
     response_data = await generate_ai_response(prompt)
     return AIResponse(**response_data)
+
+@app.post("/chat/stream", tags=["Chat"])
+async def chat_stream(request: HintRequest):
+    """
+    Streams AI chat responses in Spanish.
+    """
+    prompt = f"""
+    Actúa como un tutor de Python. Responde siempre en español.
+    {request.instruction or ""}
+    Código del usuario:
+    ```python
+    {request.code}
+    ```
+    {f"Error: {request.error}" if request.error else ""}
+    """
+
+    def sync_streamer():
+        # Use stream=True for streaming response
+        response = client.complete(
+            messages=[
+                {"role": "system", "content": "Eres un tutor de Python. Responde siempre en español."},
+                {"role": "user", "content": prompt}
+            ],
+            stream=True,
+            max_tokens=512,
+            temperature=0.7,
+        )
+        for chunk in response:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield delta
+
+    return StreamingResponse(sync_streamer(), media_type="text/plain")
 
 
 # --- Run the Application ---

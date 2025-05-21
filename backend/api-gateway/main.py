@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.requests import Request
 from fastapi import status
 
@@ -95,6 +95,25 @@ async def content_service(request: Request, path: str):
             return response.json()
         except httpx.RequestError as e:
             raise HTTPException(status_code=503, detail=f"Error: {str(e)}")
+
+@app.api_route("/api/v1/ai/chat/stream", methods=["POST"])
+async def ai_chat_stream(request: Request):
+    """Proxy streaming chat to the AI service."""
+    service_name = "ai-service"
+    if service_name not in SERVICE_URLS:
+        raise HTTPException(status_code=503, detail=f"{service_name.replace('-', ' ').title()} not available")
+
+    url = f"{SERVICE_URLS[service_name]}/chat/stream"
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'content-length']}
+    body = await request.body()
+
+    async def stream_response():
+        async with httpx.AsyncClient(timeout=None) as client:
+            async with client.stream("POST", url, headers=headers, content=body) as resp:
+                async for chunk in resp.aiter_bytes():
+                    yield chunk
+
+    return StreamingResponse(stream_response(), media_type="text/plain")
 
 @app.post("/api/v1/ai/{endpoint}")
 async def ai_service(endpoint: str, request: Request):
