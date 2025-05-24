@@ -1,7 +1,6 @@
 // filepath: /home/dev1mig/Documents/projects/pycher/frontend/src/services/api.js
 import axios from 'axios';
 import { QueryClient } from '@tanstack/react-query';
-import { logoutUser } from './userService'; 
 
 // Create API client with base URL
 export const apiClient = axios.create({
@@ -28,8 +27,14 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      logoutUser();
-      window.location.href = "/login"; // or use your router
+      // Don't call logoutUser() if this IS the logout endpoint to prevent infinite loop
+      if (!error.config.url.includes('/logout')) {
+        // Clear token immediately
+        localStorage.removeItem('token');
+
+        // Navigate to login - use window.location to avoid router import issues
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

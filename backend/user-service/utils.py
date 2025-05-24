@@ -1,41 +1,76 @@
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from typing import Optional
 from jose import JWTError, jwt
+from datetime import datetime, timedelta
 import os
 import redis
+from typing import Optional
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT settings
-SECRET_KEY = os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7")
+# JWT Configuration
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Redis client for session management
-redis_host = os.getenv("REDIS_HOST", "redis")
-redis_port = int(os.getenv("REDIS_PORT", 6379))
-redis_user = os.getenv("REDIS_USER")          # e.g. "pycher"
-redis_password = os.getenv("REDIS_PASSWORD")  # e.g. "3810"
+# Redis Configuration
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 
-redis_client = redis.Redis(
-    host=redis_host,
-    port=redis_port,
-    username=redis_user,
-    password=redis_password,
-    decode_responses=True
-)
+# Initialize Redis client
+try:
+    redis_client = redis.Redis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        db=REDIS_DB,
+        password=REDIS_PASSWORD,
+        decode_responses=True,
+        socket_connect_timeout=5,
+        socket_timeout=5,
+        retry_on_timeout=True
+    )
+    # Test connection
+    redis_client.ping()
+    print(f"✅ Redis connected successfully at {REDIS_HOST}:{REDIS_PORT}")
+except redis.ConnectionError as e:
+    print(f"❌ Redis connection failed: {e}")
+    print("⚠️  Falling back to memory-based session storage")
+    # Create a mock redis client for development
+    class MockRedis:
+        def __init__(self):
+            self._store = {}
 
-def verify_password(plain_password, hashed_password):
+        def setex(self, key, seconds, value):
+            self._store[key] = value
+            return True
+
+        def get(self, key):
+            return self._store.get(key)
+
+        def delete(self, key):
+            if key in self._store:
+                del self._store[key]
+                return 1
+            return 0
+
+        def ping(self):
+            return True
+
+    redis_client = MockRedis()
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain password against a hashed password"""
     return pwd_context.verify(plain_password, hashed_password)
 
-def get_password_hash(password):
+def get_password_hash(password: str) -> str:
+    """Hash a password"""
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT access token"""
     to_encode = data.copy()
-
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
@@ -43,23 +78,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
     return encoded_jwt
 
-def check_login_attempts(username: str):
-    """Check if a user has exceeded login attempts"""
-    key = f"login_attempts:{username}"
-    attempts = redis_client.get(key)
-
-    if attempts is None:
-        # First attempt
-        redis_client.setex(key, 3600, 1)  # 1 hour window
-        return True
-
-    attempts = int(attempts)  # <-- FIXED: removed .decode()
-    if attempts >= 5:  # Maximum 5 attempts per hour
-        return False
-
-    # Increment attempts
-    redis_client.incr(key)
-    return True
+def decode_access_token(token: str) -> Optional[dict]:
+    """Decode and validate a JWT access token"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None
