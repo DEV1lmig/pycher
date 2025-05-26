@@ -75,13 +75,14 @@ class UserCourseEnrollment(Base): # This will serve as UserCourseProgress
     user_id = Column(Integer, nullable=False)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
     enrollment_date = Column(DateTime(timezone=True), server_default=func.now())
-    last_accessed = Column(DateTime(timezone=True))
-    is_completed = Column(Boolean, default=False)
-    progress_percentage = Column(Float, default=0.0)
+    last_accessed = Column(DateTime(timezone=True), nullable=True)
+    is_completed = Column(Boolean, default=False, nullable=False)
+    progress_percentage = Column(Float, default=0.0, nullable=False)
     total_time_spent_minutes = Column(Integer, default=0)
     # New fields for detailed progress
     last_accessed_module_id = Column(Integer, ForeignKey("modules.id"), nullable=True)
     last_accessed_lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
+    is_active_enrollment = Column(Boolean, default=True, nullable=False) # New field for soft delete
 
     course = relationship("Course", back_populates="enrollments")
     # Assuming user_id links to a User table not defined in this file

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response # Add Response
 from fastapi.requests import Request
 from fastapi import status
 
@@ -159,33 +159,71 @@ async def user_service_proxy(request: Request, path: str):
 
     async with httpx.AsyncClient() as client:
         try:
-            method = request.method.lower()
-            request_func = getattr(client, method)
-            headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'content-length']}
-            content = await request.body() if method != "get" else None
+            method_upper = request.method.upper()
+            # Filter out hop-by-hop headers and headers that httpx will manage.
+            headers = {
+                k: v for k, v in request.headers.items()
+                if k.lower() not in ['host', 'content-length', 'connection', 'transfer-encoding']
+            }
 
-            if method == "get":
-                response = await request_func(
-                    url,
-                    headers=headers,
-                    params=request.query_params,
-                    timeout=30.0
-                )
-            else:
-                response = await request_func(
-                    url,
-                    headers=headers,
-                    params=request.query_params,
-                    content=content,
-                    timeout=30.0
-                )
+            # Prepare keyword arguments for httpx.AsyncClient.request
+            req_kwargs = {
+                "headers": headers,
+                "params": request.query_params, # Forward query parameters
+                "timeout": 30.0
+            }
 
+            # Add body content for methods that can have it.
+            # GET and HEAD requests should not have a body.
+            if method_upper not in ["GET", "HEAD"]:
+                body_bytes = await request.body()
+                # client.request() can handle content=b'' for an empty body.
+                req_kwargs["content"] = body_bytes
+
+            # Use the general purpose client.request method
+            response = await client.request(
+                method_upper,
+                url,
+                **req_kwargs
+            )
+
+            # Raise an exception for 4xx/5xx responses from the downstream service
             response.raise_for_status()
+
+            # Handle 204 No Content specifically, as it has no body
+            if response.status_code == status.HTTP_204_NO_CONTENT:
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+            # For other successful responses, attempt to return JSON.
+            # If the response content is empty but status is not 204,
+            # it might indicate an issue or an empty JSON object {} response.
+            if not response.content:
+                # Assuming an empty body for a non-204 success means an empty JSON object.
+                # Adjust if other content types or behaviors are expected.
+                return JSONResponse(content={}, status_code=response.status_code)
+
             return response.json()
+
         except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"Error: {str(e)}")
+            # Network errors or other issues connecting to the user service
+            # logger.error(f"RequestError proxying to user service: {e}", exc_info=True) # Optional: for server logs
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Error connecting to user service: {str(e)}")
         except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=e.response.status_code, detail=e.response.json() if e.response.content else "User service error")
+            # The user service returned an HTTP error (4xx or 5xx)
+            # logger.error(f"HTTPStatusError from user service: {e.response.status_code} - {e.response.text}", exc_info=True) # Optional
+            error_detail = "User service error"
+            try:
+                # Attempt to parse error detail from user service response
+                error_detail = e.response.json()
+            except Exception:
+                # If parsing JSON fails, use text content or a generic message
+                error_detail = e.response.text if e.response.text else f"User service returned status {e.response.status_code}"
+            raise HTTPException(status_code=e.response.status_code, detail=error_detail)
+        except Exception as e:
+            # Catch-all for other unexpected errors during proxying
+            # logger.error(f"Unexpected error in user_service_proxy: {e}", exc_info=True) # Optional
+            # This will be caught by the generic_exception_handler if not handled more specifically.
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred while proxying to the user service.")
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):

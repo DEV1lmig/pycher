@@ -99,7 +99,62 @@ export const checkCourseAccess = async (courseId) => {
 
     return { hasAccess: true, reason: null };
   } catch (error) {
-    console.error('Error checking course access:', error);
-    return { hasAccess: false, reason: 'Error verificando acceso al curso' };
+    console.error("Error checking course access:", error);
+    // Fallback: if there's an error, deny access by default or handle as appropriate
+    return { hasAccess: false, reason: "Error al verificar el acceso al curso." };
   }
+};
+
+export const unenrollFromCourse = async (courseId) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error("User not authenticated. Cannot unenroll.");
+  }
+  const response = await apiClient.delete(`/api/v1/users/courses/${courseId}/unenroll`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response;
+};
+
+// --- New Progress Related Service Functions ---
+
+/**
+ * Marks a lesson as started for the current user.
+ * @param {number} lessonId - The ID of the lesson to start.
+ * @returns {Promise<object>} The response data from the API.
+ */
+export const startLesson = async (lessonId) => {
+  const response = await apiClient.post(`/api/v1/users/lessons/${lessonId}/start`);
+  return response.data; // Assuming backend returns UserLessonProgress or similar
+};
+
+/**
+ * Submits an exercise attempt for the current user.
+ * @param {number} exerciseId - The ID of the exercise.
+ * @param {string} submittedCode - The code submitted by the user.
+ * @returns {Promise<object>} The submission result from the API.
+ */
+export const submitExerciseAttempt = async (exerciseId, submittedCode) => {
+  // The backend's complete_exercise service expects:
+  // user_id (from token), exercise_id, submitted_code, is_correct, output
+  // The frontend will send submitted_code. The backend should evaluate it.
+  // Let's assume the endpoint /submit handles this and then calls complete_exercise.
+  const response = await apiClient.post(`/api/v1/users/exercises/${exerciseId}/submit`, {
+    submitted_code: submittedCode,
+    // is_correct and output will be determined by the backend after evaluation
+  });
+  return response.data; // Should return the UserExerciseSubmission and potentially updated lesson status
+};
+
+/**
+ * Gets detailed progress for a specific lesson for the current user.
+ * This includes the lesson's completion status and the status of its exercises.
+ * @param {number} lessonId - The ID of the lesson.
+ * @returns {Promise<object>} Detailed progress for the lesson.
+ */
+export const getLessonDetailedProgress = async (lessonId) => {
+  const response = await apiClient.get(`/api/v1/users/lessons/${lessonId}/progress`);
+  return response.data; // Expects format like the example in the plan
 };

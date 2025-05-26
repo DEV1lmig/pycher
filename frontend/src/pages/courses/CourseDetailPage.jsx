@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "@tanstack/react-router";
+import { useParams, Link, useNavigate } from "@tanstack/react-router"; // Added useNavigate
 import { getCourseById, getModulesByCourseId } from "@/services/contentService";
-import { enrollInCourse, checkCourseAccess } from "@/services/userService";
+import { enrollInCourse, unenrollFromCourse } from "@/services/userService"; // Added unenrollFromCourse
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { BookOpen, Clock, Users, Star, Home, Lock, CheckCircle } from "lucide-react";
+import { BookOpen, Clock, Users, Star, Home, Lock, CheckCircle, LogOut, PlusCircle } from "lucide-react"; // Added LogOut, PlusCircle
 import { ModuleCard } from "@/components/courses/ModuleCard";
 import { courseDetailRoute } from "@/router";
 import AnimatedContent from '../../components/ui/animated-content';
@@ -12,14 +12,27 @@ import Waves from "@/components/ui/waves";
 import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { useCourseAccess } from "@/hooks/useCourseAccess";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal"; // Import the modal
+import toast from "react-hot-toast"; // Assuming you use sonner for toasts
 
 export default function CourseDetailPage() {
   const { courseId } = useParams({ from: courseDetailRoute.id });
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
-  const [enrolling, setEnrolling] = useState(false);
+  // const [enrolling, setEnrolling] = useState(false); // Will be handled by modalState
 
-  const { hasAccessToCourse, getCourseProgress, refreshEnrollments, loading: courseAccessLoading } = useCourseAccess(); // Added loading state
+  const { hasAccessToCourse, getCourseProgress, refreshEnrollments, loading: courseAccessLoading } = useCourseAccess();
+  const navigate = useNavigate();
+
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    actionType: null, // 'enroll' or 'unenroll'
+    title: "",
+    description: "",
+    confirmText: "",
+    confirmVariant: "default",
+    isLoading: false,
+  });
 
   useEffect(() => {
     getCourseById(courseId).then(setCourse);
@@ -36,18 +49,63 @@ export default function CourseDetailPage() {
       .catch(() => setModules([]));
   }, [courseId]);
 
-  const handleEnrollment = async () => {
-    setEnrolling(true);
+  const handleOpenEnrollModal = () => {
+    if (!course) return;
+    setModalState({
+      isOpen: true,
+      actionType: "enroll",
+      title: "Confirmar Inscripción",
+      description: `¿Quieres inscribirte en el curso "${course.title}"?`,
+      confirmText: "Inscribirme",
+      confirmVariant: "default",
+      isLoading: false,
+    });
+  };
+
+  const handleOpenUnenrollModal = () => {
+    if (!course) return;
+    setModalState({
+      isOpen: true,
+      actionType: "unenroll",
+      title: "Confirmar Abandono",
+      description: `¿Estás seguro de que quieres abandonar el curso "${course.title}"? Todo tu progreso en este curso se perderá permanentemente.`,
+      confirmText: "Abandonar Curso",
+      confirmVariant: "destructive",
+      isLoading: false,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!course || !modalState.actionType) return;
+    setModalState(prev => ({ ...prev, isLoading: true }));
+
+    const { actionType } = modalState;
+
     try {
-      await enrollInCourse(courseId);
-      await refreshEnrollments(); // Ensure enrollments are refreshed
+      if (actionType === "enroll") {
+        await enrollInCourse(course.id);
+        toast.success(`Te has inscrito en "${course.title}" correctamente.`);
+      } else if (actionType === "unenroll") {
+        await unenrollFromCourse(course.id);
+        toast.success(`Has abandonado el curso "${course.title}".`);
+        // Optionally navigate away if they unenroll, e.g., back to courses page
+        // navigate({ to: "/courses" });
+      }
+      await refreshEnrollments(); // Refresh data for both actions
     } catch (error) {
-      console.error('Error enrolling in course:', error);
-      // Add user feedback here, e.g., a toast notification
+      console.error(`Error during ${actionType}:`, error);
+      toast.error(`Error al ${actionType === "enroll" ? "inscribirse" : "abandonar"} el curso. ${error.message || ""}`);
     } finally {
-      setEnrolling(false);
+      // Close modal is handled by ConfirmationModal's onConfirm, but reset loading here
+      setModalState(prev => ({ ...prev, isLoading: false, isOpen: false }));
     }
   };
+
+  const handleCloseModal = () => {
+    if (modalState.isLoading) return; // Prevent closing while an action is in progress
+    setModalState({ isOpen: false, actionType: null, title: "", description: "", isLoading: false });
+  };
+
 
   if (!course || courseAccessLoading) return <div className="text-white p-8 text-center">Cargando detalles del curso...</div>; // Improved loading state
 
@@ -84,7 +142,7 @@ export default function CourseDetailPage() {
           />
         </div>
 
-        <div className={`bg-dark rounded-3xl relative p-8 mb-8 shadow-3xl border-primary/5 border m-6 ${isCourseLockedByPrerequisite ? 'opacity-60' : ''}`}>
+        <div className={`bg-dark rounded-3xl relative p-8 mb-8 shadow-3xl border-primary/5 border m-6 ${isCourseLockedByPrerequisite && !isUserEnrolledInThisCourse ? 'opacity-60' : ''}`}>
           <div className="absolute rounded-3xl overflow-hidden inset-0 z-10">
             <Waves
               lineColor="rgba(152, 128, 242, 0.4)"
@@ -102,18 +160,18 @@ export default function CourseDetailPage() {
           </div>
 
           <div className="relative z-20">
-            <div className="flex items-start justify-between mb-4">
-              <div>
+            <div className="flex flex-col md:flex-row items-start justify-between mb-4">
+              <div className="flex-grow">
                 <h2 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
                   {course.title}
-                  {isCourseLockedByPrerequisite && <Lock className="h-8 w-8 text-gray-400" />}
+                  {isCourseLockedByPrerequisite && !isUserEnrolledInThisCourse && <Lock className="h-8 w-8 text-gray-400" />}
                   {isCourseCompleted && <CheckCircle className="h-8 w-8 text-green-400" />}
                 </h2>
                 <p className="text-white mb-4 text-lg">{course.description}</p>
               </div>
 
               {isUserEnrolledInThisCourse && userCourseProgress && (
-                <div className="bg-primary/20 rounded-lg p-4 min-w-[200px]">
+                <div className="bg-primary/20 rounded-lg p-4 min-w-[200px] md:ml-6 mt-4 md:mt-0">
                   <h3 className="text-white font-semibold mb-2">Tu Progreso</h3>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-gray-300">Completado:</span>
@@ -129,7 +187,7 @@ export default function CourseDetailPage() {
               )}
             </div>
 
-            {isCourseLockedByPrerequisite && (
+            {isCourseLockedByPrerequisite && !isUserEnrolledInThisCourse && (
               <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4 mb-4">
                 <div className="flex items-center gap-2 text-red-400">
                   <Lock className="h-5 w-5" />
@@ -139,7 +197,7 @@ export default function CourseDetailPage() {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-6 mb-4">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 mb-4">
               <div className="flex items-center gap-2 text-white">
                 <BookOpen className="w-5 h-5 text-primary" />
                 <span>{course.total_modules} módulos</span>
@@ -158,32 +216,45 @@ export default function CourseDetailPage() {
               </div>
             </div>
 
-            <div className="flex gap-4 mt-4">
-              <Link
-                to="/courses"
-                className="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-4 py-2 rounded-md transition-colors"
-              >
-                Volver a Cursos
-              </Link>
+            <div className="flex flex-wrap gap-4 mt-6">
+              <Button asChild variant="outline" className="border-gray-500 text-gray-300 hover:bg-gray-700 hover:text-white">
+                <Link to="/courses">
+                  Volver a Cursos
+                </Link>
+              </Button>
 
               {!isCourseLockedByPrerequisite && !isUserEnrolledInThisCourse && (
                 <Button
-                  onClick={handleEnrollment}
-                  disabled={enrolling}
+                  onClick={handleOpenEnrollModal}
+                  disabled={modalState.isLoading && modalState.actionType === 'enroll'}
                   className="bg-primary hover:bg-primary/80 text-white font-semibold px-6 py-2"
                 >
-                  {enrolling ? "Inscribiendo..." : "Inscribirse al Curso"}
+                  <PlusCircle className="h-5 w-5 mr-2" />
+                  {modalState.isLoading && modalState.actionType === 'enroll' ? "Inscribiendo..." : "Inscribirse al Curso"}
                 </Button>
               )}
 
-              {isUserEnrolledInThisCourse && !isCourseCompleted && (
-                <Link
-                  // Link to the first module or last accessed module/lesson if available
-                  to={userCourseProgress?.last_accessed_module_id ? `/module/${userCourseProgress.last_accessed_module_id}` : `/courses/${courseId}/modules`}
-                  className="bg-secondary hover:bg-secondary/80 text-dark font-semibold px-4 py-2 rounded-md transition-colors"
-                >
-                  Continuar Aprendiendo
-                </Link>
+              {isUserEnrolledInThisCourse && (
+                <>
+                  {!isCourseCompleted && (
+                    <Button asChild variant="secondary" className="text-dark font-semibold px-6 py-2">
+                      <Link
+                        to={userCourseProgress?.last_accessed_module_id ? `/module/${userCourseProgress.last_accessed_module_id}` : (modules.length > 0 ? `/module/${modules[0].id}` : '#')}
+                      >
+                        Continuar Aprendiendo
+                      </Link>
+                    </Button>
+                  )}
+                  <Button
+                    variant="destructiveOutline" // You might need to define this variant or use "outline" and style it
+                    onClick={handleOpenUnenrollModal}
+                    disabled={modalState.isLoading && modalState.actionType === 'unenroll'}
+                    className="border-destructive bg-default text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut className="h-5 w-5 mr-2" />
+                    {modalState.isLoading && modalState.actionType === 'unenroll' ? "Abandonando..." : "Abandonar Curso"}
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -199,7 +270,7 @@ export default function CourseDetailPage() {
         )}
       </FadeContent>
 
-      {modules.length === 0 ? (
+      {modules.length === 0 && !modulesEffectivelyLocked ? (
         <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100}>
           <div className="flex justify-center p-32 text-gray-400 mx-6 mt-6">
             ¡Oh no!, este curso aún no cuenta con módulos :(
@@ -211,15 +282,23 @@ export default function CourseDetailPage() {
             <ModuleCard
               key={module.id}
               module={module}
-              // Find specific module progress if available, otherwise pass null
               progress={userCourseProgress?.modules_progress?.find(mp => mp.module_id === module.id) || null}
-              isLocked={modulesEffectivelyLocked} // Pass the effective lock status for modules
-            >
-              {/* Children for ModuleCard, e.g., a button, are handled inside ModuleCard based on its own isLocked prop */}
-            </ModuleCard>
+              isLocked={modulesEffectivelyLocked}
+            />
           ))}
         </div>
       )}
+       <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmAction}
+        title={modalState.title}
+        description={modalState.description}
+        confirmButtonText={modalState.isLoading ? "Procesando..." : modalState.confirmText}
+        cancelButtonText="Cancelar"
+        confirmButtonVariant={modalState.confirmVariant}
+        isConfirmDisabled={modalState.isLoading}
+      />
     </DashboardLayout>
   );
 }

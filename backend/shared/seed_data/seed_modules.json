@@ -2,25 +2,25 @@
   {
     "id": 1,
     "course_id": 1,
-    "title": "Conceptos Básicos de Python",
-    "description": "Introducción a Python, su historia, usos y tu primer programa.",
+    "title": "Módulo 1: Primeros Pasos con Python",
+    "description": "Descubre qué es Python, por qué es tan popular, y escribe tus primeras líneas de código. Aprenderás sobre la función print, comentarios, variables y los tipos de datos básicos.",
     "order_index": 1,
-    "duration_minutes": 30
+    "duration_minutes": 45
   },
   {
     "id": 2,
     "course_id": 1,
-    "title": "Características de Python",
-    "description": "Exploración de las características clave que hacen de Python un lenguaje popular.",
+    "title": "Módulo 2: Operaciones y Manipulación de Datos",
+    "description": "Profundiza en cómo Python maneja los datos. Explorarás operadores aritméticos, lógicos y de comparación, cómo obtener entradas del usuario, convertir tipos de datos y realizar manipulaciones básicas de texto.",
     "order_index": 2,
-    "duration_minutes": 45
+    "duration_minutes": 60
   },
   {
     "id": 3,
     "course_id": 1,
-    "title": "Ventajas y Desventajas de Python",
-    "description": "Un análisis equilibrado de los pros y contras de usar Python.",
+    "title": "Módulo 3: Controlando el Flujo y Estructuras Simples",
+    "description": "Aprende a tomar decisiones en tu código con sentencias condicionales, a repetir tareas con bucles, y a organizar datos con listas. También tendrás una introducción a la creación de tus propias funciones.",
     "order_index": 3,
-    "duration_minutes": 20
+    "duration_minutes": 75
   }
 ]

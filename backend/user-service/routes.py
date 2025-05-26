@@ -17,7 +17,7 @@ from schemas import (
     UserCreate, UserResponse, Token, UserLogin,
     UserCourseProgressResponse,
     UserModuleProgressResponse,
-    UserLessonProgressResponse,
+    UserLessonProgressResponse, # Ensure this is imported
     ExerciseCompletionRequest,
     UserExerciseSubmissionResponse,
     UserExamAttemptResponse,
@@ -25,13 +25,15 @@ from schemas import (
     LastAccessedProgressResponse,
     CourseProgressSummaryResponse,
     UserEnrollmentWithProgressResponse,
-    CourseExamSchema
+    CourseExamSchema,
+    LessonProgressDetailResponse # Add this import
 )
 
 from services import (
     get_user, get_user_by_username, get_user_by_email, create_user, authenticate_user,
     enroll_user_in_course, start_lesson, complete_exercise, get_last_accessed_progress,
-    get_course_progress_summary, get_user_enrollments_with_progress
+    get_course_progress_summary, get_user_enrollments_with_progress, unenroll_user_from_course, # Add this import
+    get_user_lesson_progress_detail # Add this import
 )
 
 from utils import create_access_token, redis_client, SECRET_KEY, ALGORITHM
@@ -195,6 +197,21 @@ def refresh_access_token(refresh_token_body: Dict[str, str] = Body(...), db: Ses
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+@router.delete("/courses/{course_id}/unenroll", status_code=status.HTTP_204_NO_CONTENT)
+def unenroll_from_course_route(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Unenrolls the current user from the specified course and deletes all their progress.
+    """
+    logger.info(f"Unenrollment attempt - User ID: {current_user.id}, Course ID: {course_id}")
+    unenroll_user_from_course(db=db, user_id=current_user.id, course_id=course_id)
+    logger.info(f"User ID: {current_user.id} successfully unenrolled from Course ID: {course_id}")
+    # FastAPI will automatically return 204 No Content for a None response with this status code
+    return
+
 # --- Progress Tracking Routes ---
 
 @router.post("/courses/{course_id}/enroll", response_model=UserCourseProgressResponse)
@@ -258,12 +275,15 @@ def get_module_progress_route(
 ):
     return get_user_module_progress(db, current_user.id, module_id)
 
-@router.post("/lessons/{lesson_id}/start", response_model=UserLessonProgressResponse)
+@router.post("/lessons/{lesson_id}/start", response_model=UserLessonProgressResponse) # Changed UserLessonProgressSchema to UserLessonProgressResponse
 def start_lesson_route(
     lesson_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+    """
+    Marks a lesson as started for the current user.
+    """
     return start_lesson(db, current_user.id, lesson_id)
 
 @router.post("/lessons/{lesson_id}/complete", response_model=UserLessonProgressResponse)
@@ -274,13 +294,19 @@ def complete_lesson_route(
 ):
     return complete_lesson(db, current_user.id, lesson_id)
 
-@router.get("/lessons/{lesson_id}/progress", response_model=Optional[UserLessonProgressResponse])
-def get_lesson_progress_route(
+@router.get("/lessons/{lesson_id}/progress", response_model=LessonProgressDetailResponse)
+def get_lesson_progress_route( # Changed function name to avoid conflict if you had another
     lesson_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    return get_user_lesson_progress(db, current_user.id, lesson_id)
+    """
+    Get detailed progress for a specific lesson for the current user.
+    """
+    progress_detail = get_user_lesson_progress_detail(db, current_user.id, lesson_id)
+    if progress_detail is None: # Should be handled by service returning a default structure or raising 404
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson progress not found or lesson not started.")
+    return progress_detail
 
 @router.post("/exercises/{exercise_id}/submit", response_model=UserExerciseSubmissionResponse)
 def submit_exercise_route(

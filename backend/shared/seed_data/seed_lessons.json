@@ -2,50 +2,89 @@
   {
     "id": 1,
     "module_id": 1,
-    "title": "Introducción a Python",
-    "content": "Python es un lenguaje de programación moderno, multiplataforma, orientado a objetos e interpretado. Su objetivo es facilitar la escritura de código legible y eficiente.\nFue creado en 1991 por Guido van Rossum, y su nombre no proviene del animal sino del grupo cómico británico Monty Python.\n\nSe utiliza ampliamente en:\n\n*   Desarrollo web (Django, Flask)\n*   Ciencia de datos (NumPy, pandas)\n*   Inteligencia artificial (TensorFlow, PyTorch)\n*   Automatización y scripting\n*   Educación por su sintaxis sencilla",
-    "order_index": 1
+    "title": "Lección 1.1: ¿Qué es Python y Por Qué Aprenderlo?",
+    "content": "Python es un lenguaje de programación de alto nivel, interpretado, interactivo y orientado a objetos. Es conocido por su sintaxis clara y legible, que se asemeja al inglés, lo que lo hace ideal para principiantes.\n\n**Historia Breve:** Creado por Guido van Rossum y lanzado por primera vez en 1991. Su nombre se inspira en el grupo cómico británico Monty Python.\n\n**Filosofía (El Zen de Python):** Escribe `import this` en una consola de Python para ver los principios que guían el diseño del lenguaje, como 'Bonito es mejor que feo' y 'Simple es mejor que complejo'.\n\n**¿Por qué Python?**\n*   **Fácil de Aprender:** Sintaxis intuitiva.\n*   **Versátil:** Desarrollo web, ciencia de datos, inteligencia artificial, machine learning, automatización, desarrollo de juegos, y más.\n*   **Gran Comunidad:** Abundantes librerías, frameworks y recursos de ayuda.\n*   **Alta Demanda Laboral:** Uno de los lenguajes más solicitados en la industria.",
+    "order_index": 1,
+    "duration_minutes": 10
   },
   {
     "id": 2,
     "module_id": 1,
-    "title": "Tu Primer Programa en Python",
-    "content": "Lección práctica:\n💻 Actividad 1.1: Escribe tu primer programa\n\n```python\nprint(\"¡Hola, mundo!\")\n```\n🔍 Explicación: `print()` es una función que permite mostrar mensajes en pantalla.\n✏️ Tarea 1.1: Cambia el mensaje para que diga “Hola, soy [Tu Nombre] y estoy aprendiendo Python”.",
-    "order_index": 2
+    "title": "Lección 1.2: Tu Primer Programa: ¡Hola, Mundo!",
+    "content": "Vamos a escribir nuestro primer programa en Python. El programa más tradicional para empezar es el que muestra el mensaje \"¡Hola, mundo!\" en la pantalla.\n\n**La Función `print()`**\nEn Python, la función `print()` se utiliza para mostrar información (texto, números, etc.) en la consola.\n\n💻 **Actividad Práctica:**\nEscribe el siguiente código en tu editor o intérprete de Python:\n```python\nprint(\"¡Hola, mundo!\")\n```\n\n**Comentarios en Python**\nLos comentarios son notas que puedes añadir a tu código para explicarlo. Python los ignora al ejecutar el programa.\nSe inician con el símbolo `#`.\n```python\n# Esto es un comentario, Python no lo ejecutará\nprint(\"¡Hola, mundo!\") # Esto también es un comentario al final de una línea\n```\n✏️ **Tarea:** Modifica el programa para que también imprima tu nombre en una nueva línea.",
+    "order_index": 2,
+    "duration_minutes": 10
   },
   {
     "id": 3,
-    "module_id": 2,
-    "title": "Características Principales",
-    "content": "*   Simplicidad: Código limpio, legible y fácil de escribir.\n*   Interpretado: Se ejecuta línea por línea, ideal para pruebas rápidas.\n*   Multiparadigma: Soporta programación orientada a objetos, funcional y estructurada.",
-    "order_index": 1
+    "module_id": 1,
+    "title": "Lección 1.3: Variables y Tipos de Datos Básicos",
+    "content": "Las **variables** son como contenedores donde puedes almacenar datos para usarlos y modificarlos más tarde en tu programa. En Python, no necesitas declarar el tipo de una variable antes de usarla.\n\n**Asignación de Variables:**\n```python\nnombre_del_alumno = \"Ana\"\nedad = 25\nprecio_producto = 19.99\nes_estudiante_activo = True\n```\n\n**Nomenclatura:**\n*   Deben empezar con una letra o guion bajo (`_`).\n*   Pueden contener letras, números y guiones bajos.\n*   Son sensibles a mayúsculas y minúsculas (`edad` es diferente de `Edad`).\n*   Usa nombres descriptivos (ej. `total_compra` en lugar de `tc`).\n\n**Tipos de Datos Fundamentales:**\n*   **Integer (`int`):** Números enteros. Ej: `10`, `-3`, `0`.\n*   **Float (`float`):** Números con decimales. Ej: `3.14`, `-0.5`, `2.0`.\n*   **String (`str`):** Secuencias de caracteres (texto). Se definen con comillas simples `'...'` o dobles `\"...\"`. Ej: `\"Hola\"`, `'Python'`.\n*   **Boolean (`bool`):** Representan valores de verdad: `True` o `False`.\n\nPara saber el tipo de una variable, puedes usar la función `type()`:\n```python\nx = 10\nprint(type(x)) # Salida: <class 'int'>\n\nmensaje = \"Python es divertido\"\nprint(type(mensajes)) # Salida: <class 'str'>\n```\n✏️ **Tarea:** Crea variables para almacenar tu película favorita (string), el año de tu nacimiento (integer), y si te gusta programar (boolean). Luego imprime sus valores y tipos.",
+    "order_index": 3,
+    "duration_minutes": 15
   },
   {
     "id": 4,
     "module_id": 2,
-    "title": "Tipado, Portabilidad y Comunidad",
-    "content": "*   Tipado dinámico: No se necesita declarar el tipo de variable.\n*   Portabilidad: Funciona en Windows, macOS y Linux.\n*   Amplia comunidad y soporte: Gran cantidad de documentación, foros y recursos.",
-    "order_index": 2
+    "title": "Lección 2.1: Operadores Aritméticos",
+    "content": "Los operadores aritméticos se usan para realizar cálculos matemáticos.\n\n*   **Suma (`+`):** `a + b`\n*   **Resta (`-`):** `a - b`\n*   **Multiplicación (`*`):** `a * b`\n*   **División (`/`):** `a / b` (siempre devuelve un float)\n*   **División Entera (`//`):** `a // b` (devuelve la parte entera del cociente)\n*   **Módulo (`%`):** `a % b` (devuelve el resto de la división)\n*   **Exponenciación (`**`):** `a ** b` (a elevado a la potencia de b)\n\n**Ejemplos:**\n```python\nnum1 = 10\nnum2 = 3\n\nprint(f\"{num1} + {num2} = {num1 + num2}\")     # Salida: 10 + 3 = 13\nprint(f\"{num1} / {num2} = {num1 / num2}\")     # Salida: 10 / 3 = 3.333...\nprint(f\"{num1} // {num2} = {num1 // num2}\")   # Salida: 10 // 3 = 3\nprint(f\"{num1} % {num2} = {num1 % num2}\")     # Salida: 10 % 3 = 1\nprint(f\"2 ** 4 = {2 ** 4}\")             # Salida: 2 ** 4 = 16\n```\n\n**Orden de Precedencia (PEMDAS/BODMAS):** Paréntesis, Exponentes, Multiplicación/División (de izq. a der.), Suma/Resta (de izq. a der.).\n```python\nresultado = (5 + 3) * 2  # resultado es 16, no 11\nprint(resultado)\n```\n✏️ **Tarea:** Calcula el área de un rectángulo con base 5 y altura 8. Luego, calcula cuántas veces cabe un número `x` en un número `y` y cuál es el sobrante.",
+    "order_index": 1,
+    "duration_minutes": 15
   },
   {
     "id": 5,
     "module_id": 2,
-    "title": "Ejemplo Práctico de Características",
-    "content": "Lección práctica:\nActividad 2.1: Observa las características en un ejemplo\n\n```python\ndef saludar(nombre):\n    return f\"Hola, {nombre}!\"\n\nprint(saludar(\"Carlos\"))\n```\n🔍 Preguntas guía:\n¿La función necesita que se indique el tipo de la variable nombre?\n\n¿Notas lo clara que es la sintaxis?\n✏️ Tarea 2.1: Crea una función que multiplique dos números y devuelva el resultado.",
-    "order_index": 3
+    "title": "Lección 2.2: Operadores de Comparación y Lógicos",
+    "content": "**Operadores de Comparación:** Comparan dos valores y devuelven un resultado Booleano (`True` o `False`).\n*   **Igual a (`==`):** `a == b`\n*   **Distinto de (`!=`):** `a != b`\n*   **Mayor que (`>`):** `a > b`\n*   **Menor que (`<`):** `a < b`\n*   **Mayor o igual que (`>=`):** `a >= b`\n*   **Menor o igual que (`<=`):** `a <= b`\n\n**Ejemplos:**\n```python\nprint(5 == 5)  # Salida: True\nprint(10 != 5) # Salida: True\nprint(7 > 3)   # Salida: True\n```\n\n**Operadores Lógicos:** Combinan expresiones Booleanas.\n*   **`and`:** Devuelve `True` si AMBAS expresiones son verdaderas.\n*   **`or`:** Devuelve `True` si AL MENOS UNA expresión es verdadera.\n*   **`not`:** Invierte el valor Booleano (convierte `True` a `False` y viceversa).\n\n**Ejemplos:**\n```python\nedad = 20\ntiene_licencia = True\n\nprint(edad >= 18 and tiene_licencia) # Salida: True\n\ndia_lluvioso = False\ntengo_paraguas = True\nprint(dia_lluvioso and not tengo_paraguas) # Salida: False (no llueve)\n\nes_fin_de_semana = True\ntengo_dinero = False\nprint(es_fin_de_semana or tengo_dinero) # Salida: True (es fin de semana)\n```\n✏️ **Tarea:** Escribe expresiones para verificar si un número es positivo Y par. Luego, si una persona es mayor de edad O tiene permiso de sus padres.",
+    "order_index": 2,
+    "duration_minutes": 15
   },
   {
     "id": 6,
-    "module_id": 3,
-    "title": "Ventajas de Python",
-    "content": "Ventajas:\n\n*   Sintaxis clara, ideal para principiantes.\n*   Código muy cercano al lenguaje humano.\n*   Bibliotecas para todo tipo de proyectos.\n*   Excelente para prototipado rápido.",
-    "order_index": 1
+    "module_id": 2,
+    "title": "Lección 2.3: Entrada de Usuario y Conversión de Tipos",
+    "content": "**Obtener Datos del Usuario con `input()`**\nLa función `input()` permite que tu programa solicite información al usuario. Siempre devuelve los datos como un string.\n```python\nnombre = input(\"Por favor, ingresa tu nombre: \")\nprint(f\"Hola, {nombre}!\")\n```\n\n**Conversión de Tipos (Casting)**\nComo `input()` devuelve strings, si necesitas realizar operaciones numéricas, debes convertir el string a `int` o `float`.\n*   `int(valor)`: Convierte `valor` a entero.\n*   `float(valor)`: Convierte `valor` a flotante.\n*   `str(valor)`: Convierte `valor` a string.\n\n**Ejemplo:**\n```python\nedad_str = input(\"Ingresa tu edad: \")\nedad_num = int(edad_str) # Convertimos a entero\n\nanio_nacimiento = 2024 - edad_num\nprint(f\"Naciste aproximadamente en el año {anio_nacimiento}.\")\n```\n**¡Cuidado!** Si intentas convertir un string que no representa un número válido (ej. `int(\"hola\")`), obtendrás un error.\n\n✏️ **Tarea:** Crea un programa que pida al usuario dos números, los sume y muestre el resultado. Asegúrate de convertir las entradas a números antes de sumar.",
+    "order_index": 3,
+    "duration_minutes": 15
   },
   {
     "id": 7,
+    "module_id": 2,
+    "title": "Lección 2.4: Manipulación Básica de Strings",
+    "content": "Los strings son secuencias de caracteres y Python ofrece muchas formas de trabajar con ellos.\n\n**Concatenación:** Unir strings usando `+`.\n```python\nparte1 = \"Hola\"\nparte2 = \"Mundo\"\nsaludo = parte1 + \" \" + parte2 # Salida: \"Hola Mundo\"\nprint(saludo)\n```\n\n**f-strings (Strings Formateados):** Una forma moderna y legible de incrustar expresiones dentro de strings.\n```python\nnombre = \"Alice\"\nedad = 30\nprint(f\"{nombre} tiene {edad} años.\") # Salida: Alice tiene 30 años.\n```\n\n**Longitud de un String con `len()`:**\n```python\ntexto = \"Python\"\nprint(len(texto)) # Salida: 6\n```\n\n**Acceder a Caracteres (Indexación):** Los strings son indexados desde 0.\n```python\nfruta = \"Manzana\"\nprint(fruta[0]) # Salida: M (primer caracter)\nprint(fruta[3]) # Salida: z (cuarto caracter)\nprint(fruta[-1]) # Salida: a (último caracter)\n```\n\n**Rebanadas (Slicing):** Obtener una sub-cadena.\n`string[inicio:fin:paso]` (fin no se incluye)\n```python\npalabra = \"Programación\"\nprint(palabra[0:4])   # Salida: Prog\nprint(palabra[4:])    # Salida: ramación (desde el índice 4 hasta el final)\nprint(palabra[:7])    # Salida: Program (desde el inicio hasta el índice 6)\nprint(palabra[::2])   # Salida: Pormcón (cada segundo caracter)\n```\n✏️ **Tarea:** Pide al usuario su nombre completo. Luego, imprime la primera letra de su nombre y cuántos caracteres tiene su nombre completo.",
+    "order_index": 4,
+    "duration_minutes": 15
+  },
+  {
+    "id": 8,
     "module_id": 3,
-    "title": "Desventajas de Python",
-    "content": "Desventajas:\n\n*   Menor rendimiento comparado con lenguajes compilados como C o C++.\n*   No ideal para aplicaciones móviles pesadas.\n*   El tipado dinámico puede causar errores inesperados en proyectos grandes.",
-    "order_index": 2
+    "title": "Lección 3.1: Tomando Decisiones: `if`, `elif`, `else`",
+    "content": "Las sentencias condicionales permiten que tu programa ejecute diferentes bloques de código según se cumplan ciertas condiciones.\n\n**Sentencia `if`:** Ejecuta un bloque de código si la condición es `True`.\n```python\nedad = 18\nif edad >= 18:\n    print(\"Eres mayor de edad.\")\n```\n\n**Sentencia `else`:** Ejecuta un bloque de código si la condición del `if` es `False`.\n```python\ntemperatura = 15\nif temperatura > 25:\n    print(\"Hace calor.\")\nelse:\n    print(\"No hace calor.\")\n```\n\n**Sentencia `elif` (else if):** Permite verificar múltiples condiciones en secuencia.\n```python\nnota = 75\nif nota >= 90:\n    print(\"Sobresaliente\")\nelif nota >= 70:\n    print(\"Notable\")\nelif nota >= 50:\n    print(\"Aprobado\")\nelse:\n    print(\"Suspenso\")\n```\n**Importante:** La indentación (espacios al inicio de la línea) es crucial en Python para definir los bloques de código.\n\n✏️ **Tarea:** Escribe un programa que pida un número al usuario e imprima si es positivo, negativo o cero.",
+    "order_index": 1,
+    "duration_minutes": 15
+  },
+  {
+    "id": 9,
+    "module_id": 3,
+    "title": "Lección 3.2: Repitiendo Tareas: Bucles `for` y `while`",
+    "content": "Los bucles permiten ejecutar un bloque de código múltiples veces.\n\n**Bucle `for`:** Itera sobre una secuencia (como un string, una lista, o un rango de números).\n\nUsando `range()` para generar secuencias de números:\n`range(fin)`: 0 hasta fin-1\n`range(inicio, fin)`: inicio hasta fin-1\n`range(inicio, fin, paso)`: inicio hasta fin-1, incrementando por paso\n\n```python\n# Imprimir números del 0 al 4\nfor i in range(5):\n    print(i)\n\n# Imprimir elementos de una palabra\nfor caracter in \"Python\":\n    print(caracter)\n```\n\n**Bucle `while`:** Ejecuta un bloque de código mientras una condición sea `True`.\n```python\ncontador = 0\nwhile contador < 5:\n    print(contador)\n    contador = contador + 1 # ¡Importante actualizar el contador para evitar bucles infinitos!\n```\n\n**`break` y `continue` (opcional):**\n*   `break`: Termina el bucle prematuramente.\n*   `continue`: Salta a la siguiente iteración del bucle.\n\n✏️ **Tarea:** Usa un bucle `for` para imprimir los números pares del 2 al 10. Luego, usa un bucle `while` para pedir al usuario que adivine un número secreto (ej. 7) hasta que lo acierte.",
+    "order_index": 2,
+    "duration_minutes": 20
+  },
+  {
+    "id": 10,
+    "module_id": 3,
+    "title": "Lección 3.3: Introducción a las Listas",
+    "content": "Una **lista** es una colección ordenada y mutable (modificable) de elementos. Pueden contener elementos de diferentes tipos.\n\n**Crear una Lista:**\n```python\nnumeros = [1, 2, 3, 4, 5]\nfrutas = [\"manzana\", \"banana\", \"cereza\"]\nmixta = [1, \"hola\", 3.14, True]\nlista_vacia = []\n```\n\n**Acceder a Elementos (Indexación):** Igual que con los strings, desde el índice 0.\n```python\nprint(frutas[0])  # Salida: manzana\nprint(frutas[1])  # Salida: banana\n```\n\n**Modificar Elementos:**\n```python\nfrutas[1] = \"arándano\"\nprint(frutas) # Salida: ['manzana', 'arándano', 'cereza']\n```\n\n**Añadir Elementos con `append()`:** Añade un elemento al final de la lista.\n```python\nfrutas.append(\"naranja\")\nprint(frutas) # Salida: ['manzana', 'arándano', 'cereza', 'naranja']\n```\n\n**Longitud de una Lista con `len()`:**\n```python\nprint(len(numeros)) # Salida: 5\n```\n\n**Iterar sobre una Lista con `for`:**\n```python\nfor fruta in frutas:\n    print(f\"Me gusta la {fruta}\")\n```\n✏️ **Tarea:** Crea una lista de tus 3 comidas favoritas. Luego, añade una cuarta comida a la lista e imprime la lista completa. Finalmente, imprime cada comida en una línea separada usando un bucle.",
+    "order_index": 3,
+    "duration_minutes": 20
+  },
+  {
+    "id": 11,
+    "module_id": 3,
+    "title": "Lección 3.4: Introducción a las Funciones",
+    "content": "Una **función** es un bloque de código reutilizable que realiza una tarea específica. Ayudan a organizar el código, hacerlo más legible y evitar la repetición.\n\n**Definir una Función:** Se usa la palabra clave `def`.\n```python\ndef saludar():\n    print(\"¡Hola desde la función!\")\n```\n\n**Llamar a una Función:**\n```python\nsaludar() # Ejecuta el código dentro de la función\n```\n\n**Parámetros:** Las funciones pueden aceptar valores de entrada, llamados parámetros.\n```python\ndef saludar_a(nombre): # 'nombre' es un parámetro\n    print(f\"¡Hola, {nombre}!\")\n\nsaludar_a(\"Ana\")       # Salida: ¡Hola, Ana!\nsaludar_a(\"Carlos\")    # Salida: ¡Hola, Carlos!\n```\n\n**Valores de Retorno con `return`:** Las funciones pueden devolver un valor al código que las llamó.\n```python\ndef sumar(a, b):\n    resultado = a + b\n    return resultado\n\nsuma_total = sumar(5, 3)\nprint(f\"La suma es: {suma_total}\") # Salida: La suma es: 8\nprint(f\"Otra suma: {sumar(10, 20)}\") # Salida: Otra suma: 30\n```\n✏️ **Tarea:** Crea una función llamada `multiplicar` que tome dos números como parámetros y devuelva su producto. Luego, llama a la función con dos números de tu elección e imprime el resultado.",
+    "order_index": 4,
+    "duration_minutes": 20
   }
 ]

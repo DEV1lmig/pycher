@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, validator, Field, computed_field # Add computed_field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 import re
 
@@ -301,3 +301,22 @@ class UserUpdate(BaseModel):
             if domain not in ALLOWED_DOMAINS:
                 raise ValueError("Dominio de correo no permitido")
         return v
+
+class ExerciseProgressInfo(BaseModel):
+    exercise_id: int
+    # title: Optional[str] = None # Optional: if you want to include exercise title
+    is_correct: bool
+    last_submission_id: Optional[int] = None
+
+    class Config:
+        orm_mode = True # For SQLAlchemy model conversion, though not directly used here
+
+class LessonProgressDetailResponse(BaseModel):
+    lesson_id: int
+    is_completed: bool
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    exercises_progress: List[ExerciseProgressInfo]
+
+    class Config:
+        orm_mode = True

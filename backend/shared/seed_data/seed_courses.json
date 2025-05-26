@@ -1,8 +1,8 @@
 [
   {
     "id": 1,
-    "title": "Python Básico",
-    "description": "Curso introductorio de Python",
+    "title": "Python Básico: Tu Aventura en la Programación",
+    "description": "¡Bienvenido al mundo de Python! Este curso está diseñado para llevarte desde cero hasta entender los conceptos fundamentales de la programación. Aprenderás a escribir tus primeros programas, manipular datos y controlar el flujo de tus aplicaciones, todo con el lenguaje amigable y poderoso que es Python.",
     "level": "Básico",
     "duration_minutes": 120,
     "students_count": 0,
