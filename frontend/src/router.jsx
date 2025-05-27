@@ -1,5 +1,4 @@
 import { createRootRoute, createRouter, createRoute,  } from '@tanstack/react-router'
-import DemoPage from '@/pages/DemoPage'
 import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
 import LandingPage from '@/pages/LandingPage'
