@@ -9,7 +9,7 @@ import AnimatedContent from "@/components/ui/animated-content";
 import FadeContent from "@/components/ui/fade-content";
 import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { Home, BookOpen, ArrowRight, CheckCircle, Loader2, AlertCircle } from "lucide-react"; // Added icons
-import LessonChatbot from "@/components/ai/LessonChatbot";
+import LessonChatbot from "@/components/ai/LessonChatBot";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useLessonDetail } from '@/hooks/useLessonDetail'; // Import the hook

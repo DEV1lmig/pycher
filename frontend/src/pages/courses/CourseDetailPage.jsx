@@ -12,7 +12,7 @@ import Waves from "@/components/ui/waves";
 import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { useCourseAccess } from "@/hooks/useCourseAccess";
-import { ConfirmationModal } from "@/components/ui/ConfirmationModal"; // Import the modal
+import { ConfirmationModal } from "@/components/ui/confirmationModal"; // Import the modal
 import toast from "react-hot-toast"; // Assuming you use sonner for toasts
 
 export default function CourseDetailPage() {
