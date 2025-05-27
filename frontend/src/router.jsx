@@ -69,12 +69,6 @@ const LessonWithCodeRoute = createRoute({
   component: () => <LessonWithCodePage />,
 });
 
-const demoRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/demo',
-  component: () => <DemoPage />,
-})
-
 const moduleLessonsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/module/$moduleId',
@@ -90,7 +84,6 @@ const ProfileRoute = createRoute({
 // Create the route tree using your routes
 const routeTree = rootRoute.addChildren([
   landingRoute,
-  demoRoute,
   loginRoute,
   registerRoute,
   ProfileRoute,
