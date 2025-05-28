@@ -9,12 +9,7 @@ services:
       - pg-data:/var/lib/postgresql/data
     networks: ["pycher-network"]
     ports:
-      - "5432:5432" # Expose for potential direct access/debugging, remove if not needed
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "5432:5432"
 
   redis:
     image: docker.io/library/redis:7-alpine
@@ -30,127 +25,81 @@ services:
     volumes: ["redis-data:/data"]
     networks: ["pycher-network"]
     ports:
-      - "6379:6379" # Expose for potential direct access/debugging, remove if not needed
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  content-service-migrations:
-    build:
-      context: ./backend/content-service
-      dockerfile: Dockerfile.prod
-    command: >
-      sh -c "alembic -c /app/shared/alembic.ini upgrade head && python /app/shared/seed_db.py"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env.production
-    environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-    networks: ["pycher-network"]
+      - "6379:6379"
 
   user-service:
-    build:
-      context: ./backend/user-service
-      dockerfile: Dockerfile.prod
-    command: uvicorn main:app --host 0.0.0.0 --port 8001
+    build: ./backend/user-service
+    volumes:
+      - ./backend/user-service:/app
+      - ./backend/shared:/app/shared:ro
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      content-service-migrations:
-        condition: service_completed_successfully
+      - postgres
+      - redis
+      - content-service  # Wait for migrations to complete
     env_file:
       - .env.production
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-      - PYTHONUNBUFFERED=1
     networks: ["pycher-network"]
 
-  content-service-app:
-    build:
-      context: ./backend/content-service
-      dockerfile: Dockerfile.prod
-    command: uvicorn main:app --host 0.0.0.0 --port 8002
+  content-service:
+    build: ./backend/content-service
+    volumes:
+      - ./backend/content-service:/app
+      - ./backend/shared:/app/shared:ro
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      content-service-migrations:
-        condition: service_completed_successfully
+      - postgres
+      - redis
     env_file:
       - .env.production
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-      - PYTHONUNBUFFERED=1
-    networks: ["pycher-network"]
-    # No host port mapping unless specifically needed for direct access in prod
-
-  execution-service:
-    build:
-      context: ./backend/execution-service
-      dockerfile: Dockerfile.prod
-    command: uvicorn main:app --host 0.0.0.0 --port 8003
-    security_opt: ["no-new-privileges=true"]
-    depends_on:
-      redis: # Assuming execution service might use Redis
-        condition: service_healthy
-    env_file:
-      - .env.production
-    environment:
-      - PYTHONUNBUFFERED=1
-    networks: ["pycher-network"]
-
-  ai-service:
-    build:
-      context: ./backend/ai-service
-      dockerfile: Dockerfile.prod
-    depends_on:
-      redis: # Assuming AI service might use Redis
-        condition: service_healthy
-    env_file:
-      - .env.production
-    environment:
-      - PYTHONUNBUFFERED=1
+    ports:
+      - "8002:8002"
+    command: >
+      sh -c "export PYTHONPATH=/app:/app/shared && alembic -c /app/shared/alembic.ini upgrade head && python /app/shared/seed_db.py && uvicorn main:app --host 0.0.0.0 --port 8002 --reload"
     networks: ["pycher-network"]
 
   api-gateway:
     build:
       context: ./backend/api-gateway
-      dockerfile: Dockerfile.prod
+    volumes:
+      - ./backend/api-gateway:/app
     ports:
       - "8000:8000"
     env_file:
       - .env.production
-    environment:
-      - PYTHONUNBUFFERED=1
-      # Ensure SERVICE_URL variables point to internal Docker DNS names and ports
-      # e.g., USER_SERVICE_URL=http://user-service:8001
-      # CONTENT_SERVICE_URL=http://content-service-app:8002
-      # EXECUTION_SERVICE_URL=http://execution-service:8003
-      # AI_SERVICE_URL=http://ai-service:8004
     networks: ["pycher-network"]
     depends_on:
-      user-service:
-        condition: service_started # Ideally service_healthy if user-service has a healthcheck
-      content-service-app:
-        condition: service_started # Ideally service_healthy
-      execution-service:
-        condition: service_started # Ideally service_healthy
-      ai-service:
-        condition: service_started # Ideally service_healthy
+      - user-service
+      - content-service
+      - execution-service
+      - ai-service
+
+  execution-service:
+    build:
+      context: ./backend/execution-service
+    volumes:
+      - ./backend/execution-service:/app
+    security_opt: ["no-new-privileges=true"]
+    networks: ["pycher-network"]
+
+  ai-service:
+    build: ./backend/ai-service
+    volumes:
+      - ./backend/ai-service:/app
+    env_file:
+      - .env.production
+    networks: ["pycher-network"]
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+    volumes:
+      - ./frontend:/app
     ports:
-      - "5173:80" # Assuming Nginx in frontend container listens on port 80
+      - "5173:5173"
     networks: ["pycher-network"]
     depends_on:
       - api-gateway
@@ -162,4 +111,3 @@ networks:
 volumes:
   pg-data:
   redis-data:
-  # frontend_node_modules volume is removed as it's for development

@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@components/ui/card';
-import { Badge } from '@components/ui/badge';
-import { Progress } from '@components/ui/progress';
-import { Button } from '@components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { Lock } from 'lucide-react';
-import FadeContent from '../ui/fade-content.jsx';
+import FadeContent from '@/components/ui/fade-content.jsx';
 
 export function ModuleCard({ module, progress, isLocked = false }) {
   const progressPercentage = progress?.percentage || 0;

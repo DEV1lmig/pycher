@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown, Send } from "lucide-react";
 import { streamChat } from "@/services/aiService";
 
