@@ -95,6 +95,7 @@ services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile.prod
     volumes:
       - ./frontend:/app
     ports:
