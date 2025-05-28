@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Lock } from 'lucide-react';
-import FadeContent from '@/componentes/ui/fade-content.jsx';
+import FadeContent from '@/components/ui/fade-content.jsx';
 
 export function ModuleCard({ module, progress, isLocked = false }) {
   const progressPercentage = progress?.percentage || 0;
