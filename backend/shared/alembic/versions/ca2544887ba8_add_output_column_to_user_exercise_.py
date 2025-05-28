@@ -25,7 +25,7 @@ def upgrade() -> None:
                existing_type=sa.BOOLEAN(),
                nullable=False)
     op.alter_column('user_course_enrollments', 'progress_percentage',
-               existing_type=sa.DOUBLE_PRECISION(precision=53),
+               existing_type=sa.Float(precision=53),
                nullable=False)
     op.add_column('user_exercise_submissions', sa.Column('output', sa.Text(), nullable=True))
     op.alter_column('users', 'first_name',
