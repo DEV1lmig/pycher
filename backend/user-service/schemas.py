@@ -320,3 +320,74 @@ class LessonProgressDetailResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+from typing import List, Optional # Ensure List and Optional are imported
+from datetime import datetime # Ensure datetime is imported
+
+# Add these new schemas for the PDF report
+
+class ReportExerciseProgressSchema(BaseModel):
+    title: str
+    is_correct: Optional[bool] = None
+    attempts: Optional[int] = None
+    score: Optional[float] = None # Changed to float to accommodate potential non-integer scores
+    submitted_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class ReportLessonProgressSchema(BaseModel):
+    title: str
+    is_completed: bool
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    exercises: List[ReportExerciseProgressSchema] = []
+
+    class Config:
+        from_attributes = True
+
+class ReportModuleProgressSchema(BaseModel):
+    title: str
+    is_completed: bool
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    lessons: List[ReportLessonProgressSchema] = []
+
+    class Config:
+        from_attributes = True
+
+class ReportExamAttemptSchema(BaseModel):
+    title: str # Exam title
+    score: Optional[float] = None
+    passed: Optional[bool] = None
+    completed_at: Optional[datetime] = None
+    # You might want to add exam_id if needed for linking or other purposes
+    # exam_id: int
+
+    class Config:
+        from_attributes = True
+
+class ReportCourseProgressSchema(BaseModel):
+    title: str
+    enrollment_date: datetime
+    is_completed: bool
+    progress_percentage: float
+    modules: List[ReportModuleProgressSchema] = []
+    exams: List[ReportExamAttemptSchema] = []
+    # You might want to add course_id if needed
+    # course_id: int
+
+    class Config:
+        from_attributes = True
+
+class UserProgressReportDataSchema(BaseModel):
+    user_id: int
+    username: str
+    email: str # Assuming email is available on your User model/schema
+    first_name: Optional[str] = None # Added optional first_name
+    last_name: Optional[str] = None  # Added optional last_name
+    report_generated_at: datetime
+    courses: List[ReportCourseProgressSchema] = []
+
+    class Config:
+        from_attributes = True

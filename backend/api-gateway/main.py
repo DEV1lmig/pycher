@@ -4,15 +4,24 @@ import httpx
 from fastapi.responses import JSONResponse, StreamingResponse, Response # Add Response
 from fastapi.requests import Request
 from fastapi import status
+import json # Should already be there
+import traceback # Add this import at the top of your file
 
 app = FastAPI(title="Python Learning Platform API Gateway")
 
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Local development
+    "http://16.171.239.251:5173",  # Production domain
+    # Add other allowed origins as needed
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Use specific origins in production!
+    allow_origins=ALLOWED_ORIGINS,  # Use specific origins in production!
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "Content-Type", "X-Request-ID"] # Added common headers
 )
 
 # Service URLs - in production, these would be environment variables
@@ -153,85 +162,101 @@ async def ai_service(endpoint: str, request: Request):
 async def user_service_proxy(request: Request, path: str):
     """Proxy requests to the user service"""
     if "user-service" not in SERVICE_URLS:
-        raise HTTPException(status_code=503, detail="User service not available")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="User service not available")
 
     url = f"{SERVICE_URLS['user-service']}/api/v1/users/{path}"
 
     async with httpx.AsyncClient() as client:
         try:
             method_upper = request.method.upper()
-            # Filter out hop-by-hop headers and headers that httpx will manage.
             headers = {
                 k: v for k, v in request.headers.items()
-                if k.lower() not in ['host', 'content-length', 'connection', 'transfer-encoding']
+                if k.lower() not in ['host', 'content-length', 'connection', 'transfer-encoding', 'user-agent']
             }
-
-            # Prepare keyword arguments for httpx.AsyncClient.request
+            # For file downloads, a long timeout might be needed if generation is slow,
+            # but user-service generates to BytesIO first, so this is for the transfer.
             req_kwargs = {
+                "method": method_upper,
+                "url": url,
                 "headers": headers,
-                "params": request.query_params, # Forward query parameters
-                "timeout": 30.0
+                "params": request.query_params,
+                "timeout": 700.0
             }
 
-            # Add body content for methods that can have it.
-            # GET and HEAD requests should not have a body.
             if method_upper not in ["GET", "HEAD"]:
                 body_bytes = await request.body()
-                # client.request() can handle content=b'' for an empty body.
                 req_kwargs["content"] = body_bytes
 
-            # Use the general purpose client.request method
-            response = await client.request(
-                method_upper,
-                url,
-                **req_kwargs
-            )
+            # Make the request to the user-service
+            response = await client.request(**req_kwargs)
 
-            # Raise an exception for 4xx/5xx responses from the downstream service
-            response.raise_for_status()
+            print(f"[{path}] Proxy: Upstream call to {url} made. Status: {response.status_code}")
+            response.raise_for_status() # Check for HTTP errors from user-service
 
-            # Handle 204 No Content specifically, as it has no body
             if response.status_code == status.HTTP_204_NO_CONTENT:
                 return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-            # For other successful responses, attempt to return JSON.
-            # If the response content is empty but status is not 204,
-            # it might indicate an issue or an empty JSON object {} response.
-            if not response.content:
-                # Assuming an empty body for a non-204 success means an empty JSON object.
-                # Adjust if other content types or behaviors are expected.
-                return JSONResponse(content={}, status_code=response.status_code)
+            content_type_header = response.headers.get("content-type", "")
+            content_type_lower = content_type_header.lower()
 
-            return response.json()
+            excluded_headers = {
+                "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+                "te", "trailers", "transfer-encoding", "upgrade",
+                "content-encoding", # httpx handles decompression
+                # "content-length" will be set by FastAPI's Response
+            }
+            forward_headers = {
+                k: v for k, v in response.headers.items() if k.lower() not in excluded_headers
+            }
+
+            if "application/json" in content_type_lower:
+                # For JSON, parse and return as JSONResponse
+                # httpx's response.json() uses response.text which reads the content.
+                try:
+                    json_content = response.json()
+                    return JSONResponse(content=json_content, status_code=response.status_code, headers=forward_headers)
+                except json.JSONDecodeError:
+                    raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Invalid JSON response from user service.")
+            else:
+                # For PDF and other non-JSON, read the entire content then return as Response
+                # This buffers the entire PDF in the API Gateway's memory.
+                file_bytes = await response.aread() # Reads all bytes from the upstream response
+                print(f"[{path}] Proxy: PDF/Non-JSON branch. Read {len(file_bytes)} bytes from upstream.")
+
+                return Response(
+                    content=file_bytes,
+                    status_code=response.status_code,
+                    headers=forward_headers,
+                    media_type=content_type_header
+                )
 
         except httpx.RequestError as e:
-            # Network errors or other issues connecting to the user service
-            # logger.error(f"RequestError proxying to user service: {e}", exc_info=True) # Optional: for server logs
+            print(f"!!!!!!!!!!!! HTTRequestError IN USER_SERVICE_PROXY FOR {url} !!!!!!!!!!!!")
+            traceback.print_exc()
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Error connecting to user service: {str(e)}")
         except httpx.HTTPStatusError as e:
-            # The user service returned an HTTP error (4xx or 5xx)
-            # logger.error(f"HTTPStatusError from user service: {e.response.status_code} - {e.response.text}", exc_info=True) # Optional
+            print(f"!!!!!!!!!!!! HTTPStatusError IN USER_SERVICE_PROXY FOR {url} !!!!!!!!!!!!")
+            traceback.print_exc()
             error_detail = "User service error"
             try:
-                # Attempt to parse error detail from user service response
                 error_detail = e.response.json()
             except Exception:
-                # If parsing JSON fails, use text content or a generic message
                 error_detail = e.response.text if e.response.text else f"User service returned status {e.response.status_code}"
             raise HTTPException(status_code=e.response.status_code, detail=error_detail)
         except Exception as e:
-            # Catch-all for other unexpected errors during proxying
-            # logger.error(f"Unexpected error in user_service_proxy: {e}", exc_info=True) # Optional
-            # This will be caught by the generic_exception_handler if not handled more specifically.
+            print(f"!!!!!!!!!!!! UNEXPECTED ERROR IN USER_SERVICE_PROXY (outer try-except) FOR {url} !!!!!!!!!!!!")
+            traceback.print_exc()
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred while proxying to the user service.")
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    # You can log the exception here if needed
+    print(f"!!!!!!!!!!!! GENERIC EXCEPTION HANDLER CAUGHT !!!!!!!!!!!!") # Add this
+    traceback.print_exc() # Add this
+    # logger.error(f"Unhandled exception caught by generic_exception_handler: {exc}", exc_info=True)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal server error"},
-        headers={"Access-Control-Allow-Origin": "*"}  # Add CORS header
+        content={"detail": "Internal server error. Check API Gateway logs."}, # Modified detail
+        headers={"Access-Control-Allow-Origin": "*"}
     )
 
 if __name__ == "__main__":

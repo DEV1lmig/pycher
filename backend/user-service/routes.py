@@ -1,12 +1,15 @@
 import logging
 import re
-from typing import Dict
-
+from typing import Dict, List, Optional, Union
+from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm  # Add this import
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from typing import Optional, List
-from datetime import timedelta, datetime
+import io
+import os # For path manipulation
+from datetime import datetime as dt # Alias for clarity
+
 from database import get_db
 from jose import jwt, JWTError
 
@@ -33,7 +36,7 @@ from services import (
     get_user, get_user_by_username, get_user_by_email, create_user, authenticate_user,
     enroll_user_in_course, start_lesson, complete_exercise, get_last_accessed_progress,
     get_course_progress_summary, get_user_enrollments_with_progress, unenroll_user_from_course, # Add this import
-    get_user_lesson_progress_detail # Add this import
+    get_user_lesson_progress_detail, get_user_progress_report_data
 )
 
 from utils import create_access_token, redis_client, SECRET_KEY, ALGORITHM
@@ -376,3 +379,123 @@ def get_user_exam_attempts_route(
     db: Session = Depends(get_db)
 ):
     return get_user_exam_attempts(db, current_user.id, exam_id)
+
+# --- Report Routes ---
+
+# Jinja2 and WeasyPrint
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from weasyprint import HTML
+from weasyprint.text.fonts import FontConfiguration # For potential font configuration
+
+# Logger setup (use your existing logger or a standard one)
+logger = logging.getLogger(__name__)
+if not logger.hasHandlers(): # Basic config if no handlers are set
+    logging.basicConfig(level=logging.INFO)
+
+
+# --- Jinja2 Environment Setup ---
+# Construct the path to the templates directory relative to this file's location.
+# This assumes routes.py is directly inside 'user-service' or a subdirectory of it,
+# and 'templates' is a sibling to 'user-service's root or directly inside 'user-service'.
+
+# Path to the directory containing this 'routes.py' file
+_current_file_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Path to the 'user-service' directory (assuming routes.py is inside user-service or a subfolder)
+# This might need adjustment based on your exact structure.
+# If routes.py is at c:\Users\dev1mig\Documents\GitHub\pycher\backend\user-service\routes.py
+# then _user_service_root_dir would be c:\Users\dev1mig\Documents\GitHub\pycher\backend\user-service\
+_user_service_root_dir = os.path.dirname(_current_file_dir) # if routes.py is in a direct subfolder of user-service
+if os.path.basename(_current_file_dir) == "user-service": # if routes.py is directly in user-service
+    _user_service_root_dir = _current_file_dir
+
+_templates_path = os.path.join(_user_service_root_dir, "templates")
+
+# Fallback for common Docker structure where WORKDIR is /app and user-service code is in /app
+if not os.path.isdir(_templates_path) and os.path.isdir("/app/templates"):
+    _templates_path = "/app/templates"
+elif not os.path.isdir(_templates_path):
+    # If still not found, default to "templates" relative to CWD (less robust)
+    _templates_path = "templates"
+    logger.warning(f"Jinja2 templates path fell back to relative 'templates'. Resolved to: {os.path.abspath(_templates_path)}")
+
+
+jinja_env = None
+try:
+    if os.path.isdir(_templates_path):
+        logger.info(f"Initializing Jinja2 Environment with template path: {_templates_path}")
+        jinja_env = Environment(
+            loader=FileSystemLoader(_templates_path),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+    else:
+        logger.error(f"Jinja2 templates directory not found at expected path: {_templates_path}. PDF report generation will fail.")
+except Exception as e:
+    logger.error(f"Failed to initialize Jinja2 Environment from path '{_templates_path}': {e}. PDF report generation will fail.", exc_info=True)
+    jinja_env = None # Ensure it's None if setup fails
+
+@router.get(
+    "/me/progress/report/pdf",
+    response_class=StreamingResponse,
+    summary="Download User Progress Report as PDF",
+    tags=["users", "reports"]
+)
+async def get_my_progress_report_pdf_route(
+    db: Session = Depends(get_db), # Ensure get_db is correctly imported/defined
+    current_user: UserResponse = Depends(get_current_user) # Ensure get_current_user and UserResponse are correct
+):
+    if jinja_env is None:
+        logger.error(f"Jinja2 environment not initialized. Cannot generate PDF report for user {current_user.id if current_user else 'unknown'}.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server template engine not configured. Cannot generate report.")
+
+    if not current_user or not hasattr(current_user, 'id'):
+        logger.error("Could not identify current user for PDF report generation.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not identify user.")
+
+    try:
+        logger.info(f"Generating progress report PDF for user_id: {current_user.id}")
+
+        # 1. Get data from the service
+        report_data_obj = get_user_progress_report_data(db, current_user.id)
+
+        # 2. Convert Pydantic model to dict for Jinja2. `model_dump` is for Pydantic V2.
+        report_data_dict = report_data_obj.model_dump(mode='python') # mode='python' keeps datetime objects as datetime
+
+        # 3. Render HTML template
+        template = jinja_env.get_template("progress_report.html")
+        html_content = template.render(report_data=report_data_dict)
+        logger.debug(f"HTML content for PDF generated for user_id: {current_user.id}")
+
+        # 4. Convert HTML to PDF using WeasyPrint
+        pdf_file_stream = io.BytesIO()
+
+        # Optional: Configure fonts if needed, e.g., for non-Latin characters or custom fonts
+        # font_config = FontConfiguration()
+        # HTML(string=html_content, font_config=font_config).write_pdf(pdf_file_stream)
+
+        HTML(string=html_content).write_pdf(pdf_file_stream)
+        pdf_file_stream.seek(0) # Reset stream position to the beginning
+
+        logger.info(f"PDF generated successfully for user_id: {current_user.id}")
+
+        # 5. Return StreamingResponse
+        username_for_file = "".join(c if c.isalnum() else "_" for c in current_user.username) # Sanitize username
+        filename_date = dt.utcnow().strftime("%Y%m%d")
+        filename = f"Pycher_Progress_Report_{username_for_file}_{filename_date}.pdf"
+
+        headers = {
+            'Content-Disposition': f'attachment; filename="{filename}"'
+        }
+        return StreamingResponse(pdf_file_stream, media_type="application/pdf", headers=headers)
+
+    except HTTPException as e:
+        # Re-raise HTTPExceptions that might come from the service layer (e.g., User Not Found)
+        logger.error(f"HTTPException while generating PDF report for user {current_user.id}: {e.detail}", exc_info=True)
+        raise e
+    except Exception as e:
+        logger.error(f"Unexpected error generating PDF report for user {current_user.id}: {str(e)}", exc_info=True)
+        # Log the full traceback for unexpected errors
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not generate PDF report due to an internal server error.")
+
+# Ensure your router is included in your main FastAPI app
+# e.g., app.include_router(router)

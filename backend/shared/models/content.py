@@ -163,11 +163,10 @@ class CourseExam(Base):
     __tablename__ = "course_exams"
     id = Column(Integer, primary_key=True, autoincrement=True)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
-    title = Column(String, nullable=False)
+    title = Column(String, nullable=False) # Title is directly on CourseExam
     description = Column(Text, nullable=True)
-    questions = Column(JSONB, nullable=False) # Store questions as JSON
-    # Example structure for questions: [{"id": 1, "type": "multiple_choice", "text": "...", "options": ["A", "B"], "answer": "A"}, ...]
-    order_index = Column(Integer, nullable=False, default=1)
+    questions = Column(JSONB, nullable=False)
+    order_index = Column(Integer, nullable=False, default=1) # Order index is directly on CourseExam
     pass_threshold_percentage = Column(Float, default=70.0, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

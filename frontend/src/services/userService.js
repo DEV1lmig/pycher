@@ -103,7 +103,7 @@ export const checkCourseAccess = async (courseId) => {
     // Fallback: if there's an error, deny access by default or handle as appropriate
     return { hasAccess: false, reason: "Error al verificar el acceso al curso." };
   }
-};
+}; // Make sure this function is properly closed if it was the last one
 
 export const unenrollFromCourse = async (courseId) => {
   const token = localStorage.getItem('token');
@@ -157,4 +157,56 @@ export const submitExerciseAttempt = async (exerciseId, submittedCode) => {
 export const getLessonDetailedProgress = async (lessonId) => {
   const response = await apiClient.get(`/api/v1/users/lessons/${lessonId}/progress`);
   return response.data; // Expects format like the example in the plan
+};
+
+export const downloadProgressReport = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Handle case where user is not authenticated or token is missing
+      // You might want to redirect to login or show an error
+      console.error("No token found. User might not be authenticated.");
+      throw new Error("Authentication required to download the report.");
+    }
+
+    const response = await apiClient.get('/api/v1/users/me/progress/report/pdf', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      responseType: 'blob', // Important for handling file downloads
+    });
+
+    // Extract filename from content-disposition header if available, otherwise fallback
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = 'Pycher_Progress_Report.pdf'; // Default filename
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (filenameMatch && filenameMatch.length > 1) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    // Create a URL for the blob
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename); // Use the extracted or default filename
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up by removing the link and revoking the object URL
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true, filename };
+  } catch (error) {
+    console.error('Error downloading progress report:', error);
+    // Try to parse error response if it's a JSON blob (some errors might be returned as JSON)
+    if (error.response && error.response.data instanceof Blob && error.response.data.type === "application/json") {
+      const errorText = await error.response.data.text();
+      const errorJson = JSON.parse(errorText);
+      throw new Error(errorJson.detail || 'Failed to download progress report.');
+    }
+    throw new Error(error.message || 'Failed to download progress report.');
+  }
 };
