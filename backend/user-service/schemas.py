@@ -106,11 +106,9 @@ class LessonStartRequest(BaseModel):
     lesson_id: int
 
 class ExerciseCompletionRequest(BaseModel):
-    exercise_id: int
     submitted_code: str
-    is_correct: bool
-    # Optional: add fields like output if you want to store/validate it
-    # output: Optional[str] = None
+    # is_correct: bool # Remove this, it will be determined by the backend
+    # output: Optional[str] = None # Remove this, it will be determined by the backend
 
 # Response Schemas for individual progress items
 class UserLessonProgressBase(BaseModel):
@@ -171,12 +169,14 @@ class UserExerciseSubmissionResponse(BaseModel):
     id: int
     user_id: int
     exercise_id: int
-    lesson_id: int
-    submitted_code: Optional[str] = None
+    lesson_id: int # Added
+    submitted_code: Optional[str] = None # Keep optional, might not always be needed by frontend
     is_correct: bool
-    attempts: int
+    output: Optional[str] = None # Contains actual output or error message from execution
+    attempt_number: int # Changed from 'attempts' to match model field
     submitted_at: datetime
     score: Optional[int] = None
+    execution_time_ms: Optional[int] = None # Added
 
     class Config:
         from_attributes = True

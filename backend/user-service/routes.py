@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import io
 import os # For path manipulation
-from datetime import datetime as dt # Alias for clarity
+from datetime import datetime as dt # Alias for clari
 
 from database import get_db
 from jose import jwt, JWTError
@@ -314,15 +314,16 @@ def get_lesson_progress_route( # Changed function name to avoid conflict if you 
 @router.post("/exercises/{exercise_id}/submit", response_model=UserExerciseSubmissionResponse)
 def submit_exercise_route(
     exercise_id: int,
-    submission_data: ExerciseCompletionRequest, # Changed from ExerciseSubmissionRequest
+    submission_data: ExerciseCompletionRequest, # Uses the updated schema
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return submit_exercise(
+    # Call the updated service function.
+    # `is_correct` and `output` are no longer passed from here.
+    # The service function `complete_exercise` now handles execution and evaluation.
+    return complete_exercise( # Or the new name if you refactored it
         db, current_user.id, exercise_id,
-        submission_data.submitted_code, submission_data.is_correct,
-        None # submission_data.output - ExerciseCompletionRequest does not have output yet
-             # If you want to pass output, add it to ExerciseCompletionRequest schema
+        submission_data.submitted_code
     )
 
 @router.get("/courses/{course_id}/progress-summary", response_model=CourseProgressSummaryResponse)

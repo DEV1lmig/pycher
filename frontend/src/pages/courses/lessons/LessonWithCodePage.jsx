@@ -28,8 +28,8 @@ export default function LessonWithCodePage() {
     getExerciseProgress,
     loading: lessonDetailLoading,
     error: lessonDetailError,
-    submittingExerciseId,
-    submitExercise,
+    submittingExerciseId, // from useLessonDetail hook
+    submitExercise: submitExerciseFromHook, // Renamed to avoid conflict if any
     // refreshData, // Available if manual refresh is needed
   } = useLessonDetail(lessonId);
 
@@ -65,21 +65,20 @@ export default function LessonWithCodePage() {
     }
   }, [lesson]);
 
-  const handleCodeSubmit = async (code) => {
+  const handleCodeSubmit = async (codeToSubmit) => { // Renamed param for clarity
     if (!currentExercise) {
       toast.error("No hay ejercicio seleccionado para enviar.");
       return;
     }
     try {
-      const submissionResult = await submitExercise(currentExercise.id, code);
-      // The hook's submitExercise already shows a toast.
-      // You can add more specific logic here based on submissionResult if needed.
-      // For example, if submissionResult contains detailed output:
-      // setLastSubmissionOutput(submissionResult.output);
-      return submissionResult; // Return for LessonCodeExecutor if it needs it
+      // submitExerciseFromHook is from useLessonDetail
+      const submissionResult = await submitExerciseFromHook(currentExercise.id, codeToSubmit);
+      // The hook should handle success/error toasts and state updates
+      return submissionResult;
     } catch (error) {
-      // Error toast is handled by the hook, but you can add more here.
+      // Error toast is likely handled by the hook
       console.error("Failed to submit exercise from page:", error);
+      // Optionally, re-throw or handle further if needed
     }
   };
 
@@ -217,13 +216,12 @@ export default function LessonWithCodePage() {
         <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow px-6 p-3 flex flex-col gap-4">
           {currentExercise ? (
             <LessonCodeExecutor
-              key={currentExercise.id} // Add key if exercise can change
+              key={currentExercise.id}
               initialCode={currentExercise.starter_code || ""}
-              exerciseId={currentExercise.id}
+              exerciseId={currentExercise.id} // Pass exerciseId
               onSubmitCode={handleCodeSubmit} // Pass the submit handler
-              isSubmitting={submittingExerciseId === currentExercise.id}
-              isCorrect={isCurrentExerciseCorrect} // Let executor know if it's already solved
-              // You might want to pass last submission output/error to LessonCodeExecutor too
+              isSubmitting={submittingExerciseId === currentExercise.id} // Pass submitting state
+              isCorrect={isCurrentExerciseCorrect} // Pass correctness state
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">

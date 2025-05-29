@@ -20,10 +20,14 @@ from schemas import (
     UserCreate, LessonProgressDetailResponse, ExerciseProgressInfo
 )
 # Import logger if you use it, e.g., from logging import getLogger; logger = getLogger(__name__)
-import logging # Added for potential logging
+import logging
 logger = logging.getLogger(__name__)
 
-from weasyprint.text.fonts import FontConfiguration
+import httpx
+EXECUTION_SERVICE_URL = "http://execution-service:8001" # Assuming Docker service name, adjust if needed
+# For local development without Docker Compose for services:
+# EXECUTION_SERVICE_URL = "http://localhost:8001"
+
 
 # --- Helper functions for cascading completion ---
 
@@ -300,22 +304,31 @@ def enroll_user_in_course(db: Session, user_id: int, course_id: int):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not process enrollment.")
 
 def start_lesson(db: Session, user_id: int, lesson_id: int):
-    """Start a lesson and track progress. Creates UserLessonProgress if not exists."""
-    lesson = db.query(Lesson).options(selectinload(Lesson.module).selectinload(Module.course)).filter(Lesson.id == lesson_id).first()
-    if not lesson:
+    # Fetch the lesson and ensure its module is available for module_id
+    lesson_model_instance = db.query(Lesson).options(
+        selectinload(Lesson.module) # Ensures lesson.module is loaded for lesson.module_id
+    ).filter(Lesson.id == lesson_id).first()
+
+    if not lesson_model_instance:
         raise HTTPException(status_code=404, detail="Lesson not found")
+    if not lesson_model_instance.module: # Check if module relationship is loaded
+        # This should not happen if selectinload worked, but good for robustness
+        raise HTTPException(status_code=500, detail="Lesson module data not found.")
 
     # Ensure user is enrolled in the course
     enrollment = db.query(UserCourseEnrollment).filter(
         UserCourseEnrollment.user_id == user_id,
-        UserCourseEnrollment.course_id == lesson.module.course_id,
+        UserCourseEnrollment.course_id == lesson_model_instance.module.course_id, # Access course_id via module
         UserCourseEnrollment.is_active_enrollment == True
     ).first()
     if not enrollment:
         raise HTTPException(status_code=403, detail="User not enrolled in this course or enrollment inactive.")
 
     # Create or update lesson progress
-    progress = db.query(UserLessonProgress).filter(
+    # Eager load the 'lesson' relationship when fetching UserLessonProgress
+    progress = db.query(UserLessonProgress).options(
+        joinedload(UserLessonProgress.lesson).selectinload(Lesson.module) # Eager load lesson and its module
+    ).filter(
         UserLessonProgress.user_id == user_id,
         UserLessonProgress.lesson_id == lesson_id
     ).first()
@@ -327,100 +340,156 @@ def start_lesson(db: Session, user_id: int, lesson_id: int):
             started_at=dt.utcnow(),
             is_completed=False # Explicitly set to false on start
         )
+        # Explicitly associate the fetched lesson_model_instance with the new progress object.
+        # This makes `progress.lesson` available immediately for the @property.
+        progress.lesson = lesson_model_instance
         db.add(progress)
         logger.info(f"Created UserLessonProgress for User ID {user_id}, Lesson ID {lesson_id}")
 
     # Also ensure UserModuleProgress exists for the parent module
     module_progress = db.query(UserModuleProgress).filter(
         UserModuleProgress.user_id == user_id,
-        UserModuleProgress.module_id == lesson.module_id
+        UserModuleProgress.module_id == lesson_model_instance.module_id # Use module_id from fetched lesson
     ).first()
     if not module_progress:
         module_progress = UserModuleProgress(
             user_id=user_id,
-            module_id=lesson.module_id,
+            module_id=lesson_model_instance.module_id, # Use module_id from fetched lesson
             started_at=dt.utcnow(),
             is_completed=False
         )
         db.add(module_progress)
-        logger.info(f"Created UserModuleProgress for User ID {user_id}, Module ID {lesson.module_id} (triggered by starting lesson {lesson_id}).")
+        logger.info(f"Created UserModuleProgress for User ID {user_id}, Module ID {lesson_model_instance.module_id} (triggered by starting lesson {lesson_id}).")
 
 
     # Update last accessed timestamps
     enrollment.last_accessed = dt.utcnow()
-    enrollment.last_accessed_module_id = lesson.module_id
+    enrollment.last_accessed_module_id = lesson_model_instance.module_id # Use module_id from fetched lesson
     enrollment.last_accessed_lesson_id = lesson_id
-    if module_progress: # module_progress would have been created if it didn't exist
-        module_progress.last_accessed_lesson_id = lesson_id # Update last accessed lesson in module progress
+    if module_progress:
+        module_progress.last_accessed_lesson_id = lesson_id
     db.add(enrollment)
     if module_progress: db.add(module_progress)
 
 
     try:
         db.commit()
-        db.refresh(progress)
-        if module_progress: db.refresh(module_progress) # Refresh if it was created/modified
+        db.refresh(progress) # Refresh to get ID and ensure relationships are synced if needed
+        # The 'lesson' attribute on 'progress' should now be correctly populated,
+        # allowing the @property 'module_id' to work.
+        if module_progress: db.refresh(module_progress)
         db.refresh(enrollment)
     except Exception as e:
         db.rollback()
         logger.error(f"Error in start_lesson for User ID {user_id}, Lesson ID {lesson_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not start lesson.")
 
-    return progress
+    return progress # 'progress' instance will be serialized by Pydantic
 
-def complete_exercise(db: Session, user_id: int, exercise_id: int, submitted_code: str, is_correct: bool, output: str = None):
-    """Complete an exercise and track submission. Triggers lesson completion check if correct."""
-    exercise = db.query(Exercise).options(selectinload(Exercise.lesson)).filter(Exercise.id == exercise_id).first() # Eager load lesson
+def complete_exercise(db: Session, user_id: int, exercise_id: int, submitted_code: str):
+    exercise = db.query(Exercise).options(
+        selectinload(Exercise.lesson)
+    ).filter(Exercise.id == exercise_id).first()
+
     if not exercise:
-        raise HTTPException(status_code=404, detail="Exercise not found")
-    if not exercise.lesson_id: # Should not happen if exercises are always part of lessons
-        raise HTTPException(status_code=500, detail="Exercise is not associated with a lesson.")
+        logger.warning(f"complete_exercise: Exercise ID {exercise_id} not found for User ID {user_id}.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+    if not exercise.lesson_id: # Crucial for linking submission to lesson
+        logger.error(f"complete_exercise: Exercise ID {exercise_id} is not associated with a lesson.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Exercise misconfiguration: not linked to a lesson.")
 
-    # Ensure UserLessonProgress exists for the parent lesson (start_lesson should handle this)
-    # but as a safeguard:
+    # Ensure UserLessonProgress exists
     lesson_progress = db.query(UserLessonProgress).filter(
         UserLessonProgress.user_id == user_id,
         UserLessonProgress.lesson_id == exercise.lesson_id
     ).first()
     if not lesson_progress:
-        logger.warning(f"No UserLessonProgress found for User ID {user_id}, Lesson ID {exercise.lesson_id} when submitting Exercise ID {exercise_id}. Calling start_lesson implicitly.")
-        # This implies the user somehow skipped starting the lesson.
-        # Call start_lesson to create the necessary progress records.
-        # This might be too much logic here; ideally, frontend ensures lesson is started.
-        # For robustness, we can call it, but it adds a commit within a commit if not careful.
-        # Alternative: raise error "Lesson not started".
-        # For now, let's assume start_lesson was called. If not, the _check_and_update_lesson_completion
-        # has a fallback to create UserLessonProgress.
-        pass
+        logger.info(f"No UserLessonProgress for User ID {user_id}, Lesson ID {exercise.lesson_id}. Starting lesson implicitly.")
+        start_lesson(db, user_id, exercise.lesson_id)
+        # Re-fetch or rely on subsequent logic; start_lesson should commit.
 
+    actual_output_str = ""
+    execution_error_str = ""
+    is_correct_submission = False
+    execution_time_ms = 0 # Default
 
-    # Create submission record
+    try:
+        with httpx.Client() as client: # Using synchronous client for now
+            response = client.post(
+                f"{EXECUTION_SERVICE_URL}/execute", # Use the defined URL
+                json={"code": submitted_code, "timeout": 5}, # Default execution timeout
+                timeout=10.0 # HTTP request timeout
+            )
+            response.raise_for_status() # Raises HTTPStatusError for 4xx/5xx responses
+            exec_result = response.json()
+
+            actual_output_str = exec_result.get("output", "").strip() # Strip output
+            execution_error_str = exec_result.get("error", "").strip() # Strip error
+            execution_time_ms = int(exec_result.get("execution_time", 0) * 1000) # In milliseconds
+
+            if execution_error_str:
+                is_correct_submission = False
+                logger.info(f"Execution for Exercise ID {exercise_id}, User ID {user_id} resulted in an error: {execution_error_str}")
+            else:
+                expected_output = (exercise.test_cases or "").strip()
+                is_correct_submission = (actual_output_str == expected_output)
+                logger.info(f"Execution for Exercise ID {exercise_id}, User ID {user_id}. Correct: {is_correct_submission}. Expected: '{expected_output}', Got: '{actual_output_str}'")
+
+    except httpx.RequestError as e:
+        logger.error(f"HTTP request to execution service failed for Exercise ID {exercise_id}, User ID {user_id}: {e}")
+        execution_error_str = f"Error connecting to execution service: {str(e)}"
+        is_correct_submission = False
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Execution service returned error for Exercise ID {exercise_id}, User ID {user_id}: {e.response.status_code} - {e.response.text}")
+        try:
+            error_detail = e.response.json().get("detail", e.response.text)
+        except ValueError: # JSONDecodeError
+            error_detail = e.response.text
+        execution_error_str = f"Execution service error: {error_detail}"
+        is_correct_submission = False
+    except Exception as e:
+        logger.error(f"Error processing execution service response for Exercise ID {exercise_id}, User ID {user_id}: {e}", exc_info=True)
+        execution_error_str = f"Error processing execution result: {str(e)}"
+        is_correct_submission = False
+
+    # Calculate attempt number
+    previous_attempts_count = db.query(UserExerciseSubmission).filter(
+        UserExerciseSubmission.user_id == user_id,
+        UserExerciseSubmission.exercise_id == exercise_id
+    ).count()
+    current_attempt_number = previous_attempts_count + 1
+
     submission = UserExerciseSubmission(
         user_id=user_id,
         exercise_id=exercise_id,
+        lesson_id=exercise.lesson_id, # Store lesson_id
         submitted_code=submitted_code,
-        is_correct=is_correct,
-        output=output,
-        score=100 if is_correct else 0 # Or some other scoring logic
+        is_correct=is_correct_submission,
+        output=execution_error_str if execution_error_str else actual_output_str,
+        score=100 if is_correct_submission else 0,
+        execution_time_ms=execution_time_ms,
+        attempt_number=current_attempt_number,
+        submitted_at=dt.utcnow() # Explicitly set for clarity
     )
     db.add(submission)
 
     try:
-        db.commit() # Commit the submission first
+        db.commit()
         db.refresh(submission)
-        logger.info(f"Exercise ID {exercise_id} submitted by User ID {user_id}. Correct: {is_correct}.")
+        logger.info(f"Exercise ID {exercise_id} submitted by User ID {user_id}, Attempt: {current_attempt_number}. Correct: {is_correct_submission}.")
 
-        if is_correct:
-            # Now, in a new transaction or as part of the same logical operation, check for lesson completion
-            # The helper functions will add to the session, and we'll commit again.
+        if is_correct_submission:
+            # This function needs to be robust and handle its own commit or be part of this transaction.
             _check_and_update_lesson_completion(db, user_id, exercise.lesson_id)
-            db.commit() # Commit changes from completion checks
-            logger.info(f"Completion checks run and committed for User ID {user_id} after correct submission for Exercise ID {exercise_id}.")
+            # Assuming _check_and_update_lesson_completion might commit, or we commit again if it doesn't.
+            # For safety, let's assume it handles its own commit or the next commit covers it.
+            # If it modifies lesson_progress, that needs to be committed.
+            db.commit() # Commit changes from lesson completion check
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error in complete_exercise for User ID {user_id}, Exercise ID {exercise_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Could not complete exercise.")
+        logger.error(f"Error in complete_exercise DB operations for User ID {user_id}, Exercise ID {exercise_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not record exercise completion properly.")
 
     return submission
 

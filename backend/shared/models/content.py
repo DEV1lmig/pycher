@@ -1,10 +1,11 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Float
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from typing import Optional, List, Dict, Any, Union, Tuple, Callable
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import JSONB
+from datetime import datetime # Add this import if not already present at the top of content.py
 
 from . import Base
-
 
 class Course(Base):
     __tablename__ = "courses"
@@ -42,15 +43,17 @@ class Module(Base):  # <-- Change from Modules to Module
 
 class Lesson(Base):
     __tablename__ = "lessons"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    module_id: Mapped[int] = mapped_column(ForeignKey("modules.id"))
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     order_index = Column(Integer, nullable=False)
     duration_minutes = Column(Integer)
     module = relationship("Module", back_populates="lessons")
-    exercises = relationship("Exercise", back_populates="lesson")
+    exercises = relationship("Exercise", back_populates="lesson", cascade="all, delete-orphan")
+    exercise_submissions = relationship("UserExerciseSubmission", back_populates="lesson") # This is correct
     user_progress = relationship("UserLessonProgress", back_populates="lesson") # New relationship
+    user_progress_entries: Mapped[List["UserLessonProgress"]] = relationship(back_populates="lesson")
 
 class Exercise(Base):
     __tablename__ = "exercises"
@@ -66,7 +69,7 @@ class Exercise(Base):
     test_cases = Column(Text)
     hints = Column(Text)
     lesson = relationship("Lesson", back_populates="exercises")
-    submissions = relationship("UserExerciseSubmission", back_populates="exercise") # New relationship
+    submissions = relationship("UserExerciseSubmission", back_populates="exercise") # This is correct
     # Optionally, add: module = relationship("Module")
 
 class UserCourseEnrollment(Base): # This will serve as UserCourseProgress
@@ -109,9 +112,10 @@ class UserModuleProgress(Base):
 
 class UserLessonProgress(Base):
     __tablename__ = "user_lesson_progress"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False)
-    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"))
+
     is_completed = Column(Boolean, default=False)
     started_at = Column(DateTime(timezone=True))
     completed_at = Column(DateTime(timezone=True))
@@ -125,24 +129,17 @@ class UserLessonProgress(Base):
     lesson = relationship("Lesson", back_populates="user_progress")
     last_accessed_exercise = relationship("Exercise", foreign_keys=[last_accessed_exercise_id])
 
-
-class UserExerciseSubmission(Base):
-    __tablename__ = "user_exercise_submissions"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False)
-    exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
-    submitted_code = Column(Text)
-    is_correct = Column(Boolean, default=False)
-    attempts = Column(Integer, default=1)
-    submitted_at = Column(DateTime(timezone=True), server_default=func.now())
-    execution_time_ms = Column(Integer)
-    score = Column(Integer, default=0)
-    output = Column(Text, nullable=True) # New field for execution output
-
-    # Relationships
-    # user = relationship("User", back_populates="exercise_submissions") # Assuming User model and relationship
-    exercise = relationship("Exercise", back_populates="submissions")
-
+    @property
+    def module_id(self) -> int:
+        if self.lesson:
+            return self.lesson.module_id
+        # This situation should ideally be prevented by ensuring 'self.lesson' is always loaded
+        # when a UserLessonProgress instance is used in a context requiring 'module_id'.
+        # Raising an error or returning a sensible default/None might be options,
+        # but Pydantic expects the property to return the declared type (int).
+        # For now, we assume 'self.lesson' will be available.
+        # Consider adding a check in your service layer if lesson might not be loaded.
+        raise AttributeError(f"Lesson relationship not loaded for UserLessonProgress ID {self.id}, cannot determine module_id.")
 
 class CourseRating(Base):
     __tablename__ = "course_ratings"
