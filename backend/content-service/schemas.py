@@ -7,13 +7,14 @@ class ExerciseBase(BaseModel):
     id: int
     title: str
     description: str
+    instructions: Optional[str] = None
     starter_code: Optional[str] = None
     solution_code: Optional[str] = None
     test_cases: Optional[str] = None
     hints: Optional[str] = None
     lesson_id: Optional[int] = None
     module_id: Optional[int] = None
-    order_index: int  # <-- Add this line
+    order_index: int
 
 class ExerciseCreate(ExerciseBase):
     pass

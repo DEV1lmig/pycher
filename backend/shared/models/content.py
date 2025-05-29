@@ -52,7 +52,6 @@ class Lesson(Base):
     module = relationship("Module", back_populates="lessons")
     exercises = relationship("Exercise", back_populates="lesson", cascade="all, delete-orphan")
     exercise_submissions = relationship("UserExerciseSubmission", back_populates="lesson") # This is correct
-    user_progress = relationship("UserLessonProgress", back_populates="lesson") # New relationship
     user_progress_entries: Mapped[List["UserLessonProgress"]] = relationship(back_populates="lesson")
 
 class Exercise(Base):
@@ -126,7 +125,7 @@ class UserLessonProgress(Base):
 
     # Relationships
     # user = relationship("User", back_populates="lesson_progress") # Assuming User model and relationship
-    lesson = relationship("Lesson", back_populates="user_progress")
+    lesson = relationship("Lesson", back_populates="user_progress_entries")
     last_accessed_exercise = relationship("Exercise", foreign_keys=[last_accessed_exercise_id])
 
     @property

@@ -24,6 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 import httpx
+import json # Add this import
+
 EXECUTION_SERVICE_URL = "http://execution-service:8001" # Assuming Docker service name, adjust if needed
 # For local development without Docker Compose for services:
 # EXECUTION_SERVICE_URL = "http://localhost:8001"
@@ -354,7 +356,7 @@ def start_lesson(db: Session, user_id: int, lesson_id: int):
     if not module_progress:
         module_progress = UserModuleProgress(
             user_id=user_id,
-            module_id=lesson_model_instance.module_id, # Use module_id from fetched lesson
+            module_id = lesson_model_instance.module_id, # Use module_id from fetched lesson
             started_at=dt.utcnow(),
             is_completed=False
         )
@@ -394,96 +396,159 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, submitted_cod
     if not exercise:
         logger.warning(f"complete_exercise: Exercise ID {exercise_id} not found for User ID {user_id}.")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
-    if not exercise.lesson_id: # Crucial for linking submission to lesson
+    if not exercise.lesson_id:
         logger.error(f"complete_exercise: Exercise ID {exercise_id} is not associated with a lesson.")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Exercise misconfiguration: not linked to a lesson.")
 
-    # Ensure UserLessonProgress exists
     lesson_progress = db.query(UserLessonProgress).filter(
         UserLessonProgress.user_id == user_id,
         UserLessonProgress.lesson_id == exercise.lesson_id
     ).first()
     if not lesson_progress:
         logger.info(f"No UserLessonProgress for User ID {user_id}, Lesson ID {exercise.lesson_id}. Starting lesson implicitly.")
+        # Assuming start_lesson handles its own commit or is part of the transaction
         start_lesson(db, user_id, exercise.lesson_id)
-        # Re-fetch or rely on subsequent logic; start_lesson should commit.
+        # It's good practice to re-fetch or ensure the lesson_progress object is available if needed immediately
+        lesson_progress = db.query(UserLessonProgress).filter(
+            UserLessonProgress.user_id == user_id,
+            UserLessonProgress.lesson_id == exercise.lesson_id
+        ).first()
+        if not lesson_progress: # If still not found after starting, something is wrong
+             logger.error(f"Failed to create or find UserLessonProgress for User ID {user_id}, Lesson ID {exercise.lesson_id} after implicit start.")
+             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to initialize lesson progress.")
 
-    actual_output_str = ""
-    execution_error_str = ""
-    is_correct_submission = False
-    execution_time_ms = 0 # Default
+
+    all_tests_passed = True
+    execution_summary_output = [] # To store output/error from each test case
+    overall_execution_error = ""
+    total_execution_time_ms = 0
 
     try:
-        with httpx.Client() as client: # Using synchronous client for now
-            response = client.post(
-                f"{EXECUTION_SERVICE_URL}/execute", # Use the defined URL
-                json={"code": submitted_code, "timeout": 5}, # Default execution timeout
-                timeout=10.0 # HTTP request timeout
-            )
-            response.raise_for_status() # Raises HTTPStatusError for 4xx/5xx responses
-            exec_result = response.json()
+        test_cases_list = json.loads(exercise.test_cases) if exercise.test_cases else [{"input": None, "output": ""}] # Default if no test_cases
+        if not isinstance(test_cases_list, list): # Basic validation
+            logger.error(f"Exercise ID {exercise.id} has malformed test_cases (not a list). Treating as no test cases.")
+            test_cases_list = [{"input": None, "output": ""}] # Fallback
 
-            actual_output_str = exec_result.get("output", "").strip() # Strip output
-            execution_error_str = exec_result.get("error", "").strip() # Strip error
-            execution_time_ms = int(exec_result.get("execution_time", 0) * 1000) # In milliseconds
+    except json.JSONDecodeError:
+        logger.error(f"Failed to parse test_cases for Exercise ID {exercise.id}. Raw: {exercise.test_cases}")
+        overall_execution_error = "Error: Invalid test case configuration for the exercise."
+        all_tests_passed = False
+        test_cases_list = [] # Prevent further processing
 
-            if execution_error_str:
-                is_correct_submission = False
-                logger.info(f"Execution for Exercise ID {exercise_id}, User ID {user_id} resulted in an error: {execution_error_str}")
-            else:
-                expected_output = (exercise.test_cases or "").strip()
-                is_correct_submission = (actual_output_str == expected_output)
-                logger.info(f"Execution for Exercise ID {exercise_id}, User ID {user_id}. Correct: {is_correct_submission}. Expected: '{expected_output}', Got: '{actual_output_str}'")
+    if not test_cases_list and not overall_execution_error: # If test_cases was empty string or "[]"
+        logger.info(f"Exercise ID {exercise.id} has no defined test cases. Marking as correct if code executes without error.")
+        # In this scenario, we might just run the code once without specific input/output checks
+        # Or, define a policy (e.g., must have at least one test case to be auto-gradable)
+        # For now, let's run it once.
+        test_cases_list = [{"input": None, "output": None}] # Special case: run once, no specific output check unless error
 
-    except httpx.RequestError as e:
-        logger.error(f"HTTP request to execution service failed for Exercise ID {exercise_id}, User ID {user_id}: {e}")
-        execution_error_str = f"Error connecting to execution service: {str(e)}"
-        is_correct_submission = False
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Execution service returned error for Exercise ID {exercise_id}, User ID {user_id}: {e.response.status_code} - {e.response.text}")
+    for i, test_case in enumerate(test_cases_list):
+        if not all_tests_passed and overall_execution_error: # Stop if initial parsing failed
+            break
+
+        test_input = test_case.get("input")
+        expected_test_output = test_case.get("output") # Can be None if we only check for errors
+
+        actual_test_output_str_raw = "" # Store raw output before stripping
+        execution_test_error_str = ""
+        test_execution_time_ms = 0
+
         try:
-            error_detail = e.response.json().get("detail", e.response.text)
-        except ValueError: # JSONDecodeError
-            error_detail = e.response.text
-        execution_error_str = f"Execution service error: {error_detail}"
-        is_correct_submission = False
-    except Exception as e:
-        logger.error(f"Error processing execution service response for Exercise ID {exercise_id}, User ID {user_id}: {e}", exc_info=True)
-        execution_error_str = f"Error processing execution result: {str(e)}"
-        is_correct_submission = False
+            with httpx.Client() as client:
+                response = client.post(
+                    f"{EXECUTION_SERVICE_URL}/execute",
+                    json={"code": submitted_code, "input_data": test_input, "timeout": 5},
+                    timeout=10.0
+                )
+                response.raise_for_status()
+                exec_result = response.json()
 
-    # Calculate attempt number
+                actual_test_output_str_raw = exec_result.get("output", "") # Get raw output
+                actual_test_output_str = actual_test_output_str_raw.strip() # Stripped version for comparison
+                execution_test_error_str = exec_result.get("error", "").strip()
+                test_execution_time_ms = int(exec_result.get("execution_time", 0) * 1000)
+                total_execution_time_ms += test_execution_time_ms
+
+                # DETAILED LOGGING FOR COMPARISON
+                logger.debug(f"--- Test Case {i+1} (EID: {exercise_id}, UID: {user_id}) ---")
+                logger.debug(f"Input to script: {repr(test_input)}")
+                logger.debug(f"Expected Output (raw from JSON): {repr(expected_test_output)}")
+                logger.debug(f"Actual Output (raw from execution): {repr(actual_test_output_str_raw)}")
+
+                expected_output_for_comparison = expected_test_output.strip() if expected_test_output is not None else None
+
+                logger.debug(f"Expected Output (stripped for comparison): {repr(expected_output_for_comparison)}")
+                logger.debug(f"Actual Output (stripped for comparison): {repr(actual_test_output_str)}")
+                # END DETAILED LOGGING
+
+                if execution_test_error_str:
+                    all_tests_passed = False
+                    execution_summary_output.append(f"Test Case {i+1} (Input: {test_input}):\nError:\n{execution_test_error_str}")
+                    logger.info(f"Test Case {i+1} for EID {exercise_id}, UID {user_id} errored: {execution_test_error_str}")
+                    break # Stop on first error
+                elif expected_test_output is not None and actual_test_output_str != expected_output_for_comparison:
+                    all_tests_passed = False
+                    execution_summary_output.append(f"Test Case {i+1} (Input: {test_input}):\nExpected:\n{expected_output_for_comparison}\nGot:\n{actual_test_output_str}")
+                    logger.info(f"Test Case {i+1} for EID {exercise_id}, UID {user_id} failed. Expected: {repr(expected_output_for_comparison)}, Got: {repr(actual_test_output_str)}")
+                    break # Stop on first failed test
+                elif expected_test_output is None and not execution_test_error_str: # Case where no specific output, just no error
+                    execution_summary_output.append(f"Test Case {i+1} (Input: {test_input}): Passed (no specific output expected, no error).")
+                    logger.info(f"Test Case {i+1} for EID {exercise_id}, UID {user_id} passed (no specific output, no error).")
+                else: # Passed
+                    execution_summary_output.append(f"Test Case {i+1} (Input: {test_input}): Passed")
+                    logger.info(f"Test Case {i+1} for EID {exercise_id}, UID {user_id} passed. Expected: {repr(expected_output_for_comparison)}, Got: {repr(actual_test_output_str)}")
+
+        except httpx.RequestError as e:
+            logger.error(f"HTTP request to execution service failed for EID {exercise_id}, UID {user_id}, Test Case {i+1}: {e}")
+            overall_execution_error = f"Error connecting to execution service: {str(e)}"
+            all_tests_passed = False
+            break
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Execution service returned error for EID {exercise_id}, UID {user_id}, Test Case {i+1}: {e.response.status_code} - {e.response.text}")
+            try:
+                error_detail = e.response.json().get("detail", e.response.text)
+            except ValueError:
+                error_detail = e.response.text
+            overall_execution_error = f"Execution service error: {error_detail}"
+            all_tests_passed = False
+            break
+        except Exception as e:
+            logger.error(f"Error processing execution for EID {exercise_id}, UID {user_id}, Test Case {i+1}: {e}", exc_info=True)
+            overall_execution_error = f"Error processing execution result: {str(e)}"
+            all_tests_passed = False
+            break
+
+    is_correct_submission = all_tests_passed and not overall_execution_error
+
     previous_attempts_count = db.query(UserExerciseSubmission).filter(
         UserExerciseSubmission.user_id == user_id,
         UserExerciseSubmission.exercise_id == exercise_id
     ).count()
     current_attempt_number = previous_attempts_count + 1
 
+    final_output_to_store = overall_execution_error if overall_execution_error else "\n---\n".join(execution_summary_output)
+
     submission = UserExerciseSubmission(
         user_id=user_id,
         exercise_id=exercise_id,
-        lesson_id=exercise.lesson_id, # Store lesson_id
+        lesson_id=exercise.lesson_id,
         submitted_code=submitted_code,
         is_correct=is_correct_submission,
-        output=execution_error_str if execution_error_str else actual_output_str,
+        output=final_output_to_store[:2000], # Truncate if too long for DB
         score=100 if is_correct_submission else 0,
-        execution_time_ms=execution_time_ms,
+        execution_time_ms=total_execution_time_ms,
         attempt_number=current_attempt_number,
-        submitted_at=dt.utcnow() # Explicitly set for clarity
+        submitted_at=dt.utcnow()
     )
     db.add(submission)
 
     try:
         db.commit()
         db.refresh(submission)
-        logger.info(f"Exercise ID {exercise_id} submitted by User ID {user_id}, Attempt: {current_attempt_number}. Correct: {is_correct_submission}.")
+        logger.info(f"Exercise ID {exercise_id} submitted by User ID {user_id}, Attempt: {current_attempt_number}. Overall Correct: {is_correct_submission}.")
 
         if is_correct_submission:
-            # This function needs to be robust and handle its own commit or be part of this transaction.
             _check_and_update_lesson_completion(db, user_id, exercise.lesson_id)
-            # Assuming _check_and_update_lesson_completion might commit, or we commit again if it doesn't.
-            # For safety, let's assume it handles its own commit or the next commit covers it.
-            # If it modifies lesson_progress, that needs to be committed.
             db.commit() # Commit changes from lesson completion check
 
     except Exception as e:
