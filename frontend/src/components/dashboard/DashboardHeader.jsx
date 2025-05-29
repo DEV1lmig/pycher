@@ -1,15 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { Bell, User, HelpCircle, LogOut, ChevronDown } from "lucide-react"
-import { SearchBar } from "@/components/modules/SearchBar"
+import { User, HelpCircle, LogOut, ChevronDown } from "lucide-react" // Removed Bell
+// Removed SearchBar import
 import { getUserProfile } from "@/services/userService";
 import { Link, useNavigate } from '@tanstack/react-router';
 import { logout } from "@/lib/auth";
 import logo from "@/assets/img/logo-pycher.png"
 
 export function DashboardHeader() {
-  const [showNotifications, setShowNotifications] = useState(false)
+  // Removed showNotifications state
   const [showProfile, setShowProfile] = useState(false)
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export function DashboardHeader() {
   useEffect(() => {
     getUserProfile().then(setUser);
   }, []);
-  
+
     const handleLogout = () => {
       logout();
       navigate({ to: "/login" });
@@ -28,41 +28,10 @@ export function DashboardHeader() {
       <Link to="/home" className="w-36 h-auto cursor-pointer">
         <img src={logo} alt="logo" className="w-36 h-auto hover:scale-105 duration-300 transition-all" />
       </Link>
-      <SearchBar />
-      
-      <div className="flex items-center space-x-4">
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-full hover:bg-[#312a56] relative"
-          >
-            <Bell className="h-5 w-5 text-gray-300" />
-            <span className="absolute top-0 right-0 h-2 w-2 bg-[#f2d231] rounded-full"></span>
-          </button>
+      {/* SearchBar component removed */}
 
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-[#1a1433] border border-[#312a56] rounded-md shadow-lg z-10">
-              <div className="p-3 border-b border-[#312a56]">
-                <h3 className="font-medium">Notificaciones</h3>
-              </div>
-              <div className="max-h-96 overflow-y-auto">
-                <div className="p-3 border-b border-[#312a56] hover:bg-[#312a56] cursor-pointer">
-                  <p className="text-sm font-medium">Nuevo curso disponible</p>
-                  <p className="text-xs text-gray-400">Python para Ciencia de Datos ya está disponible</p>
-                  <p className="text-xs text-gray-500 mt-1">Hace 2 horas</p>
-                </div>
-                <div className="p-3 border-b border-[#312a56] hover:bg-[#312a56] cursor-pointer">
-                  <p className="text-sm font-medium">Recordatorio</p>
-                  <p className="text-xs text-gray-400">No olvides completar tu ejercicio semanal</p>
-                  <p className="text-xs text-gray-500 mt-1">Hace 1 día</p>
-                </div>
-              </div>
-              <div className="p-2 text-center">
-                <button className="text-sm text-[#9980f2] hover:underline">Ver todas</button>
-              </div>
-            </div>
-          )}
-        </div>
+      <div className="flex items-center space-x-4 ml-auto"> {/* Added ml-auto to push profile to the right */}
+        {/* Notifications button and dropdown removed */}
 
         <div className="relative">
           <button

@@ -8,7 +8,7 @@ import Waves from "@/components/ui/waves";
 import AnimatedContent from "@/components/ui/animated-content";
 import FadeContent from "@/components/ui/fade-content";
 import Breadcrumbs from "@/components/ui/breadcrumbs";
-import { Home, BookOpen, ArrowRight, CheckCircle, Loader2, AlertCircle } from "lucide-react"; // Added icons
+import { Home, BookOpen, ArrowRight, CheckCircle, Loader2, AlertCircle, BookText } from "lucide-react"; // Added icons
 import LessonChatbot from "@/components/ai/LessonChatBot";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -22,18 +22,16 @@ export default function LessonWithCodePage() {
   const navigate = useNavigate();
 
   const {
-    lesson, // This is the lessonData from the hook
-    exercises, // Array of exercises for the lesson
+    lesson,
+    exercises,
     isLessonCompleted,
     getExerciseProgress,
     loading: lessonDetailLoading,
     error: lessonDetailError,
     submittingExerciseId,
-    submitExercise,
-    // refreshData, // Available if manual refresh is needed
+    submitExercise: submitExerciseFromHook,
   } = useLessonDetail(lessonId);
 
-  // State for module and course, fetched after lesson data is available
   const [module, setModule] = useState(null);
   const [course, setCourse] = useState(null);
   const [breadcrumbLoading, setBreadcrumbLoading] = useState(true);
@@ -42,6 +40,8 @@ export default function LessonWithCodePage() {
   const currentExercise = exercises && exercises.length > 0 ? exercises[0] : null;
   const currentExerciseProgress = currentExercise ? getExerciseProgress(currentExercise.id) : null;
   const isCurrentExerciseCorrect = currentExerciseProgress?.is_correct || false;
+
+  console.log("Current Exercise:", currentExercise); // <-- ADD THIS LINE
 
   useEffect(() => {
     if (lesson?.module_id) {
@@ -65,21 +65,20 @@ export default function LessonWithCodePage() {
     }
   }, [lesson]);
 
-  const handleCodeSubmit = async (code) => {
+  const handleCodeSubmit = async (codeToSubmit) => { // Renamed param for clarity
     if (!currentExercise) {
       toast.error("No hay ejercicio seleccionado para enviar.");
       return;
     }
     try {
-      const submissionResult = await submitExercise(currentExercise.id, code);
-      // The hook's submitExercise already shows a toast.
-      // You can add more specific logic here based on submissionResult if needed.
-      // For example, if submissionResult contains detailed output:
-      // setLastSubmissionOutput(submissionResult.output);
-      return submissionResult; // Return for LessonCodeExecutor if it needs it
+      // submitExerciseFromHook is from useLessonDetail
+      const submissionResult = await submitExerciseFromHook(currentExercise.id, codeToSubmit);
+      // The hook should handle success/error toasts and state updates
+      return submissionResult;
     } catch (error) {
-      // Error toast is handled by the hook, but you can add more here.
+      // Error toast is likely handled by the hook
       console.error("Failed to submit exercise from page:", error);
+      // Optionally, re-throw or handle further if needed
     }
   };
 
@@ -208,22 +207,33 @@ export default function LessonWithCodePage() {
                   </div>
                 )}
               </div>
-              <div className="prose prose-invert max-w-none text-gray-300">
+              <div className="prose prose-invert max-w-none text-gray-300 mb-3">
                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentExercise.description || ""}</ReactMarkdown>
               </div>
+              {/* Display Exercise Instructions */}
+              {currentExercise.instructions && (
+                <div className="mt-3 pt-3 border-t border-primary-opaque/10">
+                  <h4 className="font-semibold text-md text-secondary mb-2 flex items-center">
+                    <BookText size={18} className="mr-2 text-primary" />
+                    Instrucciones del Ejercicio:
+                  </h4>
+                  <div className="prose prose-sm prose-invert max-w-none text-gray-300">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentExercise.instructions}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
         <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow px-6 p-3 flex flex-col gap-4">
           {currentExercise ? (
             <LessonCodeExecutor
-              key={currentExercise.id} // Add key if exercise can change
+              key={currentExercise.id}
               initialCode={currentExercise.starter_code || ""}
-              exerciseId={currentExercise.id}
+              exerciseId={currentExercise.id} // Pass exerciseId
               onSubmitCode={handleCodeSubmit} // Pass the submit handler
-              isSubmitting={submittingExerciseId === currentExercise.id}
-              isCorrect={isCurrentExerciseCorrect} // Let executor know if it's already solved
-              // You might want to pass last submission output/error to LessonCodeExecutor too
+              isSubmitting={submittingExerciseId === currentExercise.id} // Pass submitting state
+              isCorrect={isCurrentExerciseCorrect} // Pass correctness state
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">

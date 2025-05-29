@@ -20,6 +20,7 @@ app.add_middleware(
 
 class CodeRequest(BaseModel):
     code: str
+    input_data: Optional[str] = None # Add input_data field
     timeout: Optional[int] = 5  # Default timeout in seconds
 
 class ExecutionResult(BaseModel):
@@ -42,11 +43,13 @@ async def execute_code(request: CodeRequest):
 
     output = ""
     error = ""
+    process_input = request.input_data.encode() if request.input_data is not None else None
 
     try:
         # Execute the Python code with resource limitations
         process = subprocess.Popen(
             ["python3", temp_file_path],
+            stdin=subprocess.PIPE if process_input else None, # Provide stdin if input_data exists
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -55,13 +58,17 @@ async def execute_code(request: CodeRequest):
 
         try:
             # Wait for the process with timeout
-            stdout, stderr = process.communicate(timeout=request.timeout)
+            stdout, stderr = process.communicate(input=request.input_data, timeout=request.timeout) # Pass input to communicate
             output = stdout
             error = stderr
         except subprocess.TimeoutExpired:
             # Kill the process if it times out
             os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            process.wait() # Ensure process is reaped
             error = "Execution timed out. Your code took too long to run."
+            output = stdout # Capture any output before timeout
+            if process.stderr: # Capture any stderr before timeout
+                 error += f"\nPartial stderr: {process.stderr.read()}"
     except Exception as e:
         error = f"Error executing code: {str(e)}"
     finally:

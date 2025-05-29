@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getLessonById, getExercisesByLessonId } from '@/services/contentService'; // Assuming these exist
-import { startLesson, submitExerciseAttempt, getLessonDetailedProgress } from '@/services/userService';
+import { startLesson, getLessonDetailedProgress } from '@/services/userService'; // Keep these if they are correct
+import { submitExercise as submitExerciseApi } from '@/services/progressService'; // CORRECTED IMPORT
 import { toast } from 'react-hot-toast';
 
 export function useLessonDetail(lessonId) {
@@ -55,8 +56,8 @@ export function useLessonDetail(lessonId) {
   const handleExerciseSubmit = async (exerciseId, submittedCode) => {
     setSubmittingExerciseId(exerciseId);
     try {
-      const result = await submitExerciseAttempt(exerciseId, submittedCode);
-      toast.success(result.is_correct ? `Ejercicio enviado correctamente!` : `Intento registrado. ¡Sigue intentando!`);
+      const result = await submitExerciseApi(exerciseId, submittedCode);
+      toast.success(`Ejercicio "${result.exercise_id}" enviado! Correcto: ${result.is_correct}`);
       // Refresh progress after submission
       const updatedProgressData = await getLessonDetailedProgress(lessonId);
       setLessonProgress(updatedProgressData);
