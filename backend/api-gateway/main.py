@@ -1,11 +1,16 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
+from httpx import URL
 from fastapi.responses import JSONResponse, StreamingResponse, Response # Add Response
-from fastapi.requests import Request
-from fastapi import status
+import logging # <--- CHANGE THIS
 import json # Should already be there
 import traceback # Add this import at the top of your
+import os # <--- ADD THIS if not already present for SERVICE_URLS
+
+# Configure logging
+logging.basicConfig(level=logging.INFO) # Basic configuration
+logger = logging.getLogger(__name__) # <--- GET A LOGGER INSTANCE
 
 app = FastAPI(title="Python Learning Platform API Gateway")
 
@@ -26,12 +31,14 @@ app.add_middleware(
 
 # Service URLs - in production, these would be environment variables
 SERVICE_URLS = {
-    "execution-service": "http://execution-service:8001",
-    "content-service": "http://content-service:8002",
-    "ai-service": "http://ai-service:8005", # Verify hostname is 'ai-service' and port is '8005'
-    "user-service": "http://user-service:8003",
+    "execution-service": os.getenv("EXECUTION_SERVICE_URL", "http://execution-service:8001"),
+    "content-service": os.getenv("CONTENT_SERVICE_URL", "http://content-service:8002"),
+    "ai-service": os.getenv("AI_SERVICE_URL", "http://ai-service:8005"),
+    "user-service": os.getenv("USER_SERVICE_URL", "http://user-service:8003"),
     # Add other services as they're implemented
 }
+
+logger.info(f"API Gateway configured with service URLs: {SERVICE_URLS}") # Now this will work
 
 @app.get("/health")
 async def health_check():
@@ -165,6 +172,13 @@ async def user_service_proxy(request: Request, path: str):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="User service not available")
 
     url = f"{SERVICE_URLS['user-service']}/api/v1/users/{path}"
+
+    headers = dict(request.headers)
+    headers["host"] = URL(SERVICE_URLS["user-service"]).host
+    if request.method in ["GET", "HEAD", "DELETE", "OPTIONS"] and "content-length" in headers:
+        del headers["content-length"]
+
+    logger.info(f"[User Service Proxy] Forwarding to {url} with headers: {headers}") # <--- ADD THIS LOG
 
     async with httpx.AsyncClient() as client:
         try:

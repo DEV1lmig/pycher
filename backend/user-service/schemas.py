@@ -107,6 +107,7 @@ class LessonStartRequest(BaseModel):
 
 class ExerciseCompletionRequest(BaseModel):
     submitted_code: str
+    input_data: Optional[str] = None  # Optional input data for the exercise
     # is_correct: bool # Remove this, it will be determined by the backend
     # output: Optional[str] = None # Remove this, it will be determined by the backend
 
@@ -169,17 +170,30 @@ class UserExerciseSubmissionResponse(BaseModel):
     id: int
     user_id: int
     exercise_id: int
-    lesson_id: int # Added
-    submitted_code: Optional[str] = None # Keep optional, might not always be needed by frontend
+    lesson_id: int
+    submitted_code: Optional[str] = None
     is_correct: bool
-    output: Optional[str] = None # Contains actual output or error message from execution
-    attempt_number: int # Changed from 'attempts' to match model field
+    output: Optional[str] = None
+    attempt_number: int
     submitted_at: datetime
     score: Optional[int] = None
-    execution_time_ms: Optional[int] = None # Added
+    execution_time_ms: Optional[int] = None
 
     class Config:
         from_attributes = True
+
+# Schema for displaying exercise progress within a lesson context
+class ExerciseProgressInfo(BaseModel):
+    exercise_id: int
+    title: str  # Added title
+    is_correct: Optional[bool] = None
+    attempts: int = 0
+    last_submitted_at: Optional[datetime] = None
+    # score: Optional[int] = None # Uncomment if you track score per exercise submission and want to show it here
+
+    class Config:
+        from_attributes = True
+
 
 # Schemas for specific endpoint responses
 class LastAccessedProgressResponse(BaseModel):
@@ -304,22 +318,24 @@ class UserUpdate(BaseModel):
 
 class ExerciseProgressInfo(BaseModel):
     exercise_id: int
-    # title: Optional[str] = None # Optional: if you want to include exercise title
-    is_correct: bool
-    last_submission_id: Optional[int] = None
+    title: str  # Added title
+    is_correct: Optional[bool] = None
+    attempts: int = 0
+    last_submitted_at: Optional[datetime] = None
+    # score: Optional[int] = None # Uncomment if you track score per exercise submission and want to show it here
 
     class Config:
-        orm_mode = True # For SQLAlchemy model conversion, though not directly used here
+        from_attributes = True
 
 class LessonProgressDetailResponse(BaseModel):
     lesson_id: int
     is_completed: bool
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
-    exercises_progress: List[ExerciseProgressInfo]
+    exercises_progress: List[ExerciseProgressInfo] # Expects a list of ExerciseProgressInfo
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 from typing import List, Optional # Ensure List and Optional are imported
 from datetime import datetime # Ensure datetime is imported

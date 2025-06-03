@@ -1,51 +1,50 @@
-from sqlalchemy.orm import Session, joinedload, selectinload # Ensure selectinload is imported
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
+import os
 from fastapi import HTTPException, status
-from utils import get_password_hash, verify_password
-from datetime import datetime as dt # Alias to avoid conflict if 'datetime' is used elsewhere
-from typing import Optional, List, Dict, Any, Union, Tuple, Callable # Add all types you use
+# Assuming utils.py is in the same directory as services.py
+from utils import get_password_hash, verify_password, generate_input_from_constraints
+from datetime import datetime as dt
+from typing import Optional, List, Dict, Any # Ensure all necessary types are imported
 
-# Assuming your User model is in shared.models.user
-# If it's local to user-service, adjust the import path for User
-from models import User
+from models import User # Adjusted if your models are structured differently
 from models import (
     Course, Module, Lesson, Exercise,
     UserCourseEnrollment, UserModuleProgress, UserLessonProgress, UserExerciseSubmission,
     CourseExam, UserExamAttempt
 )
-# Change this from a relative import to an absolute import
-from schemas import (
+from schemas import ( # Adjusted if your schemas are structured differently
     UserProgressReportDataSchema, ReportCourseProgressSchema, ReportModuleProgressSchema,
     ReportLessonProgressSchema, ReportExerciseProgressSchema, ReportExamAttemptSchema,
     UserCreate, LessonProgressDetailResponse, ExerciseProgressInfo
 )
-# Import logger if you use it, e.g., from logging import getLogger; logger = getLogger(__name__)
-import logging
-logger = logging.getLogger(__name__)
+import logging # Ensure logging is imported
+logger = logging.getLogger(__name__) # Ensure logger is initialized
 
 import httpx
-import json # Add this import
+import json # If you need to dump json for feedback, otherwise not strictly needed here
 
-EXECUTION_SERVICE_URL = "http://execution-service:8001" # Assuming Docker service name, adjust if needed
-# For local development without Docker Compose for services:
-# EXECUTION_SERVICE_URL = "http://localhost:8001"
+# Ensure EXECUTION_SERVICE_URL is defined, e.g.:
+# EXECUTION_SERVICE_URL = os.getenv("EXECUTION_SERVICE_URL", "http://execution-service:8001")
+# For local dev without docker-compose for services:
+EXECUTION_SERVICE_URL = os.getenv("EXECUTION_SERVICE_URL", "http://execution-service:8001") # Or your configured URL
 
 
 # --- Helper functions for cascading completion ---
 
 def _check_and_update_lesson_completion(db: Session, user_id: int, lesson_id: int):
-    logger.debug(f"Checking lesson completion for User ID: {user_id}, Lesson ID: {lesson_id}")
+    logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Starting _check_and_update_lesson_completion.") # MODIFIED: More specific start log
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
-        logger.warning(f"_check_and_update_lesson_completion: Lesson ID {lesson_id} not found.")
+        logger.warning(f"User ID {user_id}: _check_and_update_lesson_completion: Lesson ID {lesson_id} not found.")
         return
 
-    # Get all exercises for this lesson
     lesson_exercises = db.query(Exercise.id).filter(Exercise.lesson_id == lesson_id).all()
     exercise_ids_in_lesson = [e.id for e in lesson_exercises]
+    logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Found {len(exercise_ids_in_lesson)} exercises: {exercise_ids_in_lesson}") # ADDED: Log exercises found
 
     if not exercise_ids_in_lesson:
-        logger.info(f"Lesson ID {lesson_id} has no exercises. Considering it complete for User ID {user_id} if progress record exists.")
+        logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: Lesson has no exercises. Considering it complete if progress record exists.")
         # If a lesson has no exercises, it's considered complete once started.
         # Ensure UserLessonProgress exists and mark it complete.
         lesson_progress = db.query(UserLessonProgress).filter(
@@ -61,28 +60,34 @@ def _check_and_update_lesson_completion(db: Session, user_id: int, lesson_id: in
             _check_and_update_module_completion(db, user_id, lesson.module_id)
         return
 
-    # Check if all exercises in the lesson have a correct submission by the user
     all_exercises_correctly_submitted = True
-    for exercise_id in exercise_ids_in_lesson:
+    for exercise_id_in_loop in exercise_ids_in_lesson:
+        logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Checking Exercise ID {exercise_id_in_loop} for correct submission.") # ADDED: Log current exercise check
         correct_submission = db.query(UserExerciseSubmission).filter(
             UserExerciseSubmission.user_id == user_id,
-            UserExerciseSubmission.exercise_id == exercise_id,
+            UserExerciseSubmission.exercise_id == exercise_id_in_loop,
             UserExerciseSubmission.is_correct == True
         ).first()
+
         if not correct_submission:
             all_exercises_correctly_submitted = False
+            logger.warning(f"User ID {user_id}, Lesson ID {lesson_id}: Exercise ID {exercise_id_in_loop} NOT found as correctly submitted. Lesson will not be marked complete based on this check.") # MODIFIED: More prominent log
             break
+        else:
+            logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Exercise ID {exercise_id_in_loop} IS correctly submitted.") # ADDED: Log successful check for this exercise
+
+    logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Final check for all_exercises_correctly_submitted: {all_exercises_correctly_submitted}")
 
     if all_exercises_correctly_submitted:
         lesson_progress = db.query(UserLessonProgress).filter(
             UserLessonProgress.user_id == user_id,
             UserLessonProgress.lesson_id == lesson_id
-        ).first()
+        ).order_by(UserLessonProgress.id.desc()).first() # Ensure latest record is fetched
         if lesson_progress and not lesson_progress.is_completed:
             lesson_progress.is_completed = True
             lesson_progress.completed_at = dt.utcnow()
             db.add(lesson_progress)
-            logger.info(f"All exercises in Lesson ID {lesson_id} completed. Marked lesson as complete for User ID {user_id}.")
+            logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: All exercises appear correctly submitted. Proceeding to update UserLessonProgress.") # ADDED
             _check_and_update_module_completion(db, user_id, lesson.module_id)
         elif not lesson_progress:
             logger.warning(f"Lesson ID {lesson_id} marked as complete by exercises, but no UserLessonProgress record found for User ID {user_id}. Creating one.")
@@ -96,6 +101,8 @@ def _check_and_update_lesson_completion(db: Session, user_id: int, lesson_id: in
             )
             db.add(new_lesson_progress)
             _check_and_update_module_completion(db, user_id, lesson.module_id)
+    else:
+        logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: Not all exercises correctly submitted. UserLessonProgress will not be marked as complete by this path.") # ADDED
 
 
 def _check_and_update_module_completion(db: Session, user_id: int, module_id: int):
@@ -388,175 +395,218 @@ def start_lesson(db: Session, user_id: int, lesson_id: int):
 
     return progress # 'progress' instance will be serialized by Pydantic
 
-def complete_exercise(db: Session, user_id: int, exercise_id: int, submitted_code: str):
+def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitted: str, input_data: Optional[str] = None):
+    """
+    Handles the submission of an exercise by a user.
+    Validates the code using either a 'submission_test_strategy' (generated inputs)
+    or falls back to the 'input_data' provided from the user's interactive test run.
+    """
+    logger.info(f"Attempting to complete exercise ID {exercise_id} for user ID {user_id}.")
     exercise = db.query(Exercise).options(
-        selectinload(Exercise.lesson)
+        selectinload(Exercise.lesson) # Eager load lesson for lesson_id
     ).filter(Exercise.id == exercise_id).first()
 
     if not exercise:
-        logger.warning(f"complete_exercise: Exercise ID {exercise_id} not found for User ID {user_id}.")
+        logger.warning(f"complete_exercise: Exercise ID {exercise_id} not found.")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
-    if not exercise.lesson_id:
+    if not exercise.lesson_id: # Should always have a lesson
         logger.error(f"complete_exercise: Exercise ID {exercise_id} is not associated with a lesson.")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Exercise misconfiguration: not linked to a lesson.")
 
+    # Ensure lesson progress exists, or create it (implicitly starting the lesson)
     lesson_progress = db.query(UserLessonProgress).filter(
         UserLessonProgress.user_id == user_id,
         UserLessonProgress.lesson_id == exercise.lesson_id
     ).first()
     if not lesson_progress:
         logger.info(f"No UserLessonProgress for User ID {user_id}, Lesson ID {exercise.lesson_id}. Starting lesson implicitly.")
-        # Assuming start_lesson handles its own commit or is part of the transaction
-        start_lesson(db, user_id, exercise.lesson_id)
-        # It's good practice to re-fetch or ensure the lesson_progress object is available if needed immediately
+        # Calling start_lesson also handles module progress and enrollment checks/updates
+        start_lesson(db, user_id, exercise.lesson_id) # This function should handle db.commit internally or stage changes
         lesson_progress = db.query(UserLessonProgress).filter(
             UserLessonProgress.user_id == user_id,
             UserLessonProgress.lesson_id == exercise.lesson_id
         ).first()
-        if not lesson_progress: # If still not found after starting, something is wrong
-             logger.error(f"Failed to create or find UserLessonProgress for User ID {user_id}, Lesson ID {exercise.lesson_id} after implicit start.")
-             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to initialize lesson progress.")
+        if not lesson_progress: # Should not happen if start_lesson is robust
+            logger.error(f"Failed to create/find UserLessonProgress for User ID {user_id}, Lesson ID {exercise.lesson_id} after implicit start.")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to initialize lesson progress.")
 
+    logger.info(f"User ID {user_id}, EID {exercise_id}: Starting complete_exercise. Input data provided: {'Yes' if input_data else 'No'}") # ADDED: Log input_data presence
 
-    all_tests_passed = True
-    execution_summary_output = [] # To store output/error from each test case
-    overall_execution_error = ""
-    total_execution_time_ms = 0
-
-    try:
-        test_cases_list = json.loads(exercise.test_cases) if exercise.test_cases else [{"input": None, "output": ""}] # Default if no test_cases
-        if not isinstance(test_cases_list, list): # Basic validation
-            logger.error(f"Exercise ID {exercise.id} has malformed test_cases (not a list). Treating as no test cases.")
-            test_cases_list = [{"input": None, "output": ""}] # Fallback
-
-    except json.JSONDecodeError:
-        logger.error(f"Failed to parse test_cases for Exercise ID {exercise.id}. Raw: {exercise.test_cases}")
-        overall_execution_error = "Error: Invalid test case configuration for the exercise."
-        all_tests_passed = False
-        test_cases_list = [] # Prevent further processing
-
-    if not test_cases_list and not overall_execution_error: # If test_cases was empty string or "[]"
-        logger.info(f"Exercise ID {exercise.id} has no defined test cases. Marking as correct if code executes without error.")
-        # In this scenario, we might just run the code once without specific input/output checks
-        # Or, define a policy (e.g., must have at least one test case to be auto-gradable)
-        # For now, let's run it once.
-        test_cases_list = [{"input": None, "output": None}] # Special case: run once, no specific output check unless error
-
-    for i, test_case in enumerate(test_cases_list):
-        if not all_tests_passed and overall_execution_error: # Stop if initial parsing failed
-            break
-
-        test_input = test_case.get("input")
-        expected_test_output = test_case.get("output") # Can be None if we only check for errors
-
-        actual_test_output_str_raw = "" # Store raw output before stripping
-        execution_test_error_str = ""
-        test_execution_time_ms = 0
-
+    validation_rules = exercise.validation_rules if isinstance(exercise.validation_rules, dict) else {}
+    if not validation_rules and isinstance(exercise.validation_rules, str): # Handle if it's a JSON string
         try:
-            with httpx.Client() as client:
-                response = client.post(
-                    f"{EXECUTION_SERVICE_URL}/execute",
-                    json={"code": submitted_code, "input_data": test_input, "timeout": 5},
-                    timeout=10.0
-                )
+            validation_rules = json.loads(exercise.validation_rules)
+        except json.JSONDecodeError:
+            logger.error(f"Failed to parse validation_rules JSON string for Exercise ID {exercise.id}. Raw: {exercise.validation_rules}")
+            validation_rules = {}
+
+
+    all_system_tests_passed = True # Overall result of the submission
+    final_submission_message = ""  # User-facing message for the submission result
+    representative_output_for_db = "" # E.g., output of the first test run
+    # Store detailed results from each test run (generated or single)
+    # This could be stored as a JSON string in the DB if the field supports it.
+    detailed_results_log: List[Dict[str, Any]] = []
+
+    submission_strategy = validation_rules.get("submission_test_strategy")
+
+    if submission_strategy and submission_strategy.get("type") == "generated_inputs":
+        logger.info(f"EID {exercise_id}, UID {user_id}: Using 'generated_inputs' strategy for submission.")
+        count = submission_strategy.get("count", 1)
+        constraints = submission_strategy.get("input_constraints", {})
+
+        for i in range(count):
+            generated_input_value = generate_input_from_constraints(constraints)
+            test_description = f"Generated Test {i+1}/{count} (Input: '{generated_input_value}')"
+            logger.debug(f"  Running {test_description} for EID {exercise_id}")
+
+            execution_payload = {
+                "exercise_id": exercise_id,
+                "code": code_submitted,
+                "input_data": generated_input_value
+            }
+            current_test_passed = False
+            current_test_output = ""
+            current_test_error = ""
+
+            try:
+                response = httpx.post(f"{EXECUTION_SERVICE_URL}/execute", json=execution_payload, timeout=15.0)
                 response.raise_for_status()
                 exec_result = response.json()
+                current_test_passed = exec_result.get("passed", False)
+                current_test_output = exec_result.get("output", "")
+                current_test_error = exec_result.get("error", "")
+                if i == 0: representative_output_for_db = current_test_output
 
-                actual_test_output_str_raw = exec_result.get("output", "") # Get raw output
-                actual_test_output_str = actual_test_output_str_raw.strip() # Stripped version for comparison
-                execution_test_error_str = exec_result.get("error", "").strip()
-                test_execution_time_ms = int(exec_result.get("execution_time", 0) * 1000)
-                total_execution_time_ms += test_execution_time_ms
+            except httpx.RequestError as e:
+                current_test_error = f"Error connecting to execution service: {e}"
+                logger.error(f"{test_description} - {current_test_error}")
+            except httpx.HTTPStatusError as e:
+                current_test_error = f"Execution service error: {e.response.status_code}"
+                try: current_test_error += f" - {e.response.json().get('error', 'Unknown execution error')}"
+                except: pass # Keep it simple if parsing error response fails
+                logger.error(f"{test_description} - {current_test_error}")
+            except Exception as e:
+                current_test_error = f"Unexpected error during execution: {e}"
+                logger.error(f"{test_description} - {current_test_error}", exc_info=True)
 
-                # DETAILED LOGGING FOR COMPARISON
-                logger.debug(f"--- Test Case {i+1} (EID: {exercise_id}, UID: {user_id}) ---")
-                logger.debug(f"Input to script: {repr(test_input)}")
-                logger.debug(f"Expected Output (raw from JSON): {repr(expected_test_output)}")
-                logger.debug(f"Actual Output (raw from execution): {repr(actual_test_output_str_raw)}")
+            detailed_results_log.append({
+                "description": test_description,
+                "input": generated_input_value,
+                "passed": current_test_passed,
+                "output": current_test_output,
+                "error": current_test_error
+            })
 
-                expected_output_for_comparison = expected_test_output.strip() if expected_test_output is not None else None
+            if not current_test_passed:
+                all_system_tests_passed = False
+                final_submission_message = f"Failed on {test_description}. Details: {current_test_error or 'Output did not match.'}"
+                logger.warning(f"EID {exercise_id}, UID {user_id}: Submission failed on {test_description}.")
+                break # Stop on first failure for generated tests
 
-                logger.debug(f"Expected Output (stripped for comparison): {repr(expected_output_for_comparison)}")
-                logger.debug(f"Actual Output (stripped for comparison): {repr(actual_test_output_str)}")
-                # END DETAILED LOGGING
+        if all_system_tests_passed:
+             final_submission_message = f"All {count} generated input tests passed."
 
-                if execution_test_error_str:
-                    all_tests_passed = False
-                    execution_summary_output.append(f"Test Case {i+1} (Input: {test_input}):\nError:\n{execution_test_error_str}")
-                    logger.info(f"Test Case {i+1} for EID {exercise_id}, UID {user_id} errored: {execution_test_error_str}")
-                    break # Stop on first error
-                elif expected_test_output is not None and actual_test_output_str != expected_output_for_comparison:
-                    all_tests_passed = False
-                    execution_summary_output.append(f"Test Case {i+1} (Input: {test_input}):\nExpected:\n{expected_output_for_comparison}\nGot:\n{actual_test_output_str}")
-                    logger.info(f"Test Case {i+1} for EID {exercise_id}, UID {user_id} failed. Expected: {repr(expected_output_for_comparison)}, Got: {repr(actual_test_output_str)}")
-                    break # Stop on first failed test
-                elif expected_test_output is None and not execution_test_error_str: # Case where no specific output, just no error
-                    execution_summary_output.append(f"Test Case {i+1} (Input: {test_input}): Passed (no specific output expected, no error).")
-                    logger.info(f"Test Case {i+1} for EID {exercise_id}, UID {user_id} passed (no specific output, no error).")
-                else: # Passed
-                    execution_summary_output.append(f"Test Case {i+1} (Input: {test_input}): Passed")
-                    logger.info(f"Test Case {i+1} for EID {exercise_id}, UID {user_id} passed. Expected: {repr(expected_output_for_comparison)}, Got: {repr(actual_test_output_str)}")
+    else: # Fallback: No 'generated_inputs' strategy. Use input_data from the user's interactive run.
+        test_description = f"Test with user-provided input: '{input_data}'"
+        logger.info(f"EID {exercise_id}, UID {user_id}: No 'generated_inputs' strategy. {test_description}")
+
+        if validation_rules.get("requires_input_function") and input_data is None:
+            logger.warning(f"EID {exercise_id}, UID {user_id}: Exercise requires input, but no input_data from UI and no generation strategy. This may lead to failure if validator expects input.")
+            # The execution-service will handle None input as per its logic (e.g., empty string for stdin)
+
+        execution_payload = {
+            "exercise_id": exercise_id,
+            "code": code_submitted,
+            "input_data": input_data # This is from the textarea
+        }
+        current_test_passed = False
+        current_test_output = ""
+        current_test_error = ""
+
+        try:
+            response = httpx.post(f"{EXECUTION_SERVICE_URL}/execute", json=execution_payload, timeout=15.0)
+            response.raise_for_status()
+            exec_result = response.json()
+            current_test_passed = exec_result.get("passed", False)
+            current_test_output = exec_result.get("output", "")
+            current_test_error = exec_result.get("error", "")
+            representative_output_for_db = current_test_output
 
         except httpx.RequestError as e:
-            logger.error(f"HTTP request to execution service failed for EID {exercise_id}, UID {user_id}, Test Case {i+1}: {e}")
-            overall_execution_error = f"Error connecting to execution service: {str(e)}"
-            all_tests_passed = False
-            break
+            current_test_error = f"Error connecting to execution service: {e}"
+            logger.error(f"{test_description} - {current_test_error}")
         except httpx.HTTPStatusError as e:
-            logger.error(f"Execution service returned error for EID {exercise_id}, UID {user_id}, Test Case {i+1}: {e.response.status_code} - {e.response.text}")
-            try:
-                error_detail = e.response.json().get("detail", e.response.text)
-            except ValueError:
-                error_detail = e.response.text
-            overall_execution_error = f"Execution service error: {error_detail}"
-            all_tests_passed = False
-            break
+            current_test_error = f"Execution service error: {e.response.status_code}"
+            try: current_test_error += f" - {e.response.json().get('error', 'Unknown execution error')}"
+            except: pass
+            logger.error(f"{test_description} - {current_test_error}")
         except Exception as e:
-            logger.error(f"Error processing execution for EID {exercise_id}, UID {user_id}, Test Case {i+1}: {e}", exc_info=True)
-            overall_execution_error = f"Error processing execution result: {str(e)}"
-            all_tests_passed = False
-            break
+            current_test_error = f"Unexpected error during execution: {e}"
+            logger.error(f"{test_description} - {current_test_error}", exc_info=True)
 
-    is_correct_submission = all_tests_passed and not overall_execution_error
+        all_system_tests_passed = current_test_passed
+        detailed_results_log.append({
+            "description": test_description,
+            "input": input_data,
+            "passed": current_test_passed,
+            "output": current_test_output,
+            "error": current_test_error
+        })
 
+        if not all_system_tests_passed:
+            final_submission_message = f"Validation failed with your provided input. Details: {current_test_error or 'Output did not match.'}"
+        else:
+            final_submission_message = "Validation passed with your provided input."
+
+    logger.info(f"User ID {user_id}, EID {exercise_id}: Result of system tests (all_system_tests_passed): {all_system_tests_passed}. Message: '{final_submission_message}'")
+
+    # --- Record Submission ---
     previous_attempts_count = db.query(UserExerciseSubmission).filter(
         UserExerciseSubmission.user_id == user_id,
         UserExerciseSubmission.exercise_id == exercise_id
     ).count()
     current_attempt_number = previous_attempts_count + 1
 
-    final_output_to_store = overall_execution_error if overall_execution_error else "\n---\n".join(execution_summary_output)
-
-    submission = UserExerciseSubmission(
+    # For UserExerciseSubmission.feedback, store the user-facing message.
+    # For UserExerciseSubmission.output, store a representative output.
+    # If you need to store all detailed_results_log, you might need a JSON field or a separate table.
+    # For now, feedback gets the summary message.
+    db_submission = UserExerciseSubmission(
         user_id=user_id,
         exercise_id=exercise_id,
         lesson_id=exercise.lesson_id,
-        submitted_code=submitted_code,
-        is_correct=is_correct_submission,
-        output=final_output_to_store[:2000], # Truncate if too long for DB
-        score=100 if is_correct_submission else 0,
-        execution_time_ms=total_execution_time_ms,
+        code_submitted=code_submitted,
+        is_correct=all_system_tests_passed,
+        output=representative_output_for_db[:2000], # Truncate if necessary
+        feedback=final_submission_message[:2000],   # Truncate if necessary
+        # detailed_results=json.dumps(detailed_results_log) # If you add a JSON field for this
         attempt_number=current_attempt_number,
+        # execution_time can be aggregated from detailed_results_log if needed, or set to total time for this function
         submitted_at=dt.utcnow()
     )
-    db.add(submission)
+    db.add(db_submission)
 
     try:
         db.commit()
-        db.refresh(submission)
-        logger.info(f"Exercise ID {exercise_id} submitted by User ID {user_id}, Attempt: {current_attempt_number}. Overall Correct: {is_correct_submission}.")
+        db.refresh(db_submission)
+        logger.info(f"User ID {user_id}, EID {exercise_id}: UserExerciseSubmission (ID: {db_submission.id}) committed. Correct: {all_system_tests_passed}.") # MODIFIED: Log submission ID
 
-        if is_correct_submission:
+        if all_system_tests_passed:
+            logger.info(f"User ID {user_id}, EID {exercise_id}: All system tests passed. Calling _check_and_update_lesson_completion for Lesson ID {exercise.lesson_id}.") # ADDED
             _check_and_update_lesson_completion(db, user_id, exercise.lesson_id)
-            db.commit() # Commit changes from lesson completion check
+            # Ensure changes from _check_and_update_lesson_completion are committed
+            db.commit()
+            logger.info(f"User ID {user_id}, EID {exercise_id}: Committed updates after _check_and_update_lesson_completion for Lesson ID {exercise.lesson_id}.") # ADDED
+        else:
+            logger.info(f"User ID {user_id}, EID {exercise_id}: System tests did NOT pass. Skipping _check_and_update_lesson_completion.") # ADDED
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error in complete_exercise DB operations for User ID {user_id}, Exercise ID {exercise_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not record exercise completion properly.")
+        logger.error(f"User ID {user_id}, EID {exercise_id}: Error during DB commit for exercise submission or subsequent completion checks: {e}", exc_info=True) # MODIFIED: More specific log
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not record exercise completion.")
 
-    return submission
+    return db_submission
 
 def get_last_accessed_progress(db: Session, user_id: int):
     """Get user's last accessed course, module, and lesson"""
@@ -717,18 +767,14 @@ def get_user_lesson_progress_detail(db: Session, user_id: int, lesson_id: int) -
     lesson_progress = db.query(UserLessonProgress).filter(
         UserLessonProgress.user_id == user_id,
         UserLessonProgress.lesson_id == lesson_id
-    ).first()
+    ).order_by(UserLessonProgress.id.desc()).first() # Ensure latest record is fetched
 
     if not lesson_progress:
-        # If there's no progress record, it implies the lesson hasn't been started or accessed.
-        # Depending on requirements, you could return None, raise 404, or return a default state.
-        # For now, let's check if the lesson itself exists to provide a more specific response.
         lesson_exists = db.query(Lesson.id).filter(Lesson.id == lesson_id).first()
         if not lesson_exists:
             logger.warning(f"get_user_lesson_progress_detail: Lesson ID {lesson_id} not found.")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found.")
         logger.info(f"No UserLessonProgress found for User ID {user_id}, Lesson ID {lesson_id}. Lesson not started by user.")
-        # Return a default "not started" state or None. For the frontend hook, returning a structure is better.
         return LessonProgressDetailResponse(
             lesson_id=lesson_id,
             is_completed=False,
@@ -737,45 +783,35 @@ def get_user_lesson_progress_detail(db: Session, user_id: int, lesson_id: int) -
             exercises_progress=[] # No exercises attempted if lesson not started
         )
 
-    # Get all exercises associated with this lesson
-    exercises_in_lesson = db.query(Exercise.id, Exercise.title).filter(Exercise.lesson_id == lesson_id).order_by(Exercise.order_index).all()
+    # Fetch exercises for the lesson
+    lesson_exercises = db.query(Exercise).filter(Exercise.lesson_id == lesson_id).order_by(Exercise.order_index).all()
 
-    exercises_progress_info: list[ExerciseProgressInfo] = []
-    for ex_id, ex_title in exercises_in_lesson:
-        # Find the latest correct submission for this exercise by the user
-        latest_correct_submission = db.query(UserExerciseSubmission).filter(
+    exercises_progress_info_list: List[ExerciseProgressInfo] = []
+    for exercise_entity in lesson_exercises:
+        # Get the latest submission for this exercise by the user
+        latest_submission = db.query(UserExerciseSubmission).filter(
             UserExerciseSubmission.user_id == user_id,
-            UserExerciseSubmission.exercise_id == ex_id,
-            UserExerciseSubmission.is_correct == True
+            UserExerciseSubmission.exercise_id == exercise_entity.id
         ).order_by(UserExerciseSubmission.submitted_at.desc()).first()
 
-        # If no correct submission, find the latest incorrect one to show it was attempted
-        last_submission_id = None
-        is_correct_for_exercise = False
-        if latest_correct_submission:
-            is_correct_for_exercise = True
-            last_submission_id = latest_correct_submission.id
-        else:
-            latest_any_submission = db.query(UserExerciseSubmission.id).filter(
-                UserExerciseSubmission.user_id == user_id,
-                UserExerciseSubmission.exercise_id == ex_id
-            ).order_by(UserExerciseSubmission.submitted_at.desc()).first()
-            if latest_any_submission:
-                last_submission_id = latest_any_submission.id
+        exercises_progress_info_list.append(
+            ExerciseProgressInfo(
+                exercise_id=exercise_entity.id,
+                title=exercise_entity.title, # Assuming ExerciseProgressInfo has a title field
+                is_correct=latest_submission.is_correct if latest_submission else None,
+                attempts=latest_submission.attempt_number if latest_submission else 0, # Use attempt_number
+                last_submitted_at=latest_submission.submitted_at if latest_submission else None
+                # Add other fields to ExerciseProgressInfo as needed and populate them here
+            )
+        )
 
-        exercises_progress_info.append(ExerciseProgressInfo(
-            exercise_id=ex_id,
-            # title=ex_title, # Optional: if you want to return title here too
-            is_correct=is_correct_for_exercise,
-            last_submission_id=last_submission_id
-        ))
-
+    logger.info(f"get_user_lesson_progress_detail for User ID {user_id}, Lesson ID {lesson_id} - DB value for lesson_progress.is_completed: {lesson_progress.is_completed}")
     return LessonProgressDetailResponse(
         lesson_id=lesson_progress.lesson_id,
         is_completed=lesson_progress.is_completed,
         started_at=lesson_progress.started_at,
         completed_at=lesson_progress.completed_at,
-        exercises_progress=exercises_progress_info
+        exercises_progress=exercises_progress_info_list # Pass the populated list
     )
 
 def get_user_progress_report_data(db: Session, user_id: int) -> UserProgressReportDataSchema:

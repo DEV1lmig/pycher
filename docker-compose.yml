@@ -40,6 +40,8 @@ services:
       - .env.development
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+    ports:
+      - "8003:8003"
     networks: ["pycher-network"]
 
   content-service:
@@ -81,6 +83,7 @@ services:
       context: ./backend/execution-service
     volumes:
       - ./backend/execution-service:/app
+      - ./backend/shared/seed_data:/app/shared/seed_data:ro
     security_opt: ["no-new-privileges=true"]
     networks: ["pycher-network"]
 

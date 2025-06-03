@@ -321,9 +321,10 @@ def submit_exercise_route(
     # Call the updated service function.
     # `is_correct` and `output` are no longer passed from here.
     # The service function `complete_exercise` now handles execution and evaluation.
-    return complete_exercise( # Or the new name if you refactored it
+    return complete_exercise(
         db, current_user.id, exercise_id,
-        submission_data.submitted_code
+        submission_data.submitted_code,
+        submission_data.input_data # This is now being passed
     )
 
 @router.get("/courses/{course_id}/progress-summary", response_model=CourseProgressSummaryResponse)

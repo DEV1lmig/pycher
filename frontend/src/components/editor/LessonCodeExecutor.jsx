@@ -7,10 +7,12 @@ import { getCodeHint } from "@/services/aiService";
 
 export default function LessonCodeExecutor({
   initialCode = "",
-  exerciseId, // Make sure exerciseId is passed if needed directly here, or rely on parent
-  onSubmitCode, // This prop will be called to submit the exercise
-  isSubmitting, // Prop to disable button during submission
-  isCorrect,    // Prop to indicate if already solved
+  exerciseId,
+  onSubmitCode,
+  isSubmitting,
+  isCorrect,
+  onRunResult,
+  currentUserStdin, // <--- ACCEPT THE PROP
 }) {
   const [tab, setTab] = useState("editor");
   const [code, setCode] = useState(initialCode);
@@ -19,20 +21,29 @@ export default function LessonCodeExecutor({
   const [isExecuting, setIsExecuting] = useState(false);
   const [aiHint, setAiHint] = useState("");
   const [isLoadingHint, setIsLoadingHint] = useState(false);
+  const [passed, setPassed] = useState(null);
 
   const handleExecute = async () => {
     setIsExecuting(true);
     setOutput("");
     setError("");
     setAiHint("");
+    setPassed(null);
     try {
-      const result = await executeCode(code);
+      const result = await executeCode({
+        exerciseId,
+        code,
+        inputData: currentUserStdin, // <--- USE THE PROP HERE
+      });
       setOutput(result.output || "");
       setError(result.error || "");
+      setPassed(result.passed ?? null);
       setTab("output");
+      if (onRunResult) onRunResult(result);
     } catch (err) {
       setOutput("");
-      setError("Network error: " + err.message);
+      setError("Network error: " + (err.detail || err.message));
+      setPassed(false);
       setTab("output");
     }
     setIsExecuting(false);
@@ -40,8 +51,9 @@ export default function LessonCodeExecutor({
 
   const handleSubmitSolution = async () => {
     if (onSubmitCode) {
-      // The onSubmitCode function (passed from LessonWithCodePage)
-      // will handle calling the useLessonDetail hook's submitExercise.
+      // For formal submission, onSubmitCode (which calls submitExerciseFromHook)
+      // already gets userStdin from LessonWithCodePage's state.
+      // So, no change needed here for handleSubmitSolution regarding stdin.
       await onSubmitCode(code);
     }
   };
@@ -53,7 +65,7 @@ export default function LessonCodeExecutor({
       const res = await getCodeHint({
         code,
         error,
-        instruction: "Ayúdame a entender y corregir este error."
+        instruction: "Ayúdame a entender y corregir este error.",
       });
       setAiHint(res.content || res.hint || "No se pudo obtener una pista.");
     } catch (err) {
@@ -80,19 +92,19 @@ export default function LessonCodeExecutor({
             Salida
           </button>
         </div>
-        <div className="flex gap-2"> {/* Added a div to group buttons */}
+        <div className="flex gap-2">
           <Button
             onClick={handleExecute}
-            disabled={isExecuting || isSubmitting} // Disable if executing or submitting
+            disabled={isExecuting || isSubmitting}
             className="bg-primary hover:bg-primary/80 text-white"
           >
             {isExecuting ? "Ejecutando..." : "Ejecutar Código"}
           </Button>
-          {onSubmitCode && !isCorrect && ( // Show submit button if handler exists and not already correct
+          {onSubmitCode && !isCorrect && (
             <Button
               onClick={handleSubmitSolution}
-              disabled={isSubmitting || isExecuting} // Disable if submitting or executing
-              className="bg-green-600 hover:bg-green-700 text-white" // Example styling
+              disabled={isSubmitting || isExecuting}
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               {isSubmitting ? "Enviando..." : "Enviar Solución"}
             </Button>
@@ -112,11 +124,19 @@ export default function LessonCodeExecutor({
         )}
         {tab === "output" && (
           <div className="mt-2">
+            {/* Show pass/fail status */}
+            {passed !== null && (
+              <div className="mb-2">
+                <span className={passed ? "text-green-500 font-bold" : "text-red-500 font-bold"}>
+                  {passed ? "¡Correcto!" : "Incorrecto"}
+                </span>
+              </div>
+            )}
             <OutputDisplay output={output} error={error} />
             {error && (
               <>
                 <div className="flex gap-2 mt-2">
-                  <Button onClick={handleGetHint} disabled={isLoadingHint}  className="bg-primary/10 text-primary hover:bg-primary/20">
+                  <Button onClick={handleGetHint} disabled={isLoadingHint} className="bg-primary/10 text-primary hover:bg-primary/20">
                     {isLoadingHint ? "Obteniendo pista..." : "Pedir pista IA"}
                   </Button>
                 </div>

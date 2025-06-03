@@ -1,11 +1,13 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
-from models import Module, Lesson, Exercise, Course, UserCourseEnrollment, CourseRating
-from schemas import ModuleCreate, LessonCreate, ExerciseCreate
+from typing import Optional, Dict, List, Any # Ensure Dict and List are imported
+import models # Assuming your models are in models.py (e.g., models.Lesson, models.Module, models.Course)
+import schemas # Assuming your Pydantic schemas are in schemas.py
 import redis
 import os
 import json
-from typing import List, Dict, Any, Optional
+from models import Module, Lesson, Exercise, Course, UserCourseEnrollment, CourseRating
+from schemas import ModuleCreate, LessonCreate, ExerciseCreate
 import logging
 
 # Redis client for caching
@@ -102,8 +104,8 @@ def get_exercises(db: Session, lesson_id: str):
         "instructions": exercise.instructions,
         "description": exercise.description,
         "starter_code": exercise.starter_code,
-        "solution_code": exercise.solution_code,
-        "test_cases": exercise.test_cases,  # <-- fix here
+        "validation_type": exercise.validation_type,
+        "validation_rules": exercise.validation_rules,
         "hints": exercise.hints
     } for exercise in exercises]
 
@@ -253,3 +255,91 @@ def get_module_final_exercise(db: Session, module_id: int):
         Exercise.module_id == module_id,
         Exercise.lesson_id == None
     ).first()
+
+def get_next_lesson_info(db: Session, current_lesson_id: int) -> Optional[Dict]:
+    """
+    Determines the next lesson, which could be in the current module or the next module.
+    Returns a dictionary with 'id', 'title', 'module_id', and 'module_title' of the next lesson,
+    or None if no next lesson exists.
+    """
+    current_lesson = db.query(models.Lesson).options(
+        joinedload(models.Lesson.module).joinedload(models.Module.course) # Eager load module and course
+    ).filter(models.Lesson.id == current_lesson_id).first()
+
+    if not current_lesson or not current_lesson.module or not current_lesson.module.course_id:
+        # Current lesson, its module, or course context is missing
+        return None
+
+    current_module = current_lesson.module
+    current_course_id = current_lesson.module.course_id
+
+    # 1. Try to find the next lesson in the current module
+    lessons_in_current_module = db.query(models.Lesson).filter(
+        models.Lesson.module_id == current_module.id,
+        models.Lesson.order_index > current_lesson.order_index
+    ).order_by(models.Lesson.order_index.asc()).all()
+
+    if lessons_in_current_module:
+        next_l = lessons_in_current_module[0]
+        return {
+            "id": next_l.id,
+            "title": next_l.title,
+            "module_id": current_module.id,
+            "module_title": current_module.title
+        }
+
+    # 2. If no next lesson in current module, try to find the first lesson of the next module in the same course
+    modules_in_course = db.query(models.Module).filter(
+        models.Module.course_id == current_course_id,
+        models.Module.order_index > current_module.order_index
+    ).order_by(models.Module.order_index.asc()).all()
+
+    if modules_in_course:
+        next_module_candidate = modules_in_course[0]
+        # Find the first lesson in this next module candidate
+        first_lesson_in_next_module = db.query(models.Lesson).filter(
+            models.Lesson.module_id == next_module_candidate.id
+        ).order_by(models.Lesson.order_index.asc()).first()
+
+        if first_lesson_in_next_module:
+            return {
+                "id": first_lesson_in_next_module.id,
+                "title": first_lesson_in_next_module.title,
+                "module_id": next_module_candidate.id,
+                "module_title": next_module_candidate.title
+            }
+
+    # 3. No next lesson found in the current module or any subsequent module in the course
+    return None
+
+def get_module_progress(db: Session, user_id: int, module_id: int) -> Optional[Dict[str, Any]]:
+    """
+    Get the progress of a user in a specific module, including lesson and exercise completion.
+    """
+    # Get all lessons in the module
+    lessons = db.query(Lesson).filter(Lesson.module_id == module_id).all()
+
+    total_lessons = len(lessons)
+    if total_lessons == 0:
+        return {
+            "module_id": module_id,
+            "completed_lessons": 0,
+            "total_lessons": 0,
+            "progress_percentage": 0.0
+        }
+
+    # Get completed lessons for the user in this module
+    completed_lessons = db.query(Lesson).join(UserCourseEnrollment).filter(
+        Lesson.module_id == module_id,
+        UserCourseEnrollment.user_id == user_id,
+        UserCourseEnrollment.progress >= 100
+    ).all()
+
+    completed_lessons_count = len(completed_lessons)
+
+    return {
+        "module_id": module_id,
+        "completed_lessons": completed_lessons_count,
+        "total_lessons": total_lessons,
+        "progress_percentage": (completed_lessons_count / total_lessons) * 100.0
+    }

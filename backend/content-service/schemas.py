@@ -15,6 +15,8 @@ class ExerciseBase(BaseModel):
     lesson_id: Optional[int] = None
     module_id: Optional[int] = None
     order_index: int
+    validation_type: Optional[str] = None  # e.g., "output", "dynamic", "custom"
+    validation_rules: Optional[Dict[str, Any]] = None  # JSON schema or other validation rules
 
 class ExerciseCreate(ExerciseBase):
     pass

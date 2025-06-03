@@ -8,12 +8,13 @@ import Waves from "@/components/ui/waves";
 import AnimatedContent from "@/components/ui/animated-content";
 import FadeContent from "@/components/ui/fade-content";
 import Breadcrumbs from "@/components/ui/breadcrumbs";
-import { Home, BookOpen, ArrowRight, CheckCircle, Loader2, AlertCircle, BookText } from "lucide-react"; // Added icons
+import { Home, BookOpen, ArrowRight, CheckCircle, Loader2, AlertCircle, BookText, ArrowRightCircle } from "lucide-react"; // Added ArrowRightCircle
 import LessonChatbot from "@/components/ai/LessonChatBot";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useLessonDetail } from '@/hooks/useLessonDetail'; // Import the hook
 import { Button } from "@/components/ui/button"; // Import Button
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
 
 export default function LessonWithCodePage() {
@@ -30,18 +31,26 @@ export default function LessonWithCodePage() {
     error: lessonDetailError,
     submittingExerciseId,
     submitExercise: submitExerciseFromHook,
+    nextLessonInfo, // Added nextLessonInfo from the hook
   } = useLessonDetail(lessonId);
+
 
   const [module, setModule] = useState(null);
   const [course, setCourse] = useState(null);
   const [breadcrumbLoading, setBreadcrumbLoading] = useState(true);
+  const [userStdin, setUserStdin] = useState(""); // This state holds the textarea input
 
   // Determine the current exercise (assuming one main exercise per page for now)
   const currentExercise = exercises && exercises.length > 0 ? exercises[0] : null;
   const currentExerciseProgress = currentExercise ? getExerciseProgress(currentExercise.id) : null;
   const isCurrentExerciseCorrect = currentExerciseProgress?.is_correct || false;
 
-  console.log("Current Exercise:", currentExercise); // <-- ADD THIS LINE
+  // Helper: does this exercise require input?
+  const exerciseNeedsInput = !!(
+    currentExercise &&
+    currentExercise.validation_rules &&
+    currentExercise.validation_rules.requires_input_function
+  );
 
   useEffect(() => {
     if (lesson?.module_id) {
@@ -71,8 +80,8 @@ export default function LessonWithCodePage() {
       return;
     }
     try {
-      // submitExerciseFromHook is from useLessonDetail
-      const submissionResult = await submitExerciseFromHook(currentExercise.id, codeToSubmit);
+      // Pass userStdin to the submission hook
+      const submissionResult = await submitExerciseFromHook(currentExercise.id, codeToSubmit, userStdin);
       // The hook should handle success/error toasts and state updates
       return submissionResult;
     } catch (error) {
@@ -81,21 +90,6 @@ export default function LessonWithCodePage() {
       // Optionally, re-throw or handle further if needed
     }
   };
-
-  // Placeholder: Logic to find the next lesson ID
-  // This would typically involve fetching the current module's lessons and finding the next one by order_index
-  const [nextLessonId, setNextLessonId] = useState(null);
-  useEffect(() => {
-    if (module && lesson) {
-      const currentLessonIndex = module.lessons?.findIndex(l => l.id === lesson.id);
-      if (module.lessons && currentLessonIndex !== -1 && currentLessonIndex < module.lessons.length - 1) {
-        setNextLessonId(module.lessons[currentLessonIndex + 1].id);
-      } else {
-        setNextLessonId(null); // No more lessons in this module or module.lessons not populated
-      }
-    }
-  }, [module, lesson]);
-
 
   if (lessonDetailLoading || (lesson && breadcrumbLoading)) {
     return (
@@ -130,6 +124,19 @@ export default function LessonWithCodePage() {
     );
   }
 
+  // Determine if the next lesson is in a different module
+  const isNextLessonInNewModule = nextLessonInfo && lesson && nextLessonInfo.module_id !== lesson.module_id;
+
+  // ADD THIS CONSOLE LOG
+  console.log('LessonWithCodePage State Check:', {
+    lessonId,
+    isLessonCompleted,
+    nextLessonInfo,
+    currentLessonModuleId: lesson?.module_id,
+    isNextLessonInNewModule,
+    lessonTitle: lesson?.title
+  });
+
   return (
     <DashboardLayout>
       <div className="my-4 mx-6">
@@ -138,7 +145,7 @@ export default function LessonWithCodePage() {
             { label: "Inicio", href: "/home", icon: <Home size={16} /> },
             { label: "Cursos", href: "/courses", icon: <BookOpen size={16} /> },
             course && { label: course.title, href: `/courses/${course.id}` },
-            module && { label: module.title, href: `/module/${module.id}` }, // Ensure module link is correct
+            module && { label: module.title, href: `/courses/${course?.id}/modules/${module.id}` }, // Updated module link
             lesson && { label: lesson.title },
           ].filter(Boolean)}
         />
@@ -227,14 +234,32 @@ export default function LessonWithCodePage() {
         </div>
         <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow px-6 p-3 flex flex-col gap-4">
           {currentExercise ? (
-            <LessonCodeExecutor
-              key={currentExercise.id}
-              initialCode={currentExercise.starter_code || ""}
-              exerciseId={currentExercise.id} // Pass exerciseId
-              onSubmitCode={handleCodeSubmit} // Pass the submit handler
-              isSubmitting={submittingExerciseId === currentExercise.id} // Pass submitting state
-              isCorrect={isCurrentExerciseCorrect} // Pass correctness state
-            />
+            <>
+              <LessonCodeExecutor
+                key={currentExercise.id}
+                initialCode={currentExercise.starter_code || ""}
+                exerciseId={currentExercise.id}
+                onSubmitCode={handleCodeSubmit}
+                isSubmitting={submittingExerciseId === currentExercise.id}
+                isCorrect={isCurrentExerciseCorrect}
+                currentUserStdin={userStdin} // <--- PASS userStdin AS A PROP
+              />
+              {exerciseNeedsInput && (
+                <div className="mt-4">
+                  <label htmlFor="user-stdin" className="block text-sm font-medium text-gray-300 mb-1">
+                    Entrada estándar (para <code>input()</code>):
+                  </label>
+                  <Textarea
+                    id="user-stdin"
+                    value={userStdin}
+                    onChange={(e) => setUserStdin(e.target.value)}
+                    placeholder="Escribe aquí la entrada que tu código leerá con input()..."
+                    className="bg-background/70 border-primary-opaque/30 text-sm"
+                    rows={3}
+                  />
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
               <BookOpen size={48} className="mb-4" />
@@ -243,27 +268,67 @@ export default function LessonWithCodePage() {
           )}
         </div>
       </div>
-      <div className="mx-6 my-8 flex justify-between">
-        <Button variant="outline" onClick={() => navigate({ to: `/module/${lesson?.module_id}` })}>
+      <div className="mx-6 my-8 flex justify-between items-center">
+        <Button variant="outline" onClick={() => navigate({ to: `/courses/${course?.id}/modules/${lesson?.module_id}` })}>
             Volver al Módulo
         </Button>
-        {nextLessonId ? (
-            <Button
-                onClick={() => navigate({ to: `/lessons/${nextLessonId}` })}
-                disabled={!isLessonCompleted}
-                variant={isLessonCompleted ? "secondary" : "default"}
-            >
-                {isLessonCompleted ? "Siguiente Lección" : "Completa la lección"}
-                {isLessonCompleted && <ArrowRight className="h-4 w-4 ml-2" />}
-            </Button>
-        ) : isLessonCompleted && (
-             <Button variant="secondary" onClick={() => navigate({ to: `/module/${lesson?.module_id}` })}>
-                ¡Módulo Terminado! Volver
-            </Button>
-        )}
       </div>
-    </FadeContent>
+
+      {/* "Next Lesson" Button Area - This is the preferred and corrected structure */}
+      {isLessonCompleted && nextLessonInfo && (
+        <div className="mt-8 p-6 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg shadow-md text-center mx-6">
+          <h3 className="text-xl font-semibold text-green-700 dark:text-green-300 mb-3">
+            ¡Felicidades! Has completado esta lección.
+          </h3>
+          <Button
+            onClick={() => {
+              if (nextLessonInfo && nextLessonInfo.id) { // Use nextLessonInfo.id
+                navigate({ to: `/lessons/$lessonId`, params: { lessonId: nextLessonInfo.id.toString() } });
+              } else {
+                console.warn("Next lesson ID is missing, cannot navigate.", nextLessonInfo);
+                toast.error("No se pudo determinar la siguiente lección.");
+              }
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg"
+            size="lg"
+          >
+            <ArrowRightCircle className="mr-2 h-5 w-5" />
+            Siguiente Lección: {nextLessonInfo.title || "Siguiente"} {/* Use nextLessonInfo.title */}
+          </Button>
+          {isNextLessonInNewModule && nextLessonInfo.module_title && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              (Continuarás en el módulo: <span className="font-semibold">{nextLessonInfo.module_title}</span>) {/* Use nextLessonInfo.module_title */}
+            </p>
+          )}
+        </div>
+      )}
+      {isLessonCompleted && !nextLessonInfo && (
+        <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg shadow-md text-center mx-6">
+          <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300">
+            ¡Has completado todas las lecciones de este curso!
+          </h3>
+          <Button variant="secondary" onClick={() => navigate({ to: `/courses/${course?.id || lesson?.module?.course_id || ''}` })}>
+            Volver al Curso
+          </Button>
+        </div>
+      )}
+      {!isLessonCompleted && ( // If lesson is NOT completed
+          <div className="mx-6 my-8 flex justify-end items-center">
+            {/* This div is to align the button to the right, matching the "Volver al Modulo" button's container */}
+            <Button
+                disabled={true}
+                variant="default" // Or a more subdued variant
+                title="Completa la lección actual para continuar"
+            >
+                Completa la lección para continuar
+                {/* Optionally, you could show an arrow if nextLessonInfo is available but lesson not complete,
+                    but it might be confusing. Keeping it simple for now. */}
+            </Button>
+          </div>
+      )}
+
       <LessonChatbot lessonId={lessonId} lessonContent={lesson?.content} exercisePrompt={currentExercise?.description} />
+      </FadeContent>
     </DashboardLayout>
   );
 }

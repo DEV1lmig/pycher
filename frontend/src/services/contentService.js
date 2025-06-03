@@ -50,3 +50,16 @@ export const getModulesByCourseId = async (courseId) => {
   console.log(response.data);
   return response.data;
 };
+
+export const getNextLessonInfo = async (lessonId) => {
+  if (!lessonId) return null;
+  try {
+    const response = await apiClient.get(`/api/v1/content/lessons/${lessonId}/next`);
+    return response.data; // This will be the next lesson info object or null
+  } catch (error) {
+    console.error(`Error fetching next lesson info for lesson ${lessonId}:`, error);
+    // Depending on how you want to handle errors, you might throw or return null
+    // For now, let's return null so the UI doesn't break if this call fails
+    return null;
+  }
+};

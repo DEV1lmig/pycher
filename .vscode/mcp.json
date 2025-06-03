@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "freeCodeCamp.git Docs": {
+      "type": "sse",
+      "url": "https://gitmcp.io/freeCodeCamp/freeCodeCamp.git"
+    }
+  }
+}

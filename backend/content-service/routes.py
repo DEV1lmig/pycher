@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import models
-from typing import List
+from typing import List, Optional, Dict
 import services
 import schemas
 from database import get_db
@@ -16,6 +16,18 @@ router = APIRouter()
 def get_modules(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     modules = services.get_modules(db, skip=skip, limit=limit)
     return modules
+
+@router.get("/lessons/{lesson_id}/next", response_model=Optional[Dict], tags=["Lessons"])
+async def get_next_lesson_route(lesson_id: int, db: Session = Depends(get_db)):
+    """
+    Gets information about the next lesson in sequence after the given lesson.
+    Returns null if there is no next lesson in the course.
+    """
+    next_lesson_info = services.get_next_lesson_info(db, current_lesson_id=lesson_id)
+    if not next_lesson_info:
+        # It's okay to return None/null if no next lesson, not necessarily a 404 on the concept of "next"
+        return None
+    return next_lesson_info
 
 @router.get("/modules/{module_id}", response_model=schemas.Module)
 def get_module(module_id: str, db: Session = Depends(get_db)):

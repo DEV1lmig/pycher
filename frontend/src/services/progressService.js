@@ -64,10 +64,11 @@ export const getLessonProgress = async (lessonId) => {
 };
 
 // --- Exercise Submission ---
-export const submitExercise = async (exerciseId, submittedCode) => {
-  const payload = { submitted_code: submittedCode };
-  // This calls: http://localhost:8000/api/v1/users/exercises/{exerciseId}/submit
-  // (Assuming apiClient is configured to point to the API Gateway at localhost:8000 and prefixes with /api/v1)
+export const submitExercise = async (exerciseId, submittedCode, userInputData) => {
+  const payload = {
+    submitted_code: submittedCode,
+    input_data: userInputData // Add this line
+  };
   const response = await apiClient.post(`/api/v1/users/exercises/${exerciseId}/submit`, payload);
   return response.data;
 };
