@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "@tanstack/react-router"; // Added useNavigate
+import { useParams, Link } from "@tanstack/react-router"; // Added useNavigate
 import { getCourseById, getModulesByCourseId } from "@/services/contentService";
+import { getCourseProgressSummary, getModuleProgress } from "@/services/progressService"; // Importing progress service
 import { enrollInCourse, unenrollFromCourse } from "@/services/userService"; // Added unenrollFromCourse
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Clock, Users, Star, Home, Lock, CheckCircle, LogOut, PlusCircle } from "lucide-react"; // Added LogOut, PlusCircle
@@ -19,10 +20,11 @@ export default function CourseDetailPage() {
   const { courseId } = useParams({ from: courseDetailRoute.id });
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
+  const [courseProgress, setCourseProgress] = useState(null);
+  const [moduleProgresses, setModuleProgresses] = useState({});
   // const [enrolling, setEnrolling] = useState(false); // Will be handled by modalState
 
   const { hasAccessToCourse, getCourseProgress, refreshEnrollments, loading: courseAccessLoading } = useCourseAccess();
-  const navigate = useNavigate();
 
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -41,12 +43,27 @@ export default function CourseDetailPage() {
   useEffect(() => {
     if (!courseId) return;
     getModulesByCourseId(courseId)
-      .then(data => {
-        if (Array.isArray(data)) setModules(data);
-        else if (data) setModules([data]);
-        else setModules([]);
+      .then(async (data) => {
+        let modulesArr = Array.isArray(data) ? data : data ? [data] : [];
+        setModules(modulesArr);
+
+        // Fetch progress for each module in parallel
+        const progresses = await Promise.all(
+          modulesArr.map(async (mod) => {
+            try {
+              const progress = await getModuleProgress(mod.id);
+              console.log(`Module ${mod.id} progress:`, progress);
+              return [mod.id, progress];
+            } catch {
+              return [mod.id, null];
+            }
+          })
+        );
+        // Convert array to object: { [moduleId]: progressObj }
+        setModuleProgresses(Object.fromEntries(progresses));
       })
       .catch(() => setModules([]));
+    getCourseProgressSummary(courseId).then(setCourseProgress);
   }, [courseId]);
 
   const handleOpenEnrollModal = () => {
@@ -117,8 +134,9 @@ export default function CourseDetailPage() {
   const isCourseCompleted = userCourseProgress?.is_completed;
 
   // Modules are effectively locked if the course has prerequisites not met OR if the user is not enrolled
-  const modulesEffectivelyLocked = isCourseLockedByPrerequisite || !isUserEnrolledInThisCourse;
-  const displayLockReason = isCourseLockedByPrerequisite ? courseAccessInfo.reason : (!isUserEnrolledInThisCourse ? "Debes inscribirte en este curso para acceder a los módulos." : null);
+  const allModulesLockedDueToCourse = isCourseLockedByPrerequisite || !isUserEnrolledInThisCourse;
+  const overallLockReason = isCourseLockedByPrerequisite ? courseAccessInfo.reason : (!isUserEnrolledInThisCourse ? "Debes inscribirte en este curso para acceder a los módulos." : null);
+
 
   return (
     <DashboardLayout>
@@ -170,17 +188,17 @@ export default function CourseDetailPage() {
                 <p className="text-white mb-4 text-lg">{course.description}</p>
               </div>
 
-              {isUserEnrolledInThisCourse && userCourseProgress && (
+              {isUserEnrolledInThisCourse && courseProgress && (
                 <div className="bg-primary/20 rounded-lg p-4 min-w-[200px] md:ml-6 mt-4 md:mt-0">
                   <h3 className="text-white font-semibold mb-2">Tu Progreso</h3>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-gray-300">Completado:</span>
-                    <span className="text-white font-bold">{Math.round(userCourseProgress.progress_percentage)}%</span>
+                    <span className="text-white font-bold">{Math.round(courseProgress.progress_percentage)}%</span>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2">
                     <div
                       className="bg-secondary h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${userCourseProgress.progress_percentage}%` }}
+                      style={{ width: `${courseProgress.progress_percentage}%` }}
                     ></div>
                   </div>
                 </div>
@@ -263,27 +281,27 @@ export default function CourseDetailPage() {
 
       <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100}>
         <h3 className="text-2xl font-bold text-white mx-6">
-          {modulesEffectivelyLocked ? "Contenido del curso (Bloqueado)" : "Módulos disponibles"}
+          {allModulesLockedDueToCourse ? "Contenido del curso (Bloqueado)" : "Módulos disponibles"}
         </h3>
-        {modulesEffectivelyLocked && displayLockReason && (
-            <p className="text-sm text-gray-400 mx-6 mb-4">{displayLockReason}</p>
+        {allModulesLockedDueToCourse && overallLockReason && (
+            <p className="text-sm text-gray-400 mx-6 mb-4">{overallLockReason}</p>
         )}
       </FadeContent>
 
-      {modules.length === 0 && !modulesEffectivelyLocked ? (
+      {modules.length === 0 && !allModulesLockedDueToCourse ? (
         <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100}>
           <div className="flex justify-center p-32 text-gray-400 mx-6 mt-6">
             ¡Oh no!, este curso aún no cuenta con módulos :(
           </div>
         </FadeContent>
       ) : (
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-6 items-stretch ${modulesEffectivelyLocked ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-6 items-stretch ${allModulesLockedDueToCourse ? 'opacity-50 pointer-events-none' : ''}`}>
           {modules.map((module) => (
             <ModuleCard
               key={module.id}
               module={module}
-              progress={userCourseProgress?.modules_progress?.find(mp => mp.module_id === module.id) || null}
-              isLocked={modulesEffectivelyLocked}
+              progress={moduleProgresses[module.id] || null}
+              isLocked={allModulesLockedDueToCourse || module.is_locked}
             />
           ))}
         </div>

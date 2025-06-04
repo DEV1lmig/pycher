@@ -145,7 +145,7 @@ export default function LessonWithCodePage() {
             { label: "Inicio", href: "/home", icon: <Home size={16} /> },
             { label: "Cursos", href: "/courses", icon: <BookOpen size={16} /> },
             course && { label: course.title, href: `/courses/${course.id}` },
-            module && { label: module.title, href: `/courses/${course?.id}/modules/${module.id}` }, // Updated module link
+            module && { label: module.title, href: `/module/${module.id}` }, // Updated module link
             lesson && { label: lesson.title },
           ].filter(Boolean)}
         />

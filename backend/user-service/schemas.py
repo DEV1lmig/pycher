@@ -3,6 +3,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import re
 
+
 ALLOWED_DOMAINS = {"gmail.com", "outlook.com", "yahoo.com", "hotmail.com", "urbe.edu.ve"}
 
 # User schemas
@@ -336,10 +337,6 @@ class LessonProgressDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
-from typing import List, Optional # Ensure List and Optional are imported
-from datetime import datetime # Ensure datetime is imported
-
 # Add these new schemas for the PDF report
 
 class ReportExerciseProgressSchema(BaseModel):
@@ -407,3 +404,40 @@ class UserProgressReportDataSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+# --- Batch Progress Schemas ---
+
+class ModuleIdsRequest(BaseModel):
+    module_ids: List[int]
+
+class LessonIdsRequest(BaseModel):
+    lesson_ids: List[int]
+
+class BatchModuleProgressItem(BaseModel):
+    module_id: int
+    is_completed: bool
+    # Add other relevant fields if needed, e.g., started_at, completed_at
+    # For locking, is_completed is the primary need.
+
+class BatchLessonProgressItem(BaseModel):
+    lesson_id: int
+    is_completed: bool
+    # Add other relevant fields if needed
+
+class BatchModuleProgressResponse(BaseModel):
+    progress: Dict[int, bool] # module_id -> is_completed
+
+class BatchLessonProgressResponse(BaseModel):
+    progress: Dict[int, bool] # lesson_id -> is_completed
+
+# ... (rest of your existing schemas like UserLessonProgressBase, UserModuleProgressBase, etc.)
+# Ensure LessonProgressDetailResponse is correctly defined as it's used in existing routes.
+# class LessonProgressDetailResponse(BaseModel):
+#     lesson_id: int
+#     is_completed: bool
+#     started_at: Optional[datetime] = None
+#     completed_at: Optional[datetime] = None
+#     exercises_progress: List[ExerciseProgressInfo] = [] # Expects a list of ExerciseProgressInfo
+#
+#     class Config:
+#         from_attributes = True

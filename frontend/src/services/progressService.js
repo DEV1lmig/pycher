@@ -28,6 +28,7 @@ export const getLastAccessed = async () => {
 
 export const getCourseProgressSummary = async (courseId) => {
   const response = await apiClient.get(`/api/v1/users/courses/${courseId}/progress-summary`);
+  console.log("Course Progress Summary Response:", response.data);
   return response.data;
 };
 
@@ -44,6 +45,7 @@ export const completeModule = async (moduleId) => {
 
 export const getModuleProgress = async (moduleId) => {
   const response = await apiClient.get(`/api/v1/users/modules/${moduleId}/progress`);
+  console.log("Module Progress Response:", response.data);
   return response.data;
 };
 

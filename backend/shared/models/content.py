@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Float, UniqueConstraint
 from sqlalchemy.sql import func
 from typing import Optional, List, Dict, Any, Union, Tuple, Callable
 from sqlalchemy.orm import relationship, Mapped, mapped_column
@@ -37,6 +37,7 @@ class Module(Base):  # <-- Change from Modules to Module
     description = Column(Text, nullable=False)
     order_index = Column(Integer, nullable=False)
     duration_minutes = Column(Integer)
+    is_active = Column(Boolean, default=True)  # New field for soft delete
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
     course = relationship("Course", back_populates="modules")
     user_progress = relationship("UserModuleProgress", back_populates="module") # New relationship
@@ -49,6 +50,7 @@ class Lesson(Base):
     content = Column(Text, nullable=False)
     order_index = Column(Integer, nullable=False)
     duration_minutes = Column(Integer)
+    is_active = Column(Boolean, default=True)  # New field for soft delete
     module = relationship("Module", back_populates="lessons")
     exercises = relationship("Exercise", back_populates="lesson", cascade="all, delete-orphan")
     exercise_submissions = relationship("UserExerciseSubmission", back_populates="lesson")
@@ -102,6 +104,9 @@ class UserCourseEnrollment(Base): # This will serve as UserCourseProgress
 
 class UserModuleProgress(Base):
     __tablename__ = "user_module_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "module_id", name="uq_user_module_progress"),
+    )
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, nullable=False) # Assuming User table exists elsewhere
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
