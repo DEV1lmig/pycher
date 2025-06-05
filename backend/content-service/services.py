@@ -16,8 +16,7 @@ from models import (
 )
 from schemas import ModuleCreate, LessonCreate, ExerciseCreate
 import logging
-import hashlib # For creating cache keys from lists of IDs
-
+import hashlib
 # Redis client for caching
 redis_host = os.getenv("REDIS_HOST", "redis")
 redis_port = os.getenv("REDIS_PORT", 6379)
@@ -30,9 +29,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")  # Use the same key as u
 ALGORITHM = os.getenv("ALGORITHM", "HS256")  # Use the same algorithm as user-service
 
 # Environment variable for user-service URL
-USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8000/api/v1/users") # Ensure this is the correct base path
-
+USER_SERVICE_URL = os.getenv("USER_SERVICE_URL/api/v1/users", "http://user-service:8003/api/v1/users") # Ensure this is the correct base path
 logger = logging.getLogger(__name__) # Use the existing logger or the one from the top
+logger.info(f"Using USER_SERVICE_URL: {USER_SERVICE_URL}")
 
 # --- Helper for creating cache keys for batch requests ---
 def _create_batch_cache_key(user_id: int, item_type: str, ids: List[int]) -> str:
@@ -46,71 +45,88 @@ def _create_batch_cache_key(user_id: int, item_type: str, ids: List[int]) -> str
 # --- New Batch Fetching Functions (internal to content-service) ---
 async def _fetch_batch_module_progress(
     user_id: int, token: str, module_ids: List[int], client: httpx.AsyncClient
-) -> Dict[int, bool]:
+) -> Dict[int, Any]: # Changed return type to Dict[int, Any]
     if not module_ids:
         return {}
 
-    cache_key = _create_batch_cache_key(user_id, "module", module_ids)
-    try:
-        cached_data = redis_client.get(cache_key)
-        if cached_data:
-            logger.debug(f"Cache HIT for batch module progress: {cache_key}")
-            return json.loads(cached_data)
-    except Exception as e:
-        logger.error(f"Redis GET error for {cache_key}: {e}")
+    # cache_key = _create_batch_cache_key(user_id, "module", module_ids) # Assuming _create_batch_cache_key exists
+    # try:
+    #     cached_data = redis_client.get(cache_key)
+    #     if cached_data:
+    #         logger.debug(f"Cache HIT for batch module progress: {cache_key}")
+    #         return json.loads(cached_data)
+    # except Exception as e:
+    #     logger.error(f"Redis GET error for {cache_key}: {e}")
 
-    logger.debug(f"Cache MISS for batch module progress: {cache_key}. Fetching from user-service.")
+    # logger.debug(f"Cache MISS for batch module progress: {cache_key}. Fetching from user-service.")
     headers = {"Authorization": f"Bearer {token}"}
     payload = {"module_ids": module_ids}
-    progress_map = {}
+    progress_map: Dict[int, Any] = {}
+
+    target_url = f"{USER_SERVICE_URL}/modules/progress/batch"
+    logger.info(f"Calling User Service (batch module progress). Method: POST, URL: {target_url}, Headers: {headers}, Payload: {payload}")
+
     try:
-        resp = await client.post(f"{USER_SERVICE_URL}/modules/progress/batch", json=payload, headers=headers)
+        resp = await client.post(target_url, json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
-        progress_map = {int(k): v for k, v in data.get("progress", {}).items()} # Ensure keys are int
-        try:
-            redis_client.setex(cache_key, CACHE_TTL, json.dumps(progress_map))
-        except Exception as e:
-            logger.error(f"Redis SETEX error for {cache_key}: {e}")
+        # user-service returns {"progress": {id: progress_obj, ...}}
+        # So, data.get("progress", {}) gives {id_str: progress_obj, ...}
+        progress_map = {int(k): v for k, v in data.get("progress", {}).items()}
+
+        # try:
+        #     redis_client.setex(cache_key, 3600, json.dumps(progress_map)) # CACHE_TTL
+        #     logger.debug(f"Cached batch module progress: {cache_key}")
+        # except Exception as e:
+        #     logger.error(f"Redis SETEX error for {cache_key}: {e}")
+
     except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP error fetching batch module progress for U{user_id}, M_IDs {module_ids}: {e.response.status_code} - {e.response.text}")
+        logger.error(f"HTTP error fetching batch module progress for U{user_id} M_IDs {module_ids}: {e.response.status_code} - {e.response.text}", exc_info=True)
+        # Return empty map or raise, depending on how you want to handle partial failures
     except Exception as e:
-        logger.error(f"Unexpected error fetching batch module progress for U{user_id}, M_IDs {module_ids}: {e}", exc_info=True)
+        logger.error(f"Unexpected error fetching batch module progress for U{user_id} M_IDs {module_ids}: {e}", exc_info=True)
 
     return progress_map
 
 async def _fetch_batch_lesson_progress(
     user_id: int, token: str, lesson_ids: List[int], client: httpx.AsyncClient
-) -> Dict[int, bool]:
+) -> Dict[int, Any]: # Changed return type to Dict[int, Any]
     if not lesson_ids:
         return {}
 
-    cache_key = _create_batch_cache_key(user_id, "lesson", lesson_ids)
-    try:
-        cached_data = redis_client.get(cache_key)
-        if cached_data:
-            logger.debug(f"Cache HIT for batch lesson progress: {cache_key}")
-            return json.loads(cached_data)
-    except Exception as e:
-        logger.error(f"Redis GET error for {cache_key}: {e}")
+    # cache_key = _create_batch_cache_key(user_id, "lesson", lesson_ids)
+    # try:
+    #     cached_data = redis_client.get(cache_key)
+    #     if cached_data:
+    #         logger.debug(f"Cache HIT for batch lesson progress: {cache_key}")
+    #         return json.loads(cached_data)
+    # except Exception as e:
+    #     logger.error(f"Redis GET error for {cache_key}: {e}")
 
-    logger.debug(f"Cache MISS for batch lesson progress: {cache_key}. Fetching from user-service.")
+    # logger.debug(f"Cache MISS for batch lesson progress: {cache_key}. Fetching from user-service.")
     headers = {"Authorization": f"Bearer {token}"}
     payload = {"lesson_ids": lesson_ids}
-    progress_map = {}
+    progress_map: Dict[int, Any] = {}
+
+    target_url = f"{USER_SERVICE_URL}/lessons/progress/batch"
+    logger.info(f"Calling User Service (batch lesson progress). Method: POST, URL: {target_url}, Headers: {headers}, Payload: {payload}")
+
     try:
-        resp = await client.post(f"{USER_SERVICE_URL}/lessons/progress/batch", json=payload, headers=headers)
+        resp = await client.post(target_url, json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
-        progress_map = {int(k): v for k, v in data.get("progress", {}).items()} # Ensure keys are int
-        try:
-            redis_client.setex(cache_key, CACHE_TTL, json.dumps(progress_map))
-        except Exception as e:
-            logger.error(f"Redis SETEX error for {cache_key}: {e}")
+        progress_map = {int(k): v for k, v in data.get("progress", {}).items()}
+
+        # try:
+        #     redis_client.setex(cache_key, 3600, json.dumps(progress_map)) # CACHE_TTL
+        #     logger.debug(f"Cached batch lesson progress: {cache_key}")
+        # except Exception as e:
+        #     logger.error(f"Redis SETEX error for {cache_key}: {e}")
+
     except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP error fetching batch lesson progress for U{user_id}, L_IDs {lesson_ids}: {e.response.status_code} - {e.response.text}")
+        logger.error(f"HTTP error fetching batch lesson progress for U{user_id} L_IDs {lesson_ids}: {e.response.status_code} - {e.response.text}", exc_info=True)
     except Exception as e:
-        logger.error(f"Unexpected error fetching batch lesson progress for U{user_id}, L_IDs {lesson_ids}: {e}", exc_info=True)
+        logger.error(f"Unexpected error fetching batch lesson progress for U{user_id} L_IDs {lesson_ids}: {e}", exc_info=True)
 
     return progress_map
 
@@ -407,87 +423,96 @@ def get_next_lesson_info(db: Session, current_lesson_id: int) -> Optional[Dict]:
     return None
 
 async def get_lessons_with_lock_status(db: Session, module_id: int, user_id: int, token: str) -> List[schemas.LessonSchema]:
-    """
-    Fetches lessons for a module, determines their lock status based on predecessor completion.
-    Assumes Lesson model has 'is_active' and 'order_index'.
-    """
-    # Removed caching for user-specific lock status
     db_lessons = db.query(models.Lesson).filter(
         models.Lesson.module_id == module_id,
-        models.Lesson.is_active == True # Assuming an is_active flag
+        models.Lesson.is_active == True
     ).order_by(models.Lesson.order_index).all()
 
     processed_lessons = []
-    previous_lesson_completed = True # First lesson is implicitly unlocked
+    if not db_lessons:
+        return processed_lessons
+
+    predecessor_lesson_ids_to_check = [db_lessons[i-1].id for i in range(1, len(db_lessons))]
+    batch_progress_map: Dict[int, Any] = {} # Stores full progress objects
 
     async with httpx.AsyncClient() as client:
-        headers = {"Authorization": f"Bearer {token}"}
+        if predecessor_lesson_ids_to_check and user_id is not None and token: # Only fetch if there are predecessors and user is authenticated
+            try:
+                batch_progress_map = await _fetch_batch_lesson_progress(user_id, token, predecessor_lesson_ids_to_check, client)
+            except Exception as e:
+                logger.error(f"Failed to fetch batch lesson progress for M{module_id} U{user_id}: {e}", exc_info=True)
+                # Proceed with all subsequent lessons locked if batch fetch fails
+
         for i, lesson_db_model in enumerate(db_lessons):
             current_lesson_locked = False
-            if i > 0: # Not the first lesson
+            if user_id is None or not token: # Unauthenticated users see all subsequent items as locked
+                if i > 0:
+                    current_lesson_locked = True
+            elif i > 0: # Not the first lesson, and user is authenticated
                 predecessor_lesson_id = db_lessons[i-1].id
-                try:
-                    resp = await client.get(f"{USER_SERVICE_URL}/lessons/{predecessor_lesson_id}/progress", headers=headers)
-                    resp.raise_for_status()
-                    progress_data = resp.json()
-                    previous_lesson_completed = progress_data.get("is_completed", False)
-                    logger.debug(f"U{user_id} M{module_id} L{lesson_db_model.id}: Predecessor L{predecessor_lesson_id} completed: {previous_lesson_completed}")
-                except httpx.HTTPStatusError as e:
-                    logger.error(f"HTTP error fetching lesson progress for L{predecessor_lesson_id} U{user_id}: {e.response.status_code} - {e.response.text}")
-                    previous_lesson_completed = False
-                except Exception as e:
-                    logger.error(f"Unexpected error fetching lesson progress for L{predecessor_lesson_id} U{user_id}: {e}", exc_info=True)
-                    previous_lesson_completed = False
-                current_lesson_locked = not previous_lesson_completed
+                predecessor_progress = batch_progress_map.get(predecessor_lesson_id)
+
+                previous_lesson_completed = False
+                if predecessor_progress and isinstance(predecessor_progress, dict):
+                    previous_lesson_completed = predecessor_progress.get("is_completed", False)
+
+                if not previous_lesson_completed:
+                    current_lesson_locked = True
+
+                logger.debug(f"U{user_id} M{module_id} L{lesson_db_model.id}: Predecessor L{predecessor_lesson_id} completed: {previous_lesson_completed}. Current locked: {current_lesson_locked}")
 
             lesson_schema_instance = schemas.LessonSchema.from_orm(lesson_db_model)
             lesson_schema_instance.is_locked = current_lesson_locked
-            # If lessons have exercises and those need lock status, a similar nested call would be here.
-            # lesson_schema_instance.exercises = await get_exercises_with_lock_status(...)
             processed_lessons.append(lesson_schema_instance)
 
     return processed_lessons
 
 async def get_modules_by_course_with_lock_status(db: Session, course_id: int, user_id: int, token: str) -> List[schemas.ModuleSchema]:
-    """
-    Fetches modules for a course, determines their lock status, and includes lessons with their lock status.
-    Assumes Module model has 'is_active' and 'order_index'.
-    """
-    # Removed caching for user-specific lock status
     db_modules = db.query(models.Module).filter(
         models.Module.course_id == course_id,
-        models.Module.is_active == True # Assuming an is_active flag
-    ).order_by(models.Module.order_index).all() # Ensure your Module model has 'order_index'
+        models.Module.is_active == True
+    ).order_by(models.Module.order_index).all()
 
     processed_modules = []
-    previous_module_completed = True # First module is implicitly unlocked
+    if not db_modules:
+        return processed_modules
+
+    predecessor_module_ids_to_check = [db_modules[i-1].id for i in range(1, len(db_modules))]
+    batch_progress_map: Dict[int, Any] = {} # Stores full progress objects
 
     async with httpx.AsyncClient() as client:
-        headers = {"Authorization": f"Bearer {token}"}
+        if predecessor_module_ids_to_check and user_id is not None and token: # Only fetch if there are predecessors and user is authenticated
+            try:
+                batch_progress_map = await _fetch_batch_module_progress(user_id, token, predecessor_module_ids_to_check, client)
+            except Exception as e:
+                logger.error(f"Failed to fetch batch module progress for C{course_id} U{user_id}: {e}", exc_info=True)
+                # Proceed with all subsequent modules locked if batch fetch fails
+
         for i, module_db_model in enumerate(db_modules):
             current_module_locked = False
-            if i > 0: # Not the first module
+            if user_id is None or not token: # Unauthenticated users see all subsequent items as locked
+                 if i > 0:
+                    current_module_locked = True
+            elif i > 0: # Not the first module, and user is authenticated
                 predecessor_module_id = db_modules[i-1].id
-                try:
-                    resp = await client.get(f"{USER_SERVICE_URL}/modules/{predecessor_module_id}/progress", headers=headers)
-                    resp.raise_for_status()
-                    progress_data = resp.json()
-                    previous_module_completed = progress_data.get("is_completed", False)
-                    logger.debug(f"U{user_id} C{course_id} M{module_db_model.id}: Predecessor M{predecessor_module_id} completed: {previous_module_completed}")
-                except httpx.HTTPStatusError as e:
-                    logger.error(f"HTTP error fetching module progress for M{predecessor_module_id} U{user_id}: {e.response.status_code} - {e.response.text}")
-                    previous_module_completed = False
-                except Exception as e:
-                    logger.error(f"Unexpected error fetching module progress for M{predecessor_module_id} U{user_id}: {e}", exc_info=True)
-                    previous_module_completed = False
-                current_module_locked = not previous_module_completed
+                predecessor_progress = batch_progress_map.get(predecessor_module_id)
 
+                previous_module_completed = False
+                if predecessor_progress and isinstance(predecessor_progress, dict):
+                    previous_module_completed = predecessor_progress.get("is_completed", False)
+
+                if not previous_module_completed:
+                    current_module_locked = True
+
+                logger.debug(f"U{user_id} C{course_id} M{module_db_model.id}: Predecessor M{predecessor_module_id} completed: {previous_module_completed}. Current locked: {current_module_locked}")
+
+            # Fetch lessons for this module (this already uses batching internally if adapted as above)
             lessons_for_this_module = await get_lessons_with_lock_status(db, module_db_model.id, user_id, token)
 
             module_schema_instance = schemas.ModuleSchema.from_orm(module_db_model)
             module_schema_instance.is_locked = current_module_locked
             module_schema_instance.lessons = lessons_for_this_module
-            module_schema_instance.lesson_count = len(lessons_for_this_module) # Update count based on fetched lessons
+            module_schema_instance.lesson_count = len(lessons_for_this_module)
             processed_modules.append(module_schema_instance)
 
     return processed_modules

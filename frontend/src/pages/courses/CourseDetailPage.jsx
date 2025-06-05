@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "@tanstack/react-router"; // Added useNavigate
 import { getCourseById, getModulesByCourseId } from "@/services/contentService";
-import { getCourseProgressSummary, getModuleProgress } from "@/services/progressService"; // Importing progress service
+import { getCourseProgressSummary, getBatchModuleProgress } from "@/services/progressService"; // Importing progress service
 import { enrollInCourse, unenrollFromCourse } from "@/services/userService"; // Added unenrollFromCourse
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Clock, Users, Star, Home, Lock, CheckCircle, LogOut, PlusCircle } from "lucide-react"; // Added LogOut, PlusCircle
@@ -36,35 +36,28 @@ export default function CourseDetailPage() {
     isLoading: false,
   });
 
+  // DRY: Extract fetch logic
+  const fetchModulesAndProgress = useCallback(async () => {
+    if (!courseId) return;
+    const data = await getModulesByCourseId(courseId);
+    let modulesArr = Array.isArray(data) ? data : data ? [data] : [];
+    setModules(modulesArr);
+
+    const moduleIds = modulesArr.map(mod => mod.id);
+    const progressMap = await getBatchModuleProgress(moduleIds);
+
+    setModuleProgresses(progressMap || {});
+  }, [courseId]);
+
   useEffect(() => {
     getCourseById(courseId).then(setCourse);
   }, [courseId]);
 
   useEffect(() => {
-    if (!courseId) return;
-    getModulesByCourseId(courseId)
-      .then(async (data) => {
-        let modulesArr = Array.isArray(data) ? data : data ? [data] : [];
-        setModules(modulesArr);
-
-        // Fetch progress for each module in parallel
-        const progresses = await Promise.all(
-          modulesArr.map(async (mod) => {
-            try {
-              const progress = await getModuleProgress(mod.id);
-              console.log(`Module ${mod.id} progress:`, progress);
-              return [mod.id, progress];
-            } catch {
-              return [mod.id, null];
-            }
-          })
-        );
-        // Convert array to object: { [moduleId]: progressObj }
-        setModuleProgresses(Object.fromEntries(progresses));
-      })
-      .catch(() => setModules([]));
+    fetchModulesAndProgress();
     getCourseProgressSummary(courseId).then(setCourseProgress);
-  }, [courseId]);
+  }, [courseId, fetchModulesAndProgress]);
+
 
   const handleOpenEnrollModal = () => {
     if (!course) return;
@@ -296,14 +289,19 @@ export default function CourseDetailPage() {
         </FadeContent>
       ) : (
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-6 items-stretch ${allModulesLockedDueToCourse ? 'opacity-50 pointer-events-none' : ''}`}>
-          {modules.map((module) => (
-            <ModuleCard
-              key={module.id}
-              module={module}
-              progress={moduleProgresses[module.id] || null}
-              isLocked={allModulesLockedDueToCourse || module.is_locked}
-            />
-          ))}
+          {modules.map((module) => {
+  // Use is_locked from the module object returned by getModulesByCourseId
+  const isLocked = allModulesLockedDueToCourse || module.is_locked;
+  const progress = moduleProgresses[module.id] || null;
+  return (
+      <ModuleCard
+      key={module.id}
+      module={module}
+      progress={progress}
+      isLocked={isLocked}
+      />
+  );
+})}
         </div>
       )}
        <ConfirmationModal
@@ -317,6 +315,7 @@ export default function CourseDetailPage() {
         confirmButtonVariant={modalState.confirmVariant}
         isConfirmDisabled={modalState.isLoading}
       />
+
     </DashboardLayout>
   );
 }

@@ -108,12 +108,13 @@ class UserModuleProgress(Base):
         UniqueConstraint("user_id", "module_id", name="uq_user_module_progress"),
     )
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False) # Assuming User table exists elsewhere
+    user_id = Column(Integer, nullable=False)
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
     is_completed = Column(Boolean, default=False)
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)
     last_accessed_lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
+    is_unlocked = Column(Boolean, default=False)  # <-- Add this line
 
     # Relationships
     # user = relationship("User", back_populates="module_progress") # Assuming User model and relationship

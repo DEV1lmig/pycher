@@ -10,7 +10,14 @@
     "starter_code": "# Utiliza la función print() para mostrar la respuesta exacta.\nprint(\"...\")",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n"
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio."
+      }
     }
   },
   {
@@ -35,6 +42,13 @@
           "max_length": 10,
           "charset": "alpha"
         }
+      },
+      "strict_variable_name": "nombre",
+      "require_fstring": true,
+      "custom_feedback": {
+        "missing_input": "Debes usar la función input() para leer el nombre.",
+        "wrong_variable": "La variable debe llamarse 'nombre'.",
+        "not_fstring": "Usa un f-string para imprimir el saludo."
       }
     },
     "difficulty": "Fácil",
@@ -52,74 +66,70 @@
     "starter_code": "# 1. Define la variable ciudad\n\n# 2. Define la variable poblacion\n\n# 3. Imprime la variable ciudad\n\n# 4. Imprime la variable poblacion",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Madrid\n3300000\n"
+      "expected_exact_output": "Madrid\n3300000\n",
+      "strict_variable_names": ["ciudad", "poblacion"],
+      "expected_types": ["str", "int"],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_type": "Verifica que 'ciudad' sea string y 'poblacion' sea int.",
+        "wrong_variable": "Debes usar los nombres de variable exactos: 'ciudad' y 'poblacion'."
+      }
     }
   },
   {
     "id": 4,
-    "lesson_id": null,
-    "module_id": 1,
-    "order_index": 99,
-    "title": "Test Módulo 1: Fundamentos",
-    "description": "Escribe un programa que defina una variable `libro_favorito` con el nombre de un libro (string) y otra variable `paginas` con su número de páginas (integer). Luego, imprime un mensaje que diga: 'Mi libro favorito es [libro_favorito] y tiene [paginas] páginas.'",
-    "instructions": "1. Define una variable llamada `libro_favorito`. Asígnale el nombre de un libro como un string (por ejemplo, \"Cien Años de Soledad\").\n2. Define una variable llamada `paginas`. Asígnale un número entero que represente la cantidad de páginas del libro (por ejemplo, 417).\n3. Utiliza la función `print()` para mostrar el mensaje final.\n4. El mensaje debe tener el formato exacto: `Mi libro favorito es [valor de libro_favorito] y tiene [valor de paginas] páginas.`\n5. Puedes usar un f-string para construir este mensaje fácilmente. Ejemplo: `print(f\"Texto {variable1} y {variable2}.\")`.",
-    "starter_code": "# 1. Define la variable libro_favorito\nlibro_favorito = \"\"\n# 2. Define la variable paginas\npaginas = 0\n\n# 3. Imprime el mensaje formateado\n# print(f\"...\")",
-    "validation_type": "saludo_personalizado",
-    "validation_rules": {
-      "target_variable_names": ["libro_favorito", "paginas"],
-      "output_format_template": "Mi libro favorito es {var1} y tiene {var2} páginas.",
-      "requires_input_function": false,
-      "scenarios": [
-        {
-          "description": "Test con El Hobbit",
-          "custom_vars": { "var1": "El Hobbit", "var2": 300 },
-          "expected_output_template_vars": ["El Hobbit", 300]
-        },
-        {
-          "description": "Test con Otro Libro",
-          "custom_vars": { "var1": "Guía del Autoestopista Galáctico", "var2": 224 },
-          "expected_output_template_vars": ["Guía del Autoestopista Galáctico", 224]
-        }
-      ]
-    }
-  },
-  {
-    "id": 5,
     "lesson_id": 4,
     "module_id": 2,
     "order_index": 1,
     "title": "Ejercicio 2.1.1: Operaciones Básicas",
-    "description": "Calcula el resultado de la expresión matemática `(15 + 5) * 2 / 4 - 1` e imprímelo en la consola.",
-    "instructions": "1. Escribe la expresión matemática `(15 + 5) * 2 / 4 - 1` directamente en tu código.\n2. Puedes asignar el resultado de esta expresión a una variable, por ejemplo, `resultado_calculo`.\n   `resultado_calculo = (15 + 5) * 2 / 4 - 1`\n3. Utiliza la función `print()` para mostrar el valor almacenado en tu variable `resultado_calculo`.\n   Recuerda que la división (`/`) en Python siempre produce un número de punto flotante (float).",
-    "starter_code": "# 1. Calcula la expresión y almacénala en una variable\nresultado_calculo = 0 # Reemplaza 0 con tu cálculo\n\n# 2. Imprime el resultado\nprint(resultado_calculo)",
+    "description": "Calcula el resultado de la expresión matemática (15 + 5) * 2 / 4 - 1 e imprímelo en la consola.",
+    "instructions": "Escribe la expresión matemática directamente en tu código y usa print para mostrar el resultado.",
+    "starter_code": "resultado_calculo = 0\nprint(resultado_calculo)",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "9.0\n"
+      "expected_exact_output": "9.0\n",
+      "expected_types": ["float"],
+      "strict_variable_names": ["resultado_calculo"],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_type": "El resultado debe ser un número decimal (float).",
+        "wrong_variable": "La variable debe llamarse 'resultado_calculo'."
+      }
     }
   },
   {
-    "id": 6,
+    "id": 5,
     "lesson_id": 5,
     "module_id": 2,
     "order_index": 1,
     "title": "Ejercicio 2.2.1: ¿Puede Conducir?",
-    "description": "Dadas las variables `edad_usuario = 17` y `tiene_permiso_padres = True`, determina si el usuario puede conducir. Un usuario puede conducir si es mayor o igual a 18 años, O si es menor de 18 pero tiene permiso de sus padres. Imprime `True` si puede conducir, o `False` en caso contrario.",
-    "instructions": "1. Las variables `edad_usuario` y `tiene_permiso_padres` ya están definidas en el código inicial.\n2. Necesitas construir una expresión lógica que combine dos condiciones:\n   a) `edad_usuario >= 18`\n   b) `(edad_usuario < 18 and tiene_permiso_padres == True)`\n3. Usa el operador lógico `or` para combinar estas dos condiciones, ya que el usuario puede conducir si CUALQUIERA de ellas es verdadera.\n4. Almacena el resultado de esta expresión lógica completa (que será `True` o `False`) en la variable `puede_conducir`.\n5. Finalmente, imprime el valor de la variable `puede_conducir`.",
-    "starter_code": "edad_usuario = 17\ntiene_permiso_padres = True\npuede_conducir = False # Debes calcular el valor correcto para esta variable\n\n# Escribe tu lógica aquí para actualizar la variable puede_conducir\n\nprint(puede_conducir)",
+    "description": "Dadas las variables edad_usuario y tiene_permiso_padres, determina si el usuario puede conducir. Imprime True si puede conducir, o False en caso contrario.",
+    "instructions": "Usa operadores lógicos y asigna el resultado a la variable puede_conducir. Imprime el resultado.",
+    "starter_code": "edad_usuario = 17\ntiene_permiso_padres = True\npuede_conducir = False\nprint(puede_conducir)",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "True\n"
+      "expected_exact_output": "True\n",
+      "expected_types": ["bool"],
+      "strict_variable_names": ["puede_conducir"],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_type": "El resultado debe ser booleano (True o False).",
+        "wrong_variable": "La variable debe llamarse 'puede_conducir'."
+      }
     }
   },
   {
-    "id": 7,
+    "id": 6,
     "lesson_id": 6,
     "module_id": 2,
     "order_index": 1,
     "title": "Ejercicio 2.3.1: Calculadora de Edad en Días",
-    "description": "Pide al usuario su edad en años (simularemos esta entrada). Convierte la edad a días (asumiendo 365 días por año) e imprime el resultado en el formato 'Tienes aproximadamente [X] días de vida.'.",
-    "instructions": "1. El `starter_code` incluye una variable `edad_str` que simula la entrada del usuario. El sistema de pruebas proporcionará diferentes valores para `edad_str` (a través del campo `input` en `test_cases`).\n2. Convierte el valor de `edad_str` (que es un string) a un número entero usando la función `int()`. Almacena este entero en una nueva variable, por ejemplo, `edad_anios`.\n   `edad_anios = int(edad_str)`\n3. Calcula la edad en días multiplicando `edad_anios` por 365. Almacena el resultado en una variable, por ejemplo, `edad_dias`.\n4. Utiliza la función `print()` y un f-string para mostrar el resultado. El mensaje debe ser exactamente: `Tienes aproximadamente [valor de edad_dias] días de vida.`.",
-    "starter_code": "# Para testing, el sistema proveerá el valor de edad_str a través de los 'input' de test_cases.\n# En un programa real, usarías: edad_str = input(\"Ingresa tu edad en años: \")\n# No modifiques la siguiente línea directamente en tu solución, el sistema de pruebas la manejará.\nedad_str = \"25\" \n\n# 1. Convierte edad_str a entero\nedad_anios = 0 # Reemplaza con tu conversión\n\n# 2. Calcula la edad en días\nedad_dias = 0 # Reemplaza con tu cálculo\n\n# 3. Imprime el mensaje formateado\n# print(f\"...\")",
+    "description": "Convierte la edad en años a días y muestra el resultado en el formato 'Tienes aproximadamente [X] días de vida.'.",
+    "instructions": "Convierte edad_str a entero, calcula los días y usa un f-string para imprimir el mensaje.",
+    "starter_code": "edad_str = \"25\"\nedad_anios = 0\nedad_dias = 0\n# print(f\"...\")",
     "validation_type": "saludo_personalizado",
     "validation_rules": {
       "target_variable_names": ["edad_anios", "edad_dias"],
@@ -130,54 +140,42 @@
         {"input": "25", "description": "Edad 25"},
         {"input": "0", "description": "Edad 0"},
         {"input": "10", "description": "Edad 10"}
-      ]
+      ],
+      "expected_types": ["int", "int"],
+      "require_fstring": true,
+      "custom_feedback": {
+        "wrong_type": "Las variables deben ser enteros.",
+        "not_fstring": "Usa un f-string para imprimir el mensaje."
+      }
     }
   },
   {
-    "id": 8,
+    "id": 7,
     "lesson_id": 7,
     "module_id": 2,
     "order_index": 1,
     "title": "Ejercicio 2.4.1: Iniciales y Longitud",
-    "description": "Dada la variable `nombre_completo = \"Juan Perez\"`, imprime la primera letra del nombre, la primera letra del apellido y la longitud total del nombre completo, cada resultado en una nueva línea.",
-    "instructions": "1. La variable `nombre_completo` ya está definida en el código inicial.\n2. Para obtener la primera letra del nombre (la 'J'), accede al carácter en el índice 0 del string `nombre_completo`. Ejemplo: `inicial_nombre = nombre_completo[0]`.\n3. Para obtener la primera letra del apellido (la 'P'):\n    a. Primero, encuentra la posición (índice) del espacio usando el método `.find(' ')`. Ejemplo: `indice_espacio = nombre_completo.find(' ')`.\n    b. La inicial del apellido será el carácter que está justo después del espacio. Ejemplo: `inicial_apellido = nombre_completo[indice_espacio + 1]`.\n4. Para obtener la longitud total del nombre completo, usa la función `len()`. Ejemplo: `longitud_total = len(nombre_completo)`.\n5. Imprime cada uno de estos tres valores (`inicial_nombre`, `inicial_apellido`, `longitud_total`) en líneas separadas usando la función `print()` para cada uno.",
-    "starter_code": "nombre_completo = \"Juan Perez\"\n\n# 1. Obtén la inicial del nombre\n\n# 2. Obtén la inicial del apellido\n\n# 3. Obtén la longitud total\n\n# 4. Imprime los tres resultados, cada uno en una nueva línea",
+    "description": "Dada la variable nombre_completo, imprime la primera letra del nombre, la primera letra del apellido y la longitud total del nombre completo, cada resultado en una nueva línea.",
+    "instructions": "Accede a los caracteres y usa len(). Imprime cada resultado en una línea.",
+    "starter_code": "nombre_completo = \"Juan Perez\"\n# ...",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "J\nP\n10\n"
+      "expected_exact_output": "J\nP\n10\n",
+      "expected_types": ["str", "str", "int"],
+      "strict_variable_names": ["nombre_completo"],
+      "strict_whitespace": true,
+      "case_sensitive": true
     }
   },
   {
-    "id": 9,
-    "lesson_id": null,
-    "module_id": 2,
-    "order_index": 99,
-    "title": "Test Módulo 2: Operaciones",
-    "description": "Pide al usuario un número (simularemos esta entrada). Luego, imprime `True` si el número es estrictamente mayor que 10 Y estrictamente menor que 20. De lo contrario, imprime `False`.",
-    "instructions": "1. El `starter_code` incluye una variable `numero_str` que simula la entrada del usuario. El sistema de pruebas proporcionará diferentes valores para `numero_str`.\n2. Convierte `numero_str` a un número entero usando `int()` y almacénalo en una variable, por ejemplo, `numero`.\n3. Escribe una expresión lógica que verifique si `numero` es mayor que 10 Y `numero` es menor que 20. Usa el operador `and`.\n   Ejemplo: `es_valido = (numero > 10 and numero < 20)`.\n4. Imprime el resultado de esta expresión lógica (que será `True` o `False`).",
-    "starter_code": "# Para testing, el sistema proveerá el valor de numero_str a través de los 'input' de test_cases.\n# En un programa real, usarías: numero_str = input(\"Ingresa un número: \")\n# No modifiques la siguiente línea directamente en tu solución, el sistema de pruebas la manejará.\nnumero_str = \"15\"\n\n# 1. Convierte numero_str a entero\nnumero = 0 # Reemplaza con tu conversión\n\n# 2. Evalúa la condición y almacena el resultado booleano\nes_en_rango = False # Reemplaza con tu expresión lógica\n\n# 3. Imprime el resultado booleano\n# print(es_en_rango)",
-    "validation_type": "saludo_personalizado",
-    "validation_rules": {
-      "output_format_template": "{var}\n",
-      "requires_input_function": false,
-      "input_variable_in_starter": {"name": "numero_str", "type": "bool", "transform_for_template": "int(value) > 10 and int(value) < 20"},
-      "scenarios": [
-        {"input": "15", "description": "Número 15"},
-        {"input": "10", "description": "Número 10"},
-        {"input": "20", "description": "Número 20"},
-        {"input": "5", "description": "Número 5"}
-      ]
-    }
-  },
-  {
-    "id": 10,
+    "id": 8,
     "lesson_id": 8,
     "module_id": 3,
     "order_index": 1,
     "title": "Ejercicio 3.1.1: Par o Impar",
-    "description": "Dado un número (que se simulará como entrada), imprime \"Par\" si el número es par, o \"Impar\" si es impar. Considera el 0 como par.",
-    "instructions": "1. El `starter_code` incluye una variable `numero_str` que simula la entrada del usuario. El sistema de pruebas proporcionará diferentes valores para `numero_str`.\n2. Convierte `numero_str` a un número entero usando `int()` y almacénalo en la variable `numero`.\n3. Utiliza el operador módulo `%`. Si `numero % 2` es igual a 0, el número es par. Sino, es impar.\n4. Usa una estructura condicional `if-else`:\n   - Si la condición de ser par es verdadera, imprime el string \"Par\".\n   - Si no (es decir, en el `else`), imprime el string \"Impar\".",
-    "starter_code": "# Para testing, el sistema proveerá el valor de numero_str a través de los 'input' de test_cases.\n# En un programa real, usarías: numero_str = input(\"Ingresa un número: \")\n# No modifiques la siguiente línea directamente en tu solución, el sistema de pruebas la manejará.\nnumero_str = \"7\"\nnumero = int(numero_str)\n\n# Escribe tu lógica if-else aquí para imprimir \"Par\" o \"Impar\"",
+    "description": "Dado un número, imprime 'Par' si el número es par, o 'Impar' si es impar.",
+    "instructions": "Convierte numero_str a entero, usa if-else y print.",
+    "starter_code": "numero_str = \"7\"\nnumero = int(numero_str)\n# ...",
     "validation_type": "saludo_personalizado",
     "validation_rules": {
       "output_format_template": "{var}\n",
@@ -187,91 +185,115 @@
         {"input": "7", "description": "Número 7"},
         {"input": "4", "description": "Número 4"},
         {"input": "0", "description": "Número 0"}
-      ]
+      ],
+      "expected_types": ["str"],
+      "strict_whitespace": true,
+      "case_sensitive": true
     }
   },
   {
-    "id": 11,
+    "id": 9,
     "lesson_id": 9,
     "module_id": 3,
     "order_index": 1,
     "title": "Ejercicio 3.2.1: Suma con For",
-    "description": "Calcula la suma de todos los números enteros desde 1 hasta 5 (ambos inclusive) utilizando un bucle `for`. Imprime el resultado final de la suma.",
-    "instructions": "1. Inicializa una variable para almacenar la suma total, por ejemplo, `suma_total = 0`.\n2. Utiliza un bucle `for` para iterar a través de los números del 1 al 5. La función `range(1, 6)` te dará los números 1, 2, 3, 4, 5.\n   Ejemplo de bucle: `for numero_actual in range(1, 6):`\n3. Dentro del bucle, en cada iteración, añade el `numero_actual` a tu variable `suma_total`.\n   `suma_total = suma_total + numero_actual` (o `suma_total += numero_actual`).\n4. Una vez que el bucle haya terminado, imprime el valor final de `suma_total`.",
-    "starter_code": "suma_total = 0\n\n# Escribe tu bucle for aquí para calcular la suma\n\nprint(suma_total)",
+    "description": "Calcula la suma de todos los números enteros desde 1 hasta 5 utilizando un bucle for. Imprime el resultado.",
+    "instructions": "Usa un bucle for y suma_total. Imprime el resultado.",
+    "starter_code": "suma_total = 0\n# ...\nprint(suma_total)",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "15\n"
+      "expected_exact_output": "15\n",
+      "expected_types": ["int"],
+      "strict_variable_names": ["suma_total"],
+      "strict_whitespace": true,
+      "case_sensitive": true
     }
   },
   {
-    "id": 12,
-    "lesson_id": 10,
+    "id": 10,
+   "lesson_id": 10,
     "module_id": 3,
     "order_index": 1,
     "title": "Ejercicio 3.3.1: Lista de Compras",
-    "description": "Realiza las siguientes operaciones con una lista: \n1. Crea una lista llamada `compras` que contenga los siguientes strings: \"manzanas\", \"pan\", \"leche\".\n2. Añade el string \"huevos\" al final de la lista `compras`.\n3. Imprime el elemento que se encuentra en el segundo lugar de la lista (índice 1) después de haber añadido \"huevos\".",
-    "instructions": "1. Define la lista `compras` con los tres elementos iniciales: `compras = [\"manzanas\", \"pan\", \"leche\"]`.\n2. Utiliza el método `.append()` para añadir el string \"huevos\" a la lista `compras`. Ejemplo: `lista.append(nuevo_elemento)`.\n3. Accede al elemento en el índice 1 de la lista `compras` (que será el segundo elemento) y utiliza la función `print()` para mostrarlo.",
-    "starter_code": "# 1. Define la lista 'compras' con los elementos iniciales\ncompras = [] # Reemplaza esto con la definición correcta\n\n# 2. Añade 'huevos' a la lista\n\n# 3. Imprime el segundo elemento de la lista (índice 1)",
+    "description": "Crea una lista llamada compras, añade 'huevos' y muestra el segundo elemento.",
+    "instructions": "Define la lista, usa append y print.",
+    "starter_code": "compras = []\n# ...",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "pan\n"
+      "expected_exact_output": "pan\n",
+      "expected_types": ["str"],
+      "strict_variable_names": ["compras"],
+      "strict_whitespace": true,
+      "case_sensitive": true
     }
   },
   {
-    "id": 13,
+    "id": 11,
     "lesson_id": 11,
     "module_id": 3,
     "order_index": 1,
     "title": "Ejercicio 3.4.1: Función Área Rectángulo",
-    "description": "Define una función llamada `area_rectangulo` que acepte dos argumentos: `base` y `altura`. La función debe calcular y devolver el área del rectángulo (base * altura). Luego, llama a esta función con una base de 4 y una altura de 6, e imprime el resultado devuelto.",
-    "instructions": "1. Define la función `area_rectangulo` usando la palabra clave `def`. La función debe tomar dos parámetros, por ejemplo, `base` y `altura`.\n   `def area_rectangulo(base, altura):`\n2. Dentro de la función, calcula el producto de `base` y `altura`.\n3. Utiliza la palabra clave `return` para que la función devuelva este resultado calculado.\n   `return base * altura`\n4. Después de definir la función, llámala con los valores 4 para la base y 6 para la altura. Almacena el valor que devuelve la función en una variable, por ejemplo, `resultado_calculado`.\n   `resultado_calculado = area_rectangulo(4, 6)`\n5. Imprime el valor de `resultado_calculado`.",
-    "starter_code": "# 1. Define la función area_rectangulo(base, altura) aquí\n\n\n# 2. Llama a la función con base=4 y altura=6, y almacena el resultado\n# resultado_calculado = ...\n\n# 3. Imprime el resultado almacenado\n# print(resultado_calculado)",
+    "description": "Define una función area_rectangulo que acepte dos argumentos y devuelva el área.",
+    "instructions": "Define la función, llama con base=4 y altura=6, imprime el resultado.",
+    "starter_code": "def area_rectangulo(base, altura):\n    # ...\n# ...",
     "validation_type": "function_check",
     "validation_rules": {
       "function_name": "area_rectangulo",
       "scenarios": [
-        {"description": "Test con base 4, altura 6", "args": [4, 6], "expected_return_value": 24},
-        {"description": "Test con base 10, altura 5", "args": [10, 5], "expected_return_value": 50},
-        {"description": "Test con base 1, altura 1", "args": [1, 1], "expected_return_value": 1},
-        {"description": "Test del tipo de retorno", "args": [2,3], "expected_return_type": "int"}
+        {"args": [4, 6], "expected_return_value": 24, "expected_return_type": "int"},
+        {"args": [10, 5], "expected_return_value": 50, "expected_return_type": "int"},
+        {"args": [1, 1], "expected_return_value": 1, "expected_return_type": "int"}
       ],
-      "run_whole_script_and_check_output": "24\n"
+      "run_whole_script_and_check_output": "24\n",
+      "require_return_statement": true
     }
   },
   {
-    "id": 14,
-    "lesson_id": null,
-    "module_id": 3,
-    "order_index": 99,
-    "title": "Test Módulo 3: Control y Estructuras",
-    "description": "Escribe una función `contar_mayores_que_diez(lista_numeros)` que reciba una lista de números y devuelva cuántos de ellos son mayores que 10. El código inicial llama a esta función con una lista de prueba y se espera que imprimas el resultado devuelto por la función.",
-    "instructions": "1. Define la función `contar_mayores_que_diez` que acepte un parámetro `lista_numeros`.\n   `def contar_mayores_que_diez(lista_numeros):`\n2. Dentro de la función, inicializa un contador a 0 (por ejemplo, `contador = 0`).\n3. Itera sobre cada `numero` en `lista_numeros` usando un bucle `for`.\n4. Dentro del bucle, usa una sentencia `if` para verificar si el `numero` actual es mayor que 10 (`numero > 10`).\n5. Si la condición es verdadera, incrementa tu variable `contador` en 1.\n6. Después de que el bucle haya procesado todos los números, la función debe usar `return` para devolver el valor final del `contador`.\n7. El código de inicio (fuera de tu función) ya se encarga de llamar a `contar_mayores_que_diez` con una lista de prueba y de imprimir el resultado que tu función devuelve. No necesitas modificar esa parte.",
-    "starter_code": "def contar_mayores_que_diez(lista_numeros):\n    contador = 0\n    # Tu código aquí dentro de la función\n    return contador\n\n# El sistema de pruebas usará diferentes listas aquí, pero para tu prueba local:\n# mi_lista_prueba = [5, 12, 3, 18, 9, 22]\n# resultado = contar_mayores_que_diez(mi_lista_prueba)\n# print(resultado)\n# NOTA: Para pruebas de función directa, el print() final no es estrictamente necesario\n# pero puede dejarse para que el usuario pruebe localmente.",
-    "validation_type": "function_check",
-    "validation_rules": {
-      "function_name": "contar_mayores_que_diez",
-      "scenarios": [
-        {"description":"Test con números mixtos", "args":[[5,12,3,18,9,22]], "expected_return_value":3},
-        {"description":"Test sin números mayores a 10", "args":[[1,2,3,8,9]], "expected_return_value":0},
-        {"description":"Test con todos los números mayores a 10", "args":[[11,15,25]], "expected_return_value":3},
-        {"description":"Test con lista vacía", "args":[[]], "expected_return_value":0},
-        {"description":"Test del tipo de retorno", "args":[[1,2,3]], "expected_return_type":"int"}
-      ]
-    }
-  },
-  {
-    "id": 15,
-    "lesson_id": null,
-    "module_id": 1,
-    "order_index": 2,
-    "title": "Ejercicio 1.3.2: Presentación Personal",
-    "description": "Dadas las variables `nombre_usuario = \"Alex\"` y `edad_usuario_str = \"28\"` (simulando una edad leída como texto), convierte la edad a un número entero. Luego, imprime un mensaje formateado que diga: 'Hola, me llamo [Nombre] y tengo [Edad] años.'",
-    "instructions": "1. Las variables `nombre_usuario` (string) y `edad_usuario_str` (string) ya están definidas en el código inicial.\n2. Convierte el valor de `edad_usuario_str` a un número entero usando la función `int()`. Almacena este entero en una nueva variable, por ejemplo, `edad_usuario_int`.\n   `edad_usuario_int = int(edad_usuario_str)`\n3. Crea el mensaje formateado usando un f-string. El mensaje debe ser: `Hola, me llamo [valor de nombre_usuario] y tengo [valor de edad_usuario_int] años.`\n   Almacena este mensaje en una variable, por ejemplo, `mensaje_formateado`.\n4. Imprime el valor de la variable `mensaje_formateado`.",
-    "starter_code": "nombre_usuario = \"Alex\"\nedad_usuario_str = \"28\" # El sistema de pruebas podría usar otros valores aquí\n\n# 1. Convierte edad_usuario_str a entero\nedad_usuario_int = 0 # Reemplaza con tu conversión\n\n# 2. Crea el mensaje formateado\nmensaje_formateado = \"\" # Reemplaza con tu f-string\n\n# 3. Imprime el mensaje\n# print(mensaje_formateado)",
-    "validation_type": "simple_print",
-    "validation_rules": {
-      "expected_exact_output": "Hola, me llamo Alex y tengo 28 años.\n"
-    }
+  "id": 12,
+  "lesson_id": null,
+  "module_id": null,
+  "order_index": 999,
+  "title": "Examen Final: Fundamentos de Python",
+  "description": "Resuelve los siguientes ejercicios para demostrar tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones en Python.",
+  "instructions": "1. Implementa todas las funciones y tareas solicitadas.\n2. Cada función debe tener el nombre exacto indicado y cumplir con los tipos de entrada y salida especificados.\n3. Lee cuidadosamente cada consigna y asegúrate de que tu código pase todos los casos de prueba.",
+  "starter_code": "def es_par(n):\n    # Tu código aquí\n\n\ndef dias_en_anios(anios):\n    # Tu código aquí\n\n\ndef obtener_segundo(lista):\n    # Tu código aquí\n\n\ndef suma_rango(inicio, fin):\n    # Tu código aquí\n\n# Puedes agregar más funciones si lo deseas.",
+  "validation_type": "exam",
+  "validation_rules": {
+    "functions": [
+      {
+        "function_name": "es_par",
+        "scenarios": [
+          {"args": [2], "expected_return_value": true, "expected_return_type": "bool"},
+          {"args": [3], "expected_return_value": false, "expected_return_type": "bool"},
+          {"args": [0], "expected_return_value": true, "expected_return_type": "bool"}
+        ]
+      },
+      {
+        "function_name": "dias_en_anios",
+        "scenarios": [
+          {"args": [1], "expected_return_value": 365, "expected_return_type": "int"},
+          {"args": [0], "expected_return_value": 0, "expected_return_type": "int"},
+          {"args": [10], "expected_return_value": 3650, "expected_return_type": "int"}
+        ]
+      },
+      {
+        "function_name": "obtener_segundo",
+        "scenarios": [
+          {"args": [[1,2,3]], "expected_return_value": 2, "expected_return_type": "int"},
+          {"args": [["a","b","c"]], "expected_return_value": "b", "expected_return_type": "str"}
+        ]
+      },
+      {
+        "function_name": "suma_rango",
+        "scenarios": [
+          {"args": [1, 5], "expected_return_value": 15, "expected_return_type": "int"},
+          {"args": [3, 3], "expected_return_value": 3, "expected_return_type": "int"},
+          {"args": [0, 2], "expected_return_value": 3, "expected_return_type": "int"}
+        ]
+      }
+    ],
+    "require_return_statement": true,
+    "strict_function_names": ["es_par", "dias_en_anios", "obtener_segundo", "suma_rango"]
   }
+}
 ]

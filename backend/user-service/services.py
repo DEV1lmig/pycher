@@ -7,12 +7,7 @@ from utils import get_password_hash, verify_password, generate_input_from_constr
 from datetime import datetime as dt
 from typing import Optional, List, Dict, Any # Ensure all necessary types are imported
 
-from models import User # Adjusted if your models are structured differently
-from models import (
-    Course, Module, Lesson, Exercise,
-    UserCourseEnrollment, UserModuleProgress, UserLessonProgress, UserExerciseSubmission,
-    CourseExam, UserExamAttempt, Lesson
-)
+from models import User, UserCourseEnrollment, UserModuleProgress, UserLessonProgress, UserExerciseSubmission, CourseExam, UserExamAttempt, Course, Module, Lesson, Exercise # Ensure Module is imported
 from schemas import ( # Adjusted if your schemas are structured differently
     UserProgressReportDataSchema, ReportCourseProgressSchema, ReportModuleProgressSchema,
     ReportLessonProgressSchema, ReportExerciseProgressSchema, ReportExamAttemptSchema,
@@ -261,6 +256,8 @@ def enroll_user_in_course(db: Session, user_id: int, course_id: int):
     """
     Enroll a user in a course. If an inactive enrollment exists, reactivate it.
     Otherwise, create a new enrollment.
+    Also, create UserModuleProgress entries for all modules in the course,
+    unlocking the first module.
     """
     # Check for any existing enrollment (active or inactive)
     existing_enrollment = db.query(UserCourseEnrollment).filter(
@@ -268,49 +265,139 @@ def enroll_user_in_course(db: Session, user_id: int, course_id: int):
         UserCourseEnrollment.course_id == course_id
     ).first()
 
+    enrollment_is_new = False
     if existing_enrollment:
-        if existing_enrollment.is_active_enrollment:
-            logger.warning(f"Enrollment attempt failed: User ID {user_id} already actively enrolled in Course ID {course_id}.")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already actively enrolled in this course")
-        else:
-            # Reactivate the existing inactive enrollment
-            logger.info(f"Reactivating existing inactive enrollment for User ID {user_id} in Course ID {course_id}.")
+        if not existing_enrollment.is_active_enrollment:
             existing_enrollment.is_active_enrollment = True
-            existing_enrollment.enrollment_date = func.now() # Update enrollment date to now
+            existing_enrollment.enrollment_date = dt.utcnow() # Reset enrollment date on re-activation
+            existing_enrollment.last_accessed = dt.utcnow()
+            # Reset progress fields if re-enrolling after unenrolling
             existing_enrollment.is_completed = False
             existing_enrollment.progress_percentage = 0.0
-            existing_enrollment.last_accessed = None
+            existing_enrollment.total_time_spent_minutes = 0
             existing_enrollment.last_accessed_module_id = None
             existing_enrollment.last_accessed_lesson_id = None
-            # Consider if UserModuleProgress, UserLessonProgress etc. for this user/course should be reset here.
-            # For now, we are not touching them, assuming progress starts fresh.
-            # If they should be cleared, add that logic here.
-            # Also, ensure UserModuleProgress and UserLessonProgress are created if needed for the first module/lesson
-            # For simplicity, we assume starting a module/lesson will create these.
             db.add(existing_enrollment)
-            enrollment_to_return = existing_enrollment
+            logger.info(f"Reactivated enrollment for User ID {user_id} in Course ID {course_id}.")
+        else:
+            logger.info(f"User ID {user_id} is already actively enrolled in Course ID {course_id}.")
+        enrollment = existing_enrollment
     else:
-        # Create a new enrollment
-        logger.info(f"Creating new enrollment for User ID {user_id} in Course ID {course_id}.")
-        new_enrollment = UserCourseEnrollment(
+        enrollment = UserCourseEnrollment(
             user_id=user_id,
             course_id=course_id,
-            is_active_enrollment=True # Default is True, but explicit for clarity
+            enrollment_date=dt.utcnow(),
+            last_accessed=dt.utcnow(),
+            is_active_enrollment=True
         )
-        db.add(new_enrollment)
-        enrollment_to_return = new_enrollment
+        db.add(enrollment)
+        enrollment_is_new = True
+        logger.info(f"Created new enrollment for User ID {user_id} in Course ID {course_id}.")
+
+    # Update students_count on the course if it's a new, active enrollment
+    # This part might be better handled by an event or a separate admin function
+    # to avoid direct modification of Course model from user-service if Course is primarily content-service's domain.
+    # For now, assuming direct update is acceptable or Course model is accessible here.
+    if enrollment_is_new: # Only increment if it's a truly new enrollment being activated
+        course_model = db.query(Course).filter(Course.id == course_id).first()
+        if course_model:
+            course_model.students_count = (course_model.students_count or 0) + 1
+            db.add(course_model)
 
     try:
         db.commit()
-        db.refresh(enrollment_to_return)
-        # Potentially check if the first module/lesson should be auto-started or progress records created
-        logger.info(f"Enrollment successful for User ID {user_id} in Course ID {course_id}. Enrollment ID: {enrollment_to_return.id}")
-        return enrollment_to_return
+        db.refresh(enrollment)
+        if enrollment_is_new and course_model:
+            db.refresh(course_model)
     except Exception as e:
         db.rollback()
-        logger.error(f"Error during enrollment/reactivation for User ID {user_id}, Course ID {course_id}: {e}", exc_info=True)
-        # More specific error message might be useful depending on the context
+        logger.error(f"Error committing enrollment for User ID {user_id}, Course ID {course_id}: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not process enrollment.")
+
+    # --- Create UserModuleProgress entries for all modules in the course ---
+    course_modules = db.query(Module).filter(Module.course_id == course_id).order_by(Module.order_index.asc()).all()
+
+    if not course_modules:
+        logger.warning(f"Course ID {course_id} has no modules. No UserModuleProgress entries created for User ID {user_id}.")
+    else:
+        for index, module_item in enumerate(course_modules):
+            user_module_progress = db.query(UserModuleProgress).filter(
+                UserModuleProgress.user_id == user_id,
+                UserModuleProgress.module_id == module_item.id
+            ).first()
+
+            is_first_module = (index == 0)
+
+            if not user_module_progress:
+                user_module_progress = UserModuleProgress(
+                    user_id=user_id,
+                    module_id=module_item.id,
+                    is_completed=False,
+                    started_at=None, # Not started yet
+                    is_unlocked=is_first_module # Unlock only the first module
+                )
+                db.add(user_module_progress)
+                logger.info(f"Created UserModuleProgress for User ID {user_id}, Module ID {module_item.id}. Unlocked: {is_first_module}")
+            else:
+                # If progress exists (e.g., re-enrollment), ensure unlock status is correct
+                # This logic assumes re-enrollment should reset unlock status based on order.
+                # If a module was previously completed, its `is_unlocked` might already be true
+                # and `is_completed` true. We only force `is_unlocked` based on its position.
+                # A more nuanced approach might be needed if completed modules should remain unlocked
+                # even if they are not the first, upon re-enrollment.
+                # For now, we'll set it based on being the first module.
+                if user_module_progress.is_unlocked != is_first_module:
+                    # Only update if it's different, and typically only if it's not completed.
+                    # If it's completed, it should naturally be considered unlocked.
+                    # This simple logic might need refinement based on exact re-enrollment UX.
+                    # A safe bet is to ensure the first module is always unlocked on active enrollment.
+                    if is_first_module:
+                         user_module_progress.is_unlocked = True
+                         logger.info(f"Ensured UserModuleProgress for User ID {user_id}, Module ID {module_item.id} is Unlocked (first module).")
+                    # For other modules, if they were somehow marked unlocked but shouldn't be (and aren't completed),
+                    # this logic doesn't explicitly re-lock them unless `is_first_module` is false and it was true.
+                    # The `complete_module` function should handle unlocking subsequent modules.
+                    # The main goal here is to ensure the *first* module is unlocked.
+                    # Subsequent modules are unlocked by completing the previous one.
+                    elif not user_module_progress.is_completed: # Only re-lock if not completed
+                        user_module_progress.is_unlocked = False # Ensure non-first modules start locked unless completed
+                        logger.info(f"Ensured UserModuleProgress for User ID {user_id}, Module ID {module_item.id} is Locked (not first, not completed).")
+
+
+                db.add(user_module_progress)
+
+        try:
+            db.commit()
+            # Refresh relevant objects if needed, e.g., for returning in response
+            # For now, the main enrollment object is already refreshed.
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error committing UserModuleProgress entries for User ID {user_id}, Course ID {course_id}: {e}", exc_info=True)
+            # Don't necessarily fail the whole enrollment if this part fails,
+            # but log it as a critical issue. Or decide if this should also raise an HTTPException.
+
+
+    # The response model is UserCourseProgressResponse, which might expect module progress.
+    # For now, returning the basic enrollment. If the response model needs more,
+    # this function would need to gather that data.
+    # Let's assume UserCourseProgressResponse can be built from the enrollment object.
+    # We need to construct the response according to UserCourseProgressResponse schema
+
+    # Simplified response for now, assuming UserCourseProgressResponse can be built from this.
+    # You might need to query and build a more complex object if the schema demands it.
+    return UserCourseProgressResponse(
+        id=enrollment.id,
+        user_id=enrollment.user_id,
+        course_id=enrollment.course_id,
+        is_started=(enrollment.last_accessed is not None), # Basic assumption
+        is_completed=enrollment.is_completed,
+        started_at=enrollment.enrollment_date, # Or a more specific started_at if tracked
+        completed_at=None, # This would be set when course is completed
+        current_module_id=enrollment.last_accessed_module_id,
+        progress_percentage=enrollment.progress_percentage,
+        total_time_spent_minutes=enrollment.total_time_spent_minutes,
+        modules_progress=[] # Populate this if your schema requires it and you fetch it here
+    )
 
 def start_lesson(db: Session, user_id: int, lesson_id: int):
     # Fetch the lesson and ensure its module is available for module_id
@@ -612,15 +699,59 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
 
 def get_batch_module_progress_details(db: Session, user_id: int, module_ids: list[int]) -> dict:
     """
-    Returns a dictionary mapping module_id to completion status (True/False) for the given user.
+    Returns a dictionary mapping module_id to the full progress object for the given user.
     """
     progress_records = db.query(UserModuleProgress).filter(
         UserModuleProgress.user_id == user_id,
         UserModuleProgress.module_id.in_(module_ids)
     ).all()
-    progress_map = {mid: False for mid in module_ids}
-    for record in progress_records:
-        progress_map[record.module_id] = bool(record.is_completed)
+    progress_map = {}
+    for mid in module_ids:
+        record = next((r for r in progress_records if r.module_id == mid), None)
+        if record:
+            # Calculate progress percentage based on completed lessons
+            total_lessons = db.query(func.count(Lesson.id)).filter(Lesson.module_id == mid).scalar() or 0
+            completed_lessons = 0
+            if total_lessons > 0:
+                completed_lessons = db.query(func.count(UserLessonProgress.id)).filter(
+                    UserLessonProgress.user_id == user_id,
+                    UserLessonProgress.lesson.has(Lesson.module_id == mid),
+                    UserLessonProgress.is_completed == True
+                ).scalar() or 0
+            progress_percentage = (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0.0
+
+            progress_map[mid] = {
+                "id": record.id,
+                "user_id": record.user_id,
+                "module_id": record.module_id,
+                "is_started": record.started_at is not None,
+                "is_completed": record.is_completed,
+                "started_at": record.started_at,
+                "completed_at": record.completed_at,
+                "current_lesson_id": record.last_accessed_lesson_id,
+                "progress_percentage": progress_percentage,
+                "is_unlocked": record.is_unlocked,
+                "lessons_progress": [],
+                "course_id": getattr(record.module, "course_id", None) if hasattr(record, "module") and record.module else None,
+            }
+        else:
+            # Default progress object if not started
+            module_info = db.query(Module.course_id).filter(Module.id == mid).first()
+            course_id_for_default = module_info.course_id if module_info else None
+            progress_map[mid] = {
+                "id": -1,
+                "user_id": user_id,
+                "module_id": mid,
+                "is_started": False,
+                "is_completed": False,
+                "started_at": None,
+                "completed_at": None,
+                "current_lesson_id": None,
+                "progress_percentage": 0.0,
+                "is_unlocked": False,
+                "lessons_progress": [],
+                "course_id": course_id_for_default,
+            }
     return progress_map
 
 def get_batch_lesson_progress_details(db: Session, user_id: int, lesson_ids: list[int]) -> dict:
@@ -658,17 +789,105 @@ def start_module(db: Session, user_id: int, module_id: int):
         UserModuleProgress.user_id == user_id,
         UserModuleProgress.module_id == module_id
     ).first()
+
     if not module_progress:
+        # This case should ideally be handled by enroll_user_in_course creating all entries.
+        # If it's missing, it implies an issue or the module isn't part of the user's current enrollment scope.
+        # However, to be robust, we can create it here, but it should be marked as locked unless it's the first.
+        # For simplicity, we'll assume `enroll_user_in_course` has done its job.
+        # If not, we might need to check if it's the first module of the course to unlock it.
+        logger.warning(f"UserModuleProgress not found for User ID {user_id}, Module ID {module_id} in start_module. This should have been created on enrollment.")
+        # To prevent error, let's create a basic one, assuming it should be locked by default if created ad-hoc.
+        # A better approach is to ensure enroll_user_in_course is robust.
+        module_info = db.query(Module.course_id, Module.order_index).filter(Module.id == module_id).first()
+        if not module_info:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found.")
+
+        is_first_module_of_course = (module_info.order_index == 1) # Simplified check
+
         module_progress = UserModuleProgress(
             user_id=user_id,
             module_id=module_id,
             started_at=dt.utcnow(),
-            is_completed=False
+            is_completed=False,
+            is_unlocked=is_first_module_of_course # Unlock if it's the first, otherwise default to locked
         )
         db.add(module_progress)
+        # Ensure the user is enrolled in the course this module belongs to
+        enrollment = db.query(UserCourseEnrollment).filter(
+            UserCourseEnrollment.user_id == user_id,
+            UserCourseEnrollment.course_id == module_info.course_id,
+            UserCourseEnrollment.is_active_enrollment == True
+        ).first()
+        if not enrollment:
+            # This is a more critical issue - trying to start a module for a course not enrolled in.
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not enrolled in the course for this module.")
+
+    elif not module_progress.is_unlocked and not module_progress.is_completed:
+        # If the module progress exists but is explicitly locked (and not completed)
+        logger.warning(f"User ID {user_id} attempting to start locked Module ID {module_id}.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Módulo bloqueado. Completa el módulo anterior primero.")
+
+    if module_progress.started_at is None: # Only set started_at if it's the first time
+        module_progress.started_at = dt.utcnow()
+        db.add(module_progress)
+
+    # Update last accessed on course enrollment
+    module_db_instance = db.query(Module).filter(Module.id == module_id).first()
+    if module_db_instance:
+        enrollment = db.query(UserCourseEnrollment).filter(
+            UserCourseEnrollment.user_id == user_id,
+            UserCourseEnrollment.course_id == module_db_instance.course_id,
+            UserCourseEnrollment.is_active_enrollment == True
+        ).first()
+        if enrollment:
+            enrollment.last_accessed = dt.utcnow()
+            enrollment.last_accessed_module_id = module_id
+            # last_accessed_lesson_id will be updated when a lesson is started
+            db.add(enrollment)
+        else:
+            logger.error(f"No active enrollment found for User ID {user_id} in Course ID {module_db_instance.course_id} when starting Module ID {module_id}.")
+
+
+    try:
         db.commit()
         db.refresh(module_progress)
-    return module_progress
+        if enrollment:
+            db.refresh(enrollment)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error committing start_module for User ID {user_id}, Module ID {module_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not start module.")
+
+    # Construct response based on UserModuleProgressResponse schema
+    # This requires fetching course_id and calculating progress_percentage
+    course_id_for_response = module_db_instance.course_id if module_db_instance else None
+
+    total_lessons_in_module = db.query(func.count(Lesson.id)).filter(Lesson.module_id == module_id).scalar() or 0
+    completed_lessons_count = 0
+    if total_lessons_in_module > 0:
+        completed_lessons_count = db.query(func.count(UserLessonProgress.id)).filter(
+            UserLessonProgress.user_id == user_id,
+            UserLessonProgress.lesson.has(Lesson.module_id == module_id), # Ensure lesson belongs to this module
+            UserLessonProgress.is_completed == True
+        ).scalar() or 0
+
+    progress_percentage_val = (completed_lessons_count / total_lessons_in_module * 100) if total_lessons_in_module > 0 else 0
+
+    return UserModuleProgressResponse(
+        id=module_progress.id,
+        user_id=module_progress.user_id,
+        module_id=module_progress.module_id,
+        course_id=course_id_for_response,
+        is_started=module_progress.started_at is not None,
+        is_completed=module_progress.is_completed,
+        is_unlocked=module_progress.is_unlocked, # Reflect the current unlock status
+        started_at=module_progress.started_at,
+        completed_at=module_progress.completed_at,
+        current_lesson_id=module_progress.last_accessed_lesson_id,
+        progress_percentage=progress_percentage_val,
+        lessons_progress=[] # Populate if needed
+    )
 
 def complete_module(db: Session, user_id: int, module_id: int):
     module_progress = db.query(UserModuleProgress).filter(
@@ -683,6 +902,29 @@ def complete_module(db: Session, user_id: int, module_id: int):
         db.add(module_progress)
         db.commit()
         db.refresh(module_progress)
+
+        # Unlock the next module for this user
+        current_module = db.query(Module).filter(Module.id == module_id).first()
+        if current_module:
+            next_module = db.query(Module).filter(
+                Module.course_id == current_module.course_id,
+                Module.order_index > current_module.order_index
+            ).order_by(Module.order_index.asc()).first()
+            if next_module:
+                next_progress = db.query(UserModuleProgress).filter(
+                    UserModuleProgress.user_id == user_id,
+                    UserModuleProgress.module_id == next_module.id
+                ).first()
+                if not next_progress:
+                    next_progress = UserModuleProgress(
+                        user_id=user_id,
+                        module_id=next_module.id,
+                        started_at=None,
+                        is_completed=False,
+                        is_unlocked=True  # <-- Unlock here
+                    )
+                    db.add(next_progress)
+                    db.commit()
     return module_progress
 
 def get_user_module_progress(db: Session, user_id: int, module_id: int) -> Optional[UserModuleProgressResponse]:
@@ -1061,8 +1303,7 @@ def get_user_progress_report_data(db: Session, user_id: int) -> UserProgressRepo
                     report_exercises_data.append(ReportExerciseProgressSchema(
                         title=exercise_entity.title,
                         is_correct=submission.is_correct if submission else None,
-                        attempts=submission.attempts if submission else 0,
-                        score=submission.score if submission else None,
+                        attempt_number=submission.attempt_number if submission else 0,
                         submitted_at=submission.submitted_at if submission else None
                     ))
 

@@ -132,7 +132,7 @@ class UserLessonProgressResponse(UserLessonProgressBase):
 
 class UserModuleProgressBase(BaseModel):
     module_id: int
-    course_id: int
+    course_id: Optional[int] = None
     is_started: bool = False
     is_completed: bool = False
     is_unlocked: bool = False
@@ -425,7 +425,8 @@ class BatchLessonProgressItem(BaseModel):
     # Add other relevant fields if needed
 
 class BatchModuleProgressResponse(BaseModel):
-    progress: Dict[int, bool] # module_id -> is_completed
+
+    progress: Dict[int, UserModuleProgressResponse]
 
 class BatchLessonProgressResponse(BaseModel):
     progress: Dict[int, bool] # lesson_id -> is_completed

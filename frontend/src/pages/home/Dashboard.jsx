@@ -12,6 +12,7 @@ export default function DashboardPage() {
   useEffect(() => {
     getAllCourses().then(setCourses);
   }, []);
+  console.log(courses);
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6 p-6">
@@ -25,7 +26,7 @@ export default function DashboardPage() {
           </p>
           </FadeContent>
           <CourseCards courses={courses} />
-          
+
         </section>
       </div>
     </DashboardLayout>

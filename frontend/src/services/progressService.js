@@ -98,6 +98,26 @@ export const getUserExamAttempts = async (examId) => {
   return response.data;
 };
 
+/**
+ * Fetch batch progress for multiple modules.
+ * @param {number[]} moduleIds
+ * @returns {Promise<Object>} Map of moduleId to progress object (including is_unlocked)
+ */
+export const getBatchModuleProgress = async (moduleIds) => {
+  const response = await apiClient.post(`/api/v1/users/modules/progress/batch`, {
+    module_ids: moduleIds,
+  });
+  console.log(response.data)
+  return response.data.progress;
+};
+
+export const getBatchLessonProgress = async (lessonIds) => {
+  const response = await apiClient.post(`/api/v1/users/lessons/progress/batch`, {
+    lesson_ids: lessonIds,
+  });
+  return response.data.progress;
+};
+
 const progressService = {
   enrollInCourse,
   getMyEnrollments,
@@ -115,6 +135,7 @@ const progressService = {
   startExamAttempt,
   submitExamAttempt,
   getUserExamAttempts,
+  getBatchModuleProgress,
 };
 
 export default progressService;

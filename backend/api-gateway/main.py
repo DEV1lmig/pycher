@@ -17,7 +17,7 @@ app = FastAPI(title="Python Learning Platform API Gateway")
 ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Local development
     "http://16.171.239.251:5173",  # Production domain
-    # Add other allowed origins as needed
+    "*"
 ]
 
 app.add_middleware(
@@ -214,7 +214,7 @@ async def user_service_proxy(request: Request, path: str):
             content_type_lower = content_type_header.lower()
 
             excluded_headers = {
-                "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+                "connection", "keep-alive",
                 "te", "trailers", "transfer-encoding", "upgrade",
                 "content-encoding", # httpx handles decompression
                 # "content-length" will be set by FastAPI's Response
@@ -256,7 +256,8 @@ async def user_service_proxy(request: Request, path: str):
                 error_detail = e.response.json()
             except Exception:
                 error_detail = e.response.text if e.response.text else f"User service returned status {e.response.status_code}"
-            raise HTTPException(status_code=e.response.status_code, detail=error_detail)
+            resp = JSONResponse(status_code=e.response.status_code, content={"detail": error_detail})
+            return add_cors_headers(resp)
         except Exception as e:
             print(f"!!!!!!!!!!!! UNEXPECTED ERROR IN USER_SERVICE_PROXY (outer try-except) FOR {url} !!!!!!!!!!!!")
             traceback.print_exc()
@@ -272,6 +273,28 @@ async def generic_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error. Check API Gateway logs."}, # Modified detail
         headers={"Access-Control-Allow-Origin": "*"}
     )
+
+@app.middleware("http")
+async def add_cors_preflight_handling(request: Request, call_next):
+    """Handle CORS preflight requests"""
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Authorization, Content-Type",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+            }
+        )
+
+    response = await call_next(request)
+    return response
+
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    return response
 
 if __name__ == "__main__":
     import uvicorn

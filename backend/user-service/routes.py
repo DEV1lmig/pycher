@@ -292,6 +292,7 @@ def get_module_progress_route(
     db: Session = Depends(get_db)
 ):
     progress = get_user_module_progress(db, current_user.id, module_id)
+    logger.info(f"Module progress check for U{current_user.id}, M_ID {module_id}. Result from service: {progress}")
     if progress is None:
         # Instead of 404, return a default progress object
         return UserModuleProgressResponse(
