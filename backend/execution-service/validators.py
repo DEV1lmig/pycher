@@ -4,6 +4,7 @@ import tempfile
 import os
 import signal
 import importlib.util
+import random
 from typing import Dict, Optional, List, Any, Tuple
 
 # --- Result Class ---
@@ -150,6 +151,14 @@ def validate_simple_print_exercise(
 
     stdout, stderr, timed_out, exit_code = run_user_code_sandboxed(user_code, input_data, timeout)
 
+    # --- Add this check after running the code ---
+    if not stdout.strip():
+        return DynamicValidationResult(
+            False,
+            "No se detectó ninguna salida. ¿Has completado el ejercicio? Escribe tu código y usa print() para mostrar el resultado.",
+            actual_output=stdout
+        )
+
     if timed_out:
         return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout)
     if exit_code != 0:
@@ -177,7 +186,7 @@ def validate_simple_print_exercise(
 def validate_saludo_personalizado(
     user_code: str,
     rules: Dict[str, Any],
-    input_data: Optional[str] = None, # This is the name to be used for the scenario
+    input_data: Optional[str] = None,
     timeout: int = 5
 ) -> DynamicValidationResult:
     """
@@ -393,11 +402,172 @@ def validate_function_exercise(
             except Exception: # Silently ignore cleanup errors
                 pass
 
+def generate_dynamic_test_cases(constraints: Dict[str, Any], num_cases: int = 10):
+    """
+    Generate random test cases based on input constraints.
+    Supported types: int, str
+    """
+    t = constraints.get("type")
+    cases = []
+    if t == "int":
+        min_val = constraints.get("min", 0)
+        max_val = constraints.get("max", 100)
+        for _ in range(num_cases):
+            cases.append(str(random.randint(min_val, max_val)))
+    elif t == "str":
+        min_length = constraints.get("min_length", 3)
+        max_length = constraints.get("max_length", 10)
+        charset = constraints.get("charset", "abcdefghijklmnopqrstuvwxyz")
+        for _ in range(num_cases):
+            length = random.randint(min_length, max_length)
+            cases.append(''.join(random.choices(charset, k=length)))
+    return cases
+
+def validate_dynamic_output_exercise(
+    user_code: str,
+    rules: Dict[str, Any],
+    input_data: Optional[str] = None,
+    timeout: int = 5
+) -> DynamicValidationResult:
+    """
+    Dynamically validates output-based exercises.
+    If input_data is provided, it's used as a single test case.
+    Otherwise, generates multiple test cases based on "input_constraints".
+    Expects:
+      - "input_constraints" in rules (dict) - used if input_data is None
+      - "transform_for_template" in rules (str, Python expression using 'value')
+      - "output_format_template" in rules (str, e.g. "{var}\n")
+    """
+    security_res = general_security_check(user_code)
+    if not security_res.passed:
+        return security_res
+
+    format_template = rules.get("output_format_template", "{var}\n")
+    transform_expr = rules.get("transform_for_template")
+
+    if not transform_expr:
+        return DynamicValidationResult(False, "Validation config error: 'transform_for_template' missing.")
+
+    test_cases: List[str]
+    if input_data is not None:
+        # If direct input_data is provided (e.g., from textarea "Ejecutar Código"),
+        # use it as the *only* test case for this run.
+        test_cases = [input_data]
+    else:
+        # Original behavior: generate multiple test cases for submission ("Entregar")
+        constraints = rules.get("input_constraints", {"type": "int", "min": 0, "max": 100})
+        num_cases = rules.get("num_cases", 8)
+        test_cases = generate_dynamic_test_cases(constraints, num_cases=num_cases)
+        if not test_cases: # Should not happen if constraints are valid
+            return DynamicValidationResult(False, "Failed to generate dynamic test cases based on constraints.")
+
+    errors = []
+
+    for case_value in test_cases:
+        # Compute expected output dynamically
+        try:
+            # The 'value' in transform_expr refers to the current test case input
+            expected_var = eval(transform_expr, {"value": case_value, "int": int, "str": str, "bool": bool})
+        except Exception as e:
+            # It's better to make this error specific to the case if possible,
+            # but a general transform error might stop all validation.
+            return DynamicValidationResult(False, f"Error in validation transform expression: {e}")
+
+        expected_output = format_template.replace("{var}", str(expected_var))
+
+        # Pass the current test case value as input_data to the sandbox
+        stdout, stderr, timed_out, exit_code = run_user_code_sandboxed(user_code, input_data=case_value, timeout=timeout)
+
+        # --- Add this check for each test case ---
+        if not stdout.strip():
+            return DynamicValidationResult(
+                False,
+                "No se detectó ninguna salida. ¿Has completado el ejercicio? Escribe tu código y usa print() para mostrar el resultado.",
+                actual_output=stdout
+            )
+
+        if timed_out:
+            errors.append(f"Input '{case_value}': Execution timed out.")
+            continue
+        if exit_code != 0:
+            errors.append(f"Input '{case_value}': Runtime error: {stderr.strip()}")
+            continue
+
+        # Normalize whitespace for comparison, or make this configurable via rules
+        actual_output_stripped = stdout.strip()
+        expected_output_stripped = expected_output.strip()
+
+        if actual_output_stripped != expected_output_stripped:
+            # Provide more context in the error message
+            expected_repr = repr(expected_output_stripped)
+            actual_repr = repr(actual_output_stripped)
+            errors.append(f"Input '{case_value}': Expected {expected_repr}, got {actual_repr}.")
+
+    if errors:
+        error_message = "Algunos casos de prueba fallaron:\n" + "\n".join(errors)
+        # If only one test case (direct input), the actual_output is from that single run.
+        # If multiple, this stdout is from the last successful run, which might be fine.
+        # For simplicity, let's not set actual_output on batch failure here, or set it to the first error's output.
+        return DynamicValidationResult(False, error_message, actual_output=stdout if len(test_cases) == 1 else None)
+
+    # If all cases passed
+    # For a single direct input run, stdout would be from that run.
+    # For multiple generated cases, this stdout is from the last successful run, which might be fine.
+    return DynamicValidationResult(True, "¡Todos los casos dinámicos pasaron!", actual_output=stdout)
+
+def validate_function_and_output_exercise(
+    user_code: str,
+    rules: Dict[str, Any],
+    input_data: Optional[str] = None,
+    timeout: int = 5
+) -> DynamicValidationResult:
+    """
+    Validates both the function definition (with scenarios) and the script output.
+    """
+    # 1. Function check (like function_check)
+    func_rules = rules.get("function_rules", {})
+    scenarios = func_rules.get("scenarios", [])
+    func_name = func_rules.get("function_name")
+    for scenario in scenarios:
+        scenario_result = validate_function_exercise(
+            user_code=user_code,
+            rules=func_rules,
+            scenario_config=scenario,
+            timeout=timeout
+        )
+        if not scenario_result.passed:
+            return scenario_result
+
+    # 2. Output check (like simple_print)
+    expected_output = rules.get("expected_exact_output")
+    stdout = ""
+    if expected_output:
+        stdout, stderr, timed_out, exit_code = run_user_code_sandboxed(user_code, input_data, timeout)
+        if not stdout.strip():
+            return DynamicValidationResult(
+                False,
+                "No se detectó ninguna salida. ¿Has completado el ejercicio? Escribe tu código y usa print() para mostrar el resultado.",
+                actual_output=stdout
+            )
+        if timed_out:
+            return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout)
+        if exit_code != 0:
+            error_message = stderr.strip() if stderr.strip() else "Runtime error occurred."
+            return DynamicValidationResult(False, f"Runtime error: {error_message}", actual_output=stdout)
+        if stdout != expected_output:
+            return DynamicValidationResult(
+                False,
+                f"Output mismatch. Expected: {repr(expected_output)}\nGot: {repr(stdout)}",
+                actual_output=stdout
+            )
+    return DynamicValidationResult(True, "¡Función y salida correctas!", actual_output=stdout)
 # --- Validator Dispatcher Map ---
 VALIDATOR_MAP = {
     "simple_print": validate_simple_print_exercise,
     "saludo_personalizado": validate_saludo_personalizado,
     "function_check": validate_function_exercise,
+    "dynamic_output": validate_dynamic_output_exercise,  # <-- new dynamic validator
+    "function_and_output": validate_function_and_output_exercise, # <-- added combined validator
     # Add more mappings as you define validation_types and implement new validators
     # e.g., "loop_check", "class_method_check", etc.
 }

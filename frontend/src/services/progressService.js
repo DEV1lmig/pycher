@@ -49,6 +49,11 @@ export const getModuleProgress = async (moduleId) => {
   return response.data;
 };
 
+export const getCompletedExercisesCount = async () => {
+  const response = await apiClient.get('/api/v1/users/me/completed-exercises-count');
+  return response.data;
+};
+
 // --- Lesson Progress ---
 export const startLesson = async (lessonId) => {
   const response = await apiClient.post(`/api/v1/users/lessons/${lessonId}/start`);

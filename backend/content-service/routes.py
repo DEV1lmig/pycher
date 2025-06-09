@@ -168,3 +168,12 @@ def get_module_final_exercise(module_id: int, db: Session = Depends(get_db)):
     if not exercise:
         raise HTTPException(status_code=404, detail="Final exercise not found")
     return exercise
+@router.get("/courses/{course_id}/exam-exercise")
+def get_course_exam_exercise_route(course_id: int, db: Session = Depends(get_db)):
+    """
+    Get the exam exercise for a course.
+    """
+    exam_ex = services.get_course_exam_exercise(db, course_id)
+    if not exam_ex:
+        raise HTTPException(status_code=404, detail="Exam exercise not found")
+    return exam_ex

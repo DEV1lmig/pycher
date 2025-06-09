@@ -1,8 +1,9 @@
 [
   {
     "id": 1,
-    "lesson_id": 1,
+    "course_id": 1,
     "module_id": 1,
+    "lesson_id": 1,
     "order_index": 1,
     "title": "Ejercicio 1.1.1: ¿Qué es Python?",
     "description": "Responde: ¿Cuál es una de las principales razones por las que Python es popular para principiantes?",
@@ -22,8 +23,9 @@
   },
   {
     "id": 2,
-    "lesson_id": 2,
+    "course_id": 1,
     "module_id": 1,
+    "lesson_id": 2,
     "order_index": 1,
     "title": "Ejercicio 1.2.1: Saludo Personalizado",
     "description": "Escribe un programa que lea un nombre y luego imprima '¡Hola, [Nombre]!' en pantalla, reemplazando [Nombre] con el nombre leído.",
@@ -57,8 +59,9 @@
   },
   {
     "id": 3,
-    "lesson_id": 3,
+    "course_id": 1,
     "module_id": 1,
+    "lesson_id": 3,
     "order_index": 1,
     "title": "Ejercicio 1.3.1: Variables y Tipos",
     "description": "Crea una variable `ciudad` con el valor \"Madrid\" y una variable `poblacion` con el valor 3300000. Imprime ambas variables, cada una en una nueva línea.",
@@ -79,8 +82,9 @@
   },
   {
     "id": 4,
-    "lesson_id": 4,
+    "course_id": 1,
     "module_id": 2,
+    "lesson_id": 4,
     "order_index": 1,
     "title": "Ejercicio 2.1.1: Operaciones Básicas",
     "description": "Calcula el resultado de la expresión matemática (15 + 5) * 2 / 4 - 1 e imprímelo en la consola.",
@@ -101,8 +105,9 @@
   },
   {
     "id": 5,
-    "lesson_id": 5,
+    "course_id": 1,
     "module_id": 2,
+    "lesson_id": 5,
     "order_index": 1,
     "title": "Ejercicio 2.2.1: ¿Puede Conducir?",
     "description": "Dadas las variables edad_usuario y tiene_permiso_padres, determina si el usuario puede conducir. Imprime True si puede conducir, o False en caso contrario.",
@@ -123,36 +128,34 @@
   },
   {
     "id": 6,
-    "lesson_id": 6,
+    "course_id": 1,
     "module_id": 2,
+    "lesson_id": 6,
     "order_index": 1,
     "title": "Ejercicio 2.3.1: Calculadora de Edad en Días",
     "description": "Convierte la edad en años a días y muestra el resultado en el formato 'Tienes aproximadamente [X] días de vida.'.",
     "instructions": "Convierte edad_str a entero, calcula los días y usa un f-string para imprimir el mensaje.",
-    "starter_code": "edad_str = \"25\"\nedad_anios = 0\nedad_dias = 0\n# print(f\"...\")",
-    "validation_type": "saludo_personalizado",
+    "starter_code": "edad_str = input()\nedad_anios = int(edad_str)\nedad_dias = edad_anios * 365\nprint(f\"Tienes aproximadamente {edad_dias} días de vida.\")",
+    "validation_type": "dynamic_output",
     "validation_rules": {
-      "target_variable_names": ["edad_anios", "edad_dias"],
-      "output_format_template": "Tienes aproximadamente {var} días de vida.",
-      "requires_input_function": false,
-      "input_variable_in_starter": {"name": "edad_str", "type": "int", "transform_for_template": "value * 365"},
-      "scenarios": [
-        {"input": "25", "description": "Edad 25"},
-        {"input": "0", "description": "Edad 0"},
-        {"input": "10", "description": "Edad 10"}
-      ],
-      "expected_types": ["int", "int"],
+      "requires_input_function": true,
+      "input_constraints": { "type": "int", "min": 0, "max": 120 },
+      "transform_for_template": "f'Tienes aproximadamente {int(value)*365} días de vida.'",
+      "output_format_template": "{var}",
+      "num_cases": 8,
+      "strict_whitespace": true,
+      "case_sensitive": true,
       "require_fstring": true,
       "custom_feedback": {
-        "wrong_type": "Las variables deben ser enteros.",
         "not_fstring": "Usa un f-string para imprimir el mensaje."
       }
     }
   },
   {
     "id": 7,
-    "lesson_id": 7,
+    "course_id": 1,
     "module_id": 2,
+    "lesson_id": 7,
     "order_index": 1,
     "title": "Ejercicio 2.4.1: Iniciales y Longitud",
     "description": "Dada la variable nombre_completo, imprime la primera letra del nombre, la primera letra del apellido y la longitud total del nombre completo, cada resultado en una nueva línea.",
@@ -167,34 +170,32 @@
       "case_sensitive": true
     }
   },
-  {
-    "id": 8,
-    "lesson_id": 8,
-    "module_id": 3,
-    "order_index": 1,
-    "title": "Ejercicio 3.1.1: Par o Impar",
-    "description": "Dado un número, imprime 'Par' si el número es par, o 'Impar' si es impar.",
-    "instructions": "Convierte numero_str a entero, usa if-else y print.",
-    "starter_code": "numero_str = \"7\"\nnumero = int(numero_str)\n# ...",
-    "validation_type": "saludo_personalizado",
-    "validation_rules": {
-      "output_format_template": "{var}\n",
-      "requires_input_function": false,
-      "input_variable_in_starter": {"name": "numero_str", "type": "str", "transform_for_template": "'Par' if int(value) % 2 == 0 else 'Impar'"},
-      "scenarios": [
-        {"input": "7", "description": "Número 7"},
-        {"input": "4", "description": "Número 4"},
-        {"input": "0", "description": "Número 0"}
-      ],
-      "expected_types": ["str"],
-      "strict_whitespace": true,
-      "case_sensitive": true
-    }
-  },
+{
+"id": 8,
+"course_id": 1,
+"module_id": 3,
+"lesson_id": 8,
+"order_index": 1,
+"title": "Ejercicio 3.1.1: Par o Impar",
+"description": "Dado un número, imprime 'Par' si el número es par, o 'Impar' si es impar.",
+"instructions": "Convierte numero_str a entero, usa if-else y print.",
+"starter_code": "numero_str = input()\nnumero = int(numero_str)\n# ...",
+"validation_type": "dynamic_output",
+"validation_rules": {
+    "input_constraints": { "type": "int", "min": 0, "max": 100 },
+    "transform_for_template": "'Par' if int(value) % 2 == 0 else 'Impar'",
+    "output_format_template": "{var}\n",
+    "num_cases": 8,
+    "strict_whitespace": true,
+    "case_sensitive": true,
+    "requires_input_function": true
+ }
+},
   {
     "id": 9,
-    "lesson_id": 9,
+    "course_id": 1,
     "module_id": 3,
+    "lesson_id": 9,
     "order_index": 1,
     "title": "Ejercicio 3.2.1: Suma con For",
     "description": "Calcula la suma de todos los números enteros desde 1 hasta 5 utilizando un bucle for. Imprime el resultado.",
@@ -211,8 +212,9 @@
   },
   {
     "id": 10,
-   "lesson_id": 10,
+    "course_id": 1,
     "module_id": 3,
+    "lesson_id": 10,
     "order_index": 1,
     "title": "Ejercicio 3.3.1: Lista de Compras",
     "description": "Crea una lista llamada compras, añade 'huevos' y muestra el segundo elemento.",
@@ -229,30 +231,34 @@
   },
   {
     "id": 11,
-    "lesson_id": 11,
+    "course_id": 1,
     "module_id": 3,
+    "lesson_id": 11,
     "order_index": 1,
     "title": "Ejercicio 3.4.1: Función Área Rectángulo",
     "description": "Define una función area_rectangulo que acepte dos argumentos y devuelva el área.",
     "instructions": "Define la función, llama con base=4 y altura=6, imprime el resultado.",
     "starter_code": "def area_rectangulo(base, altura):\n    # ...\n# ...",
-    "validation_type": "function_check",
+    "validation_type": "function_and_output",
     "validation_rules": {
-      "function_name": "area_rectangulo",
-      "scenarios": [
-        {"args": [4, 6], "expected_return_value": 24, "expected_return_type": "int"},
-        {"args": [10, 5], "expected_return_value": 50, "expected_return_type": "int"},
-        {"args": [1, 1], "expected_return_value": 1, "expected_return_type": "int"}
-      ],
-      "run_whole_script_and_check_output": "24\n",
-      "require_return_statement": true
+      "function_rules": {
+        "function_name": "area_rectangulo",
+        "scenarios": [
+          {"args": [4, 6], "expected_return_value": 24, "expected_return_type": "int"},
+          {"args": [10, 5], "expected_return_value": 50, "expected_return_type": "int"},
+          {"args": [1, 1], "expected_return_value": 1, "expected_return_type": "int"}
+        ],
+        "require_return_statement": true
+      },
+      "expected_exact_output": "24\n"
     }
   },
   {
   "id": 12,
-  "lesson_id": null,
+  "course_id": 1,
   "module_id": null,
-  "order_index": 999,
+  "lesson_id": null,
+  "order_index": 1,
   "title": "Examen Final: Fundamentos de Python",
   "description": "Resuelve los siguientes ejercicios para demostrar tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones en Python.",
   "instructions": "1. Implementa todas las funciones y tareas solicitadas.\n2. Cada función debe tener el nombre exacto indicado y cumplir con los tipos de entrada y salida especificados.\n3. Lee cuidadosamente cada consigna y asegúrate de que tu código pase todos los casos de prueba.",

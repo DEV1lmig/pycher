@@ -13,6 +13,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     getAllCourses().then(async (coursesData) => {
+      coursesData.sort((a, b) => a.id - b.id);
       setCourses(coursesData);
       // Fetch progress for each course in parallel
       const progressEntries = await Promise.all(
@@ -25,7 +26,6 @@ export default function CoursesPage() {
           }
         })
       );
-      // Build a map: { [courseId]: progressObj }
       setProgressMap(Object.fromEntries(progressEntries));
     });
   }, []);

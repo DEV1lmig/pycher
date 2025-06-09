@@ -107,65 +107,54 @@ async def execute_and_validate_code(request: CodeRequest):
     # --- Logic to decide execution path ---
     if request.input_data is not None:
         # Case 1: input_data IS provided in the request (e.g., from "Ejecutar Código" textarea)
-        # Perform a single, direct execution and validation with this input.
         run_description_for_log = f"Direct run with user input: '{request.input_data}'"
         logging.info(f"EID {request.exercise_id}: {run_description_for_log}")
 
-        if validation_type in ["simple_print", "saludo_personalizado", "variable_output"]: # Add other script-based types
+        # Ensure dynamic_output is handled here for single input run
+        if validation_type in ["simple_print", "saludo_personalizado", "variable_output", "dynamic_output", "function_and_output"]:
             final_run_result = validator_func(
                 user_code=request.code,
-                rules=exercise_rules_from_config, # General rules for the exercise
-                input_data=request.input_data,    # The specific input from the request
+                rules=exercise_rules_from_config,
+                input_data=request.input_data,    # Pass direct input to the validator
                 timeout=request.timeout
             )
         elif validation_type == "function_check":
             logging.warning(f"EID {request.exercise_id}: 'input_data' provided for 'function_check'. This is typically handled by scenarios with 'args'. Performing a default scenario interpretation if possible, or this might indicate a misconfiguration if the function doesn't use stdin.")
-            # For a function_check, if input_data is provided, it might mean the function is expected to read from stdin,
-            # or it's a special case. If the function_check validator can handle input_data (e.g. for a function that uses input()),
-            # it would be called similarly. Otherwise, this path might need specific error handling or a default behavior.
-            # For now, let's assume the validator might try to use it if relevant, or ignore if not.
-            # A more robust way would be for the validator to signal if input_data is incompatible with its type without a scenario.
-            # Let's assume for now it might be a function that *does* use input()
             final_run_result = validator_func(
                 user_code=request.code,
                 rules=exercise_rules_from_config,
-                # For function_check, scenario_config is usually key. If we are in a direct run with input_data,
-                # we might need a "default" or "direct input" scenario interpretation.
-                # This part depends heavily on how `validate_function_exercise` is designed to handle missing scenario_config.
-                # Let's assume it can perform a basic run if scenario_config is minimal/None and input_data is given.
-                scenario_config={}, # Minimal scenario, relying on input_data if validator supports it
-                input_data_for_script_within_function=request.input_data, # A clearer way if validator is adapted
+                scenario_config={},  # or a real scenario if you have one
                 timeout=request.timeout
             )
             # If your function_check validator *cannot* work this way, this should be an error:
-            # final_run_result = DynamicValidationResult(passed=False, message="Direct input not directly applicable to function_check without a specific scenario context.", actual_output=None, execution_time=0.0)
+            # final_run_result = DynamicValidationResult(passed=False, message="Direct input not directly applicable to function_check without a specific scenario context.", actual_output=None) #execution_time=0.0)
 
         else:
-            final_run_result = DynamicValidationResult(passed=False, message=f"Unsupported validation type '{validation_type}' for direct input run.", actual_output=None, execution_time=0.0)
+            final_run_result = DynamicValidationResult(passed=False, message=f"Unsupported validation type '{validation_type}' for direct input run.", actual_output=None)
 
     else:
-        # Case 2: input_data is NOT provided in the request.
-        # Run predefined scenarios from exercise_config, or a single default run if no scenarios.
+        # Case 2: input_data is NOT provided in the request (e.g. "Entregar Ejercicio")
         run_description_for_log = "Predefined scenarios run or default run"
         logging.info(f"EID {request.exercise_id}: {run_description_for_log} (request.input_data was None)")
 
         scenarios_in_config: List[Dict[str, Any]] = exercise_rules_from_config.get("scenarios", [])
 
         if not scenarios_in_config:
-            # No predefined scenarios. Perform a single default run (input will be None).
-            logging.info(f"EID {request.exercise_id}: No predefined scenarios found. Performing a single default run.")
+            # No predefined scenarios. Perform a default run.
+            # This is where dynamic_output should generate its multiple cases.
+            logging.info(f"EID {request.exercise_id}: No predefined scenarios found. Performing a default run.")
             run_description_for_log = "Default Run (No Scenarios Defined, No Request Input)"
-            if validation_type in ["simple_print", "saludo_personalizado", "variable_output"]:
+            if validation_type in ["simple_print", "saludo_personalizado", "variable_output", "dynamic_output", "function_and_output"]: # Ensure dynamic_output is here
                 final_run_result = validator_func(
                     user_code=request.code,
                     rules=exercise_rules_from_config,
-                    input_data=None, # Explicitly None for this default run
+                    input_data=None, # Validator will generate cases if input_data is None
                     timeout=request.timeout
                 )
             elif validation_type == "function_check":
-                 final_run_result = DynamicValidationResult(passed=False, message=f"Configuration error: 'function_check' (EID {request.exercise_id}) requires 'scenarios' with 'args' in 'validation_rules' when no direct input_data or predefined scenarios are provided.", actual_output=None, execution_time=0.0)
+                 final_run_result = DynamicValidationResult(passed=False, message=f"Configuration error: 'function_check' (EID {request.exercise_id}) requires 'scenarios' with 'args' in 'validation_rules' when no direct input_data or predefined scenarios are provided.", actual_output=None)
             else:
-                 final_run_result = DynamicValidationResult(passed=False, message=f"Unsupported validation type '{validation_type}' for default run without scenarios.", actual_output=None, execution_time=0.0)
+                 final_run_result = DynamicValidationResult(passed=False, message=f"Unsupported validation type '{validation_type}' for default run without scenarios.", actual_output=None)
         else:
             # Run all predefined scenarios from the exercise configuration.
             logging.info(f"EID {request.exercise_id}: Running {len(scenarios_in_config)} predefined scenarios.")
@@ -180,7 +169,7 @@ async def execute_and_validate_code(request: CodeRequest):
                 logging.debug(f"  Running predefined scenario: {current_scenario_desc} with its input: '{scenario_specific_input}'")
 
                 scenario_run_result_item: DynamicValidationResult
-                if validation_type in ["simple_print", "saludo_personalizado", "variable_output"]:
+                if validation_type in ["simple_print", "saludo_personalizado", "variable_output", "dynamic_output", "function_and_output"]:
                     scenario_run_result_item = validator_func(
                         user_code=request.code,
                         rules=exercise_rules_from_config, # Overall exercise rules
@@ -190,12 +179,12 @@ async def execute_and_validate_code(request: CodeRequest):
                 elif validation_type == "function_check":
                     scenario_run_result_item = validator_func(
                         user_code=request.code,
-                        rules=exercise_rules_from_config, # Contains function_name
-                        scenario_config=scenario_item_config, # Contains args, expected_return for this scenario
+                        rules=exercise_rules_from_config,
+                        scenario_config=scenario_item_config,
                         timeout=request.timeout
                     )
-                else: # Should not happen if validator map is correct
-                    scenario_run_result_item = DynamicValidationResult(passed=False, message=f"Unsupported type '{validation_type}' for scenario.", actual_output=None, execution_time=0.0)
+                else:
+                    scenario_run_result_item = DynamicValidationResult(passed=False, message=f"Unsupported type '{validation_type}' for scenario.", actual_output=None) # Removed execution_time=0.0
 
                 if i == 0: # Capture first scenario's output as representative if all pass
                     representative_output = scenario_run_result_item.actual_output

@@ -604,3 +604,10 @@ async def get_user_context(request: Request) -> dict:
             logger.error(f"JWT decode error: {e}")
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     return {"user_id": user_id, "token": token}
+def get_course_exam_exercise(db: Session, course_id: int):
+    return db.query(Exercise).filter(
+        Exercise.course_id == course_id,
+        Exercise.module_id == None,
+        Exercise.lesson_id == None,
+        Exercise.validation_type == "exam"
+    ).first()

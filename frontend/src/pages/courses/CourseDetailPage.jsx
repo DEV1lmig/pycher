@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "@tanstack/react-router"; // Added useNavigate
-import { getCourseById, getModulesByCourseId } from "@/services/contentService";
+import { getCourseById, getModulesByCourseId, getCourseExamExercises } from "@/services/contentService";
 import { getCourseProgressSummary, getBatchModuleProgress } from "@/services/progressService"; // Importing progress service
 import { enrollInCourse, unenrollFromCourse } from "@/services/userService"; // Added unenrollFromCourse
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Clock, Users, Star, Home, Lock, CheckCircle, LogOut, PlusCircle } from "lucide-react"; // Added LogOut, PlusCircle
 import { ModuleCard } from "@/components/courses/ModuleCard";
+import { ExamCard } from "@/components/courses/ExamCard";
 import { courseDetailRoute } from "@/router";
 import AnimatedContent from '../../components/ui/animated-content';
 import FadeContent from "@/components/ui/fade-content";
@@ -22,6 +23,7 @@ export default function CourseDetailPage() {
   const [modules, setModules] = useState([]);
   const [courseProgress, setCourseProgress] = useState(null);
   const [moduleProgresses, setModuleProgresses] = useState({});
+  const [examExercise, setExamExercise] = useState(null);
   // const [enrolling, setEnrolling] = useState(false); // Will be handled by modalState
 
   const { hasAccessToCourse, getCourseProgress, refreshEnrollments, loading: courseAccessLoading } = useCourseAccess();
@@ -57,6 +59,14 @@ export default function CourseDetailPage() {
     fetchModulesAndProgress();
     getCourseProgressSummary(courseId).then(setCourseProgress);
   }, [courseId, fetchModulesAndProgress]);
+
+  useEffect(() => {
+    if (course && modules.length > 0) {
+      getCourseExamExercises(course.id)
+        .then(setExamExercise)
+        .catch(() => setExamExercise(null));
+    }
+  }, [course, modules]);
 
 
   const handleOpenEnrollModal = () => {
@@ -316,6 +326,12 @@ export default function CourseDetailPage() {
         isConfirmDisabled={modalState.isLoading}
       />
 
+      {/* After the modules grid */}
+      {isUserEnrolledInThisCourse && isCourseCompleted && examExercise && (
+        <div className="mx-6 mt-8">
+          <ExamCard exam={examExercise} isLocked={false} />
+        </div>
+      )}
     </DashboardLayout>
   );
 }

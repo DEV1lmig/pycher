@@ -311,6 +311,18 @@ def get_module_progress_route(
         )
     return progress
 
+@router.get("/me/completed-exercises-count", response_model=int)
+def get_completed_exercises_count_route(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from models import UserExerciseSubmission
+    count = db.query(UserExerciseSubmission).filter(
+        UserExerciseSubmission.user_id == current_user.id,
+        UserExerciseSubmission.is_correct == True
+    ).count()
+    return count
+
 @router.post("/lessons/{lesson_id}/start", response_model=UserLessonProgressResponse) # Changed UserLessonProgressSchema to UserLessonProgressResponse
 def start_lesson_route(
     lesson_id: int,

@@ -59,8 +59,9 @@ class Lesson(Base):
 class Exercise(Base):
     __tablename__ = "exercises"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)  # Optional: If exercises can be linked to a course directly
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=True)
+    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
     order_index = Column(Integer, nullable=False, default=1)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)

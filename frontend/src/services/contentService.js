@@ -63,3 +63,8 @@ export const getNextLessonInfo = async (lessonId) => {
     return null;
   }
 };
+
+export const getCourseExamExercises = async (courseId) => {
+    const response = await apiClient.get(`/api/v1/content/courses/${courseId}/exam-exercises`);
+    return response.data;
+}
