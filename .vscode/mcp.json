@@ -1,8 +1,12 @@
 {
-  "servers": {
-    "freeCodeCamp.git Docs": {
-      "type": "sse",
-      "url": "https://gitmcp.io/freeCodeCamp/freeCodeCamp.git"
+    "servers": {
+        "freeCodeCamp.git Docs": {
+            "type": "sse",
+            "url": "https://gitmcp.io/freeCodeCamp/freeCodeCamp.git"
+        },
+        "context7": {
+            "type": "http",
+            "url": "https://mcp.context7.com/mcp"
+        }
     }
-  }
 }

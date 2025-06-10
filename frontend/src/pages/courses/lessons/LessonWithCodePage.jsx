@@ -9,7 +9,7 @@ import AnimatedContent from "@/components/ui/animated-content";
 import FadeContent from "@/components/ui/fade-content";
 import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { Home, BookOpen, ArrowRight, CheckCircle, Loader2, AlertCircle, BookText, ArrowRightCircle } from "lucide-react";
-import LessonChatbot from "@/components/ai/LessonChatBot";
+import LessonChatDrawer from "@/components/ai/LessonChatDrawer";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useLessonDetail } from '@/hooks/useLessonDetail';
@@ -58,6 +58,7 @@ export default function LessonWithCodePage() {
   const [breadcrumbLoading, setBreadcrumbLoading] = useState(true);
   const [userStdin, setUserStdin] = useState("");
   const [examExercise, setExamExercise] = useState(null);
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   useEffect(() => {
     if (lesson?.module_id) {
       setBreadcrumbLoading(true);
@@ -153,9 +154,6 @@ useEffect(() => {
     );
   }
 
-  // Determine if the next lesson is in a different module
-  const isNextLessonInNewModule = nextLessonInfo && lesson && nextLessonInfo.module_id !== lesson.module_id;
-
   // Breadcrumbs
   const breadcrumbs = [
     { label: "Inicio", href: "/home", icon: <Home size={16} /> },
@@ -201,25 +199,57 @@ useEffect(() => {
             />
           </div>
           <div className="relative z-20">
-            <div className="flex justify-between items-start">
-              <h1 className="text-3xl font-bold text-white mb-2">
-                {isExamMode
-                  ? examExercise?.title || "Examen Final"
-                  : lesson?.title}
-              </h1>
-              {!isExamMode && isLessonCompleted && (
-                <div className="flex items-center text-green-400 bg-green-900/50 px-3 py-1 rounded-md">
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  <span>Lección Completada</span>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {isExamMode
+                    ? examExercise?.title || "Examen Final"
+                    : lesson?.title}
+                </h1>
+                <div className="text-gray-400 mb-4 prose prose-invert max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {isExamMode
+                      ? examExercise?.description || ""
+                      : lesson?.description || ""}
+                  </ReactMarkdown>
                 </div>
-              )}
-            </div>
-            <div className="text-gray-400 mb-4 prose prose-invert max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {isExamMode
-                  ? examExercise?.description || ""
-                  : lesson?.description || ""}
-              </ReactMarkdown>
+              </div>
+              <div className="flex flex-col md:items-end md:justify-end gap-2">
+                {!isExamMode && isLessonCompleted && (
+                  <div className="flex items-center text-green-400 bg-green-900/50 px-3 py-1 rounded-md mb-1 md:mb-0">
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    <span>Lección Completada</span>
+                  </div>
+                )}
+                {/* Move Next Lesson Button to header */}
+                {isLessonCompleted && nextLessonInfo && (
+                  <Button
+                    onClick={() => {
+                      if (nextLessonInfo && nextLessonInfo.id) {
+                        navigate({ to: `/lessons/$lessonId`, params: { lessonId: nextLessonInfo.id.toString() } });
+                      } else {
+                        console.warn("Next lesson ID is missing, cannot navigate.", nextLessonInfo);
+                        toast.error("No se pudo determinar la siguiente lección.");
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-base mt-2 md:mt-0"
+                    size="lg"
+                  >
+                    <ArrowRightCircle className="mr-2 h-5 w-5" />
+                    Siguiente Lección: {nextLessonInfo.title || "Siguiente"}
+                  </Button>
+                )}
+                {/* If all lessons completed, show message here */}
+                {isLessonCompleted && !nextLessonInfo && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg shadow-md text-center text-blue-700 dark:text-blue-300 mt-2 md:mt-0">
+                    ¡Has completado todas las lecciones de este curso!
+                    <Button variant="secondary" className="ml-3"
+                      onClick={() => navigate({ to: `/courses/${course?.id || lesson?.module?.course_id || ''}` })}>
+                      Volver al Curso
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -228,9 +258,11 @@ useEffect(() => {
       <FadeContent blur={true} duration={300} easing="ease-out" initialOpacity={0} delay={100}>
         <div
           className="grid grid-cols-1 md:grid-cols-2 mx-6 gap-6 custom-scroll"
-          style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}
+          style={{ height: "calc(100vh - 300px)" }} // Remove overflowY here
         >
-          <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow px-6 p-5 flex flex-col overflow-y-auto custom-scroll">
+          {/* Lesson/Exercise Content Column */}
+          <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow px-6 p-5 flex flex-col overflow-y-auto custom-scroll flex-1"
+               style={{ maxHeight: "calc(100vh - 300px)" }}>
             <h2 className="font-bold text-lg text-secondary mb-2">
               {isExamMode
                 ? examExercise?.title || "Examen Final"
@@ -277,7 +309,9 @@ useEffect(() => {
               </div>
             )}
           </div>
-          <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow px-6 p-3 flex flex-col gap-4">
+          {/* Code Editor/Output Column */}
+          <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow px-6 p-3 flex flex-col flex-1 overflow-y-auto custom-scroll"
+               style={{ maxHeight: "calc(100vh - 300px)" }}>
             {currentExercise ? (
               <>
                 <LessonCodeExecutor
@@ -290,7 +324,7 @@ useEffect(() => {
                   currentUserStdin={userStdin}
                 />
                 {exerciseNeedsInput && (
-                  <div className="mt-4">
+                  <div className="mt-2"> {/* Changed from mt-4 to mt-2 for less space */}
                     <label htmlFor="user-stdin" className="block text-sm font-medium text-gray-300 mb-1">
                       Entrada estándar (para <code>input()</code>):
                     </label>
@@ -299,7 +333,7 @@ useEffect(() => {
                       value={userStdin}
                       onChange={(e) => setUserStdin(e.target.value)}
                       placeholder="Escribe aquí la entrada que tu código leerá con input()..."
-                      className="bg-background/70 border-primary-opaque/30 text-sm"
+                      className="bg-primary-opaque/70 border-primary-opaque/30 text-sm"
                       rows={3}
                     />
                   </div>
@@ -318,66 +352,34 @@ useEffect(() => {
           </div>
         </div>
         <div className="mx-6 my-8 flex justify-between items-center">
-          <Button variant="outline" onClick={() => navigate({ to: `/courses/${course?.id}/modules/${lesson?.module_id}` })}>
+          <Button variant="outline" onClick={() => navigate({ to: `/modules/${lesson?.module_id}` })}>
               Volver al Módulo
           </Button>
         </div>
 
-        {/* "Next Lesson" Button Area - This is the preferred and corrected structure */}
-        {isLessonCompleted && nextLessonInfo && (
-          <div className="mt-8 p-6 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg shadow-md text-center mx-6">
-            <h3 className="text-xl font-semibold text-green-700 dark:text-green-300 mb-3">
-              ¡Felicidades! Has completado esta lección.
-            </h3>
-            <Button
-              onClick={() => {
-                if (nextLessonInfo && nextLessonInfo.id) { // Use nextLessonInfo.id
-                  navigate({ to: `/lessons/$lessonId`, params: { lessonId: nextLessonInfo.id.toString() } });
-                } else {
-                  console.warn("Next lesson ID is missing, cannot navigate.", nextLessonInfo);
-                  toast.error("No se pudo determinar la siguiente lección.");
-                }
-              }}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg"
-              size="lg"
-            >
-              <ArrowRightCircle className="mr-2 h-5 w-5" />
-              Siguiente Lección: {nextLessonInfo.title || "Siguiente"} {/* Use nextLessonInfo.title */}
-            </Button>
-            {isNextLessonInNewModule && nextLessonInfo.module_title && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                (Continuarás en el módulo: <span className="font-semibold">{nextLessonInfo.module_title}</span>) {/* Use nextLessonInfo.module_title */}
-              </p>
-            )}
-          </div>
-        )}
-        {isLessonCompleted && !nextLessonInfo && (
-          <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg shadow-md text-center mx-6">
-            <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300">
-              ¡Has completado todas las lecciones de este curso!
-            </h3>
-            <Button variant="secondary" onClick={() => navigate({ to: `/courses/${course?.id || lesson?.module?.course_id || ''}` })}>
-              Volver al Curso
-            </Button>
-          </div>
-        )}
-        {!isLessonCompleted && ( // If lesson is NOT completed
-            <div className="mx-6 my-8 flex justify-end items-center">
-              {/* This div is to align the button to the right, matching the "Volver al Modulo" button's container */}
-              <Button
-                  disabled={true}
-                  variant="default" // Or a more subdued variant
-                  title="Completa la lección actual para continuar"
+            {/* Floating Chat Button */}
+            {!chatDrawerOpen && (
+              <button
+                className="fixed bottom-6 right-6 z-[10000] bg-primary-700 text-white rounded-full px-5 py-3 shadow-lg hover:bg-primary-800 transition"
+                onClick={() => setChatDrawerOpen(true)}
+                aria-label="Abrir chat"
+                style={{ fontWeight: "bold", fontSize: "1.1rem" }}
               >
-                  Completa la lección para continuar
-                  {/* Optionally, you could show an arrow if nextLessonInfo is available but lesson not complete,
-                      but it might be confusing. Keeping it simple for now. */}
-              </Button>
-            </div>
-        )}
+                💬 Chat IA
+              </button>
+            )}
 
-        <LessonChatbot lessonId={lessonId} lessonContent={lesson?.content} exercisePrompt={currentExercise?.description} />
+            {chatDrawerOpen && (
+              <LessonChatDrawer
+                open={chatDrawerOpen}
+                onOpenChange={setChatDrawerOpen}
+                lessonContent={lesson?.content}
+                exercisePrompt={currentExercise?.description}
+              />
+            )}
         </FadeContent>
+
+
     </DashboardLayout>
   );
 }
