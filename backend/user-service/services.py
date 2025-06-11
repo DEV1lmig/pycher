@@ -1380,7 +1380,6 @@ def change_user_username(db: Session, user: User, new_username: str):
     existing = db.query(User).filter(User.username == new_username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Nombre de usuario ya registrado")
-    logger.info(f"Changing username for User ID {user.id} from {user.username} to {new_username}")
     user.username = new_username
     db.add(user)
     db.commit()
