@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Lock } from 'lucide-react';
+import { Lock, CheckCircle } from 'lucide-react';
 import FadeContent from '@/components/ui/fade-content.jsx';
 
 export function ModuleCard({ module, progress, isLocked = false }) {
-  const progressPercentage = progress?.percentage || 0;
+  const progressPercentage = progress?.progress_percentage || 0;
+  const isCompleted = progress?.is_completed;
 
   return (
     <FadeContent blur={true} duration={400} easing="ease-out" initialOpacity={0} delay={100}>
@@ -34,6 +35,9 @@ export function ModuleCard({ module, progress, isLocked = false }) {
           </div>
           <CardTitle className={`text-2xl font-bold ${isLocked ? 'text-gray-400' : 'text-white'}`}>
             {module.title}
+            {isCompleted && !isLocked && (
+              <CheckCircle className="h-5 w-5 text-green-400 ml-2" />
+            )}
           </CardTitle>
           <CardDescription className={isLocked ? 'text-gray-500' : ''}>
             {module.description}

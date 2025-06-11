@@ -3,7 +3,7 @@ import re
 from typing import Dict, List, Optional, Union
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Body
-from fastapi.security import OAuth2PasswordRequestForm  # Add this import
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import io
@@ -29,14 +29,29 @@ from schemas import (
     CourseProgressSummaryResponse,
     UserEnrollmentWithProgressResponse,
     CourseExamSchema,
-    LessonProgressDetailResponse # Add this import
+    LessonProgressDetailResponse, # Add this import
+    ModuleIdsRequest, LessonIdsRequest,
+    BatchModuleProgressResponse, BatchLessonProgressResponse, ChangePasswordRequest, ChangeUsernameRequest
 )
 
 from services import (
     get_user, get_user_by_username, get_user_by_email, create_user, authenticate_user,
     enroll_user_in_course, start_lesson, complete_exercise, get_last_accessed_progress,
-    get_course_progress_summary, get_user_enrollments_with_progress, unenroll_user_from_course, # Add this import
-    get_user_lesson_progress_detail, get_user_progress_report_data
+    get_course_progress_summary, get_user_enrollments_with_progress, unenroll_user_from_course,
+    get_user_lesson_progress_detail, get_user_progress_report_data,
+    get_batch_module_progress_details, change_user_password, change_user_username,
+    get_batch_lesson_progress_details,
+    # --- ADDED MISSING SERVICE FUNCTION IMPORTS ---
+    update_last_accessed,
+    start_module,
+    complete_module,
+    get_user_module_progress,
+    complete_lesson,
+    get_course_exam,
+    start_exam_attempt,
+    submit_exam_attempt,
+    get_user_exam_attempts
+    # --- END ADDED IMPORTS ---
 )
 
 from utils import create_access_token, redis_client, SECRET_KEY, ALGORITHM
@@ -249,7 +264,7 @@ def get_last_accessed_route(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    content = get_last_accessed_content(db, current_user.id)
+    content = get_last_accessed_progress(db, current_user.id) # CORRECTED: Was get_last_accessed_content
     if not content:
         return None
     return content
@@ -270,13 +285,43 @@ def complete_module_route(
 ):
     return complete_module(db, current_user.id, module_id)
 
-@router.get("/modules/{module_id}/progress", response_model=Optional[UserModuleProgressResponse])
+@router.get("/modules/{module_id}/progress", response_model=UserModuleProgressResponse)
 def get_module_progress_route(
     module_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return get_user_module_progress(db, current_user.id, module_id)
+    progress = get_user_module_progress(db, current_user.id, module_id)
+    logger.info(f"Module progress check for U{current_user.id}, M_ID {module_id}. Result from service: {progress}")
+    if progress is None:
+        # Instead of 404, return a default progress object
+        return UserModuleProgressResponse(
+            id=-1,
+            user_id=current_user.id,
+            module_id=module_id,
+            course_id=None,
+            is_started=False,
+            is_completed=False,
+            is_unlocked=False,
+            started_at=None,
+            completed_at=None,
+            current_lesson_id=None,
+            progress_percentage=0.0,
+            lessons_progress=[]
+        )
+    return progress
+
+@router.get("/me/completed-exercises-count", response_model=int)
+def get_completed_exercises_count_route(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from models import UserExerciseSubmission
+    count = db.query(UserExerciseSubmission).filter(
+        UserExerciseSubmission.user_id == current_user.id,
+        UserExerciseSubmission.is_correct == True
+    ).count()
+    return count
 
 @router.post("/lessons/{lesson_id}/start", response_model=UserLessonProgressResponse) # Changed UserLessonProgressSchema to UserLessonProgressResponse
 def start_lesson_route(
@@ -298,17 +343,21 @@ def complete_lesson_route(
     return complete_lesson(db, current_user.id, lesson_id)
 
 @router.get("/lessons/{lesson_id}/progress", response_model=LessonProgressDetailResponse)
-def get_lesson_progress_route( # Changed function name to avoid conflict if you had another
+def get_lesson_progress_route(
     lesson_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get detailed progress for a specific lesson for the current user.
-    """
     progress_detail = get_user_lesson_progress_detail(db, current_user.id, lesson_id)
-    if progress_detail is None: # Should be handled by service returning a default structure or raising 404
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson progress not found or lesson not started.")
+    if progress_detail is None:
+        # Instead of 404, return a default progress object
+        return LessonProgressDetailResponse(
+            lesson_id=lesson_id,
+            is_completed=False,
+            started_at=None,
+            completed_at=None,
+            exercises_progress=[]
+        )
     return progress_detail
 
 @router.post("/exercises/{exercise_id}/submit", response_model=UserExerciseSubmissionResponse)
@@ -321,9 +370,10 @@ def submit_exercise_route(
     # Call the updated service function.
     # `is_correct` and `output` are no longer passed from here.
     # The service function `complete_exercise` now handles execution and evaluation.
-    return complete_exercise( # Or the new name if you refactored it
+    return complete_exercise(
         db, current_user.id, exercise_id,
-        submission_data.submitted_code
+        submission_data.submitted_code,
+        submission_data.input_data # This is now being passed
     )
 
 @router.get("/courses/{course_id}/progress-summary", response_model=CourseProgressSummaryResponse)
@@ -351,7 +401,7 @@ def get_course_exam_route(
     if not enrollment:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not enrolled in this course")
 
-    exam = get_course_exam(db, course_id)
+    exam = get_course_exam(db, course_id) # Assuming get_course_exam is a service function
     if not exam:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found for this course")
     return exam # Pydantic will serialize CourseExam model
@@ -389,7 +439,7 @@ from weasyprint import HTML
 from weasyprint.text.fonts import FontConfiguration # For potential font configuration
 
 # Logger setup (use your existing logger or a standard one)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__) # This will use the logger defined at the top of the file or create a new one for this module
 if not logger.hasHandlers(): # Basic config if no handlers are set
     logging.basicConfig(level=logging.INFO)
 
@@ -497,6 +547,67 @@ async def get_my_progress_report_pdf_route(
         logger.error(f"Unexpected error generating PDF report for user {current_user.id}: {str(e)}", exc_info=True)
         # Log the full traceback for unexpected errors
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not generate PDF report due to an internal server error.")
+
+# --- Batch Progress Endpoints ---
+
+@router.post("/modules/progress/batch", response_model=BatchModuleProgressResponse)
+def get_batch_module_progress_route(
+    request_data: ModuleIdsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Fetches completion status for a batch of module IDs for the current user.
+    """
+    if not request_data.module_ids:
+        return BatchModuleProgressResponse(progress={})
+
+    # --- Call the new service function ---
+    progress_map = get_batch_module_progress_details(db, current_user.id, request_data.module_ids)
+    logger.info(f"Batch module progress check for U{current_user.id}, M_IDs {request_data.module_ids}. Result from service: {progress_map}")
+    return BatchModuleProgressResponse(progress=progress_map)
+
+
+@router.post("/lessons/progress/batch", response_model=BatchLessonProgressResponse)
+def get_batch_lesson_progress_route(
+    request_data: LessonIdsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Fetches completion status for a batch of lesson IDs for the current user.
+    """
+    if not request_data.lesson_ids:
+        return BatchLessonProgressResponse(progress={})
+
+    # --- Call the new service function ---
+    progress_map = get_batch_lesson_progress_details(db, current_user.id, request_data.lesson_ids)
+    logger.info(f"Batch lesson progress check for U{current_user.id}, L_IDs {request_data.lesson_ids}. Result from service: {progress_map}")
+    return BatchLessonProgressResponse(progress=progress_map)
+
+@router.post("/change-password")
+def change_password(request: ChangePasswordRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Changes the user's password.
+    """
+    # Log the password change attempt (omit new password)
+    logger.info(f"Password change attempt for user: {current_user.username}")
+
+    # Validate current password
+    if not authenticate_user(db, current_user.username, request.current_password):
+        logger.warning(f"Password change failed - Invalid current password for user: {current_user.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Contraseña actual incorrecta"
+        )
+
+    # Change the password
+    change_user_password(db, current_user, request.current_password, request.new_password)
+    logger.info(f"Password changed successfully for user: {current_user.username}")
+    return {"detail": "Contraseña cambiada correctamente"}
+@router.post("/change-username")
+def change_username(request: ChangeUsernameRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return change_user_username(db, current_user, request.new_username)
 
 # Ensure your router is included in your main FastAPI app
 # e.g., app.include_router(router)

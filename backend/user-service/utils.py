@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import os
 import redis
 from typing import Optional
+import random
+import string
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -87,3 +89,27 @@ def decode_access_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+
+def generate_input_from_constraints(constraints: dict) -> str:
+    input_type = constraints.get("type", "string")
+    if input_type == "string":
+        min_len = constraints.get("min_length", 1)
+        max_len = constraints.get("max_length", 10)
+        length = random.randint(min_len, max_len)
+        charset_type = constraints.get("charset", "alphanumeric")
+        char_pool = ""
+        if charset_type == "alpha":
+            char_pool = string.ascii_letters
+        elif charset_type == "alphanumeric":
+            char_pool = string.ascii_letters + string.digits
+        elif charset_type == "numeric":
+            char_pool = string.digits
+        else: # Default to alphanumeric if unknown
+            char_pool = string.ascii_letters + string.digits
+
+        if not char_pool: # Should not happen with defaults
+            return "test"
+        return ''.join(random.choice(char_pool) for _ in range(length))
+    # Extend for other types like "integer" if needed
+    logger.warning(f"Unsupported input generation type: {input_type}. Returning default.")
+    return "default_gen_input"

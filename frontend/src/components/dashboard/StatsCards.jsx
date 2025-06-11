@@ -3,10 +3,9 @@ import AnimatedContent from '../ui/animated-content'
 import { useEffect, useState } from "react";
 import { getUserEnrollments } from "@/services/userService"; // Import service to get enrollments
 
-export function StatsCards() {
+export function StatsCards({completedExercisesCount}) {
   const [enrolledCoursesCount, setEnrolledCoursesCount] = useState(0);
   // Placeholder for completed exercises - ideally, this would come from a dedicated backend endpoint
-  const [completedExercisesCount, setCompletedExercisesCount] = useState("N/A");
 
   useEffect(() => {
     getUserEnrollments()

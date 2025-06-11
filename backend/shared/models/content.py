@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Float, UniqueConstraint
 from sqlalchemy.sql import func
 from typing import Optional, List, Dict, Any, Union, Tuple, Callable
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import JSONB
-from datetime import datetime # Add this import if not already present at the top of content.py
+from sqlalchemy.dialects.postgresql import JSONB # Ensure JSONB is imported
+from datetime import datetime
 
 from . import Base
 
@@ -22,12 +22,12 @@ class Course(Base):
     is_active = Column(Boolean, default=True)
 
     modules = relationship("Module", back_populates="course", cascade="all, delete-orphan")
-    exams = relationship("CourseExam", back_populates="course", cascade="all, delete-orphan") # New relationship
-    enrollments = relationship("UserCourseEnrollment", back_populates="course") # New relationship
+    exams = relationship("CourseExam", back_populates="course", cascade="all, delete-orphan")
+    enrollments = relationship("UserCourseEnrollment", back_populates="course")
 
     @property
     def total_modules(self):
-        return len(self.modules)  # Automatically computed from the relationship
+        return len(self.modules)
 
 class Module(Base):  # <-- Change from Modules to Module
     __tablename__ = "modules"
@@ -37,6 +37,7 @@ class Module(Base):  # <-- Change from Modules to Module
     description = Column(Text, nullable=False)
     order_index = Column(Integer, nullable=False)
     duration_minutes = Column(Integer)
+    is_active = Column(Boolean, default=True)  # New field for soft delete
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
     course = relationship("Course", back_populates="modules")
     user_progress = relationship("UserModuleProgress", back_populates="module") # New relationship
@@ -49,24 +50,33 @@ class Lesson(Base):
     content = Column(Text, nullable=False)
     order_index = Column(Integer, nullable=False)
     duration_minutes = Column(Integer)
+    is_active = Column(Boolean, default=True)  # New field for soft delete
     module = relationship("Module", back_populates="lessons")
     exercises = relationship("Exercise", back_populates="lesson", cascade="all, delete-orphan")
-    exercise_submissions = relationship("UserExerciseSubmission", back_populates="lesson") # This is correct
+    exercise_submissions = relationship("UserExerciseSubmission", back_populates="lesson")
     user_progress_entries: Mapped[List["UserLessonProgress"]] = relationship(back_populates="lesson")
 
 class Exercise(Base):
     __tablename__ = "exercises"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)  # Optional: If exercises can be linked to a course directly
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=True)
-    order_index = Column(Integer, nullable=False, default=1)  # <-- Add this line
+    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
+    order_index = Column(Integer, nullable=False, default=1)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     instructions = Column(Text)
     starter_code = Column(Text)
-    solution_code = Column(Text)
-    test_cases = Column(Text)
+    validation_type = Column(String, nullable=True)
+    validation_rules = Column(JSONB, nullable=True)
     hints = Column(Text)
+    difficulty = Column(String, nullable=True)
+    estimated_time_minutes = Column(Integer, nullable=True)  # Optional: Add difficulty and estimated time
+    tags = Column(JSONB, nullable=True)  # Optional: Tags for categorization
+    # You might also want to add estimated_time_minutes and tags if they are part of your seed data
+    # estimated_time_minutes = Column(Integer, nullable=True)
+    # tags = Column(JSONB, nullable=True) # Or use a separate Tags table and a many-to-many relationship
+
     lesson = relationship("Lesson", back_populates="exercises")
     submissions = relationship("UserExerciseSubmission", back_populates="exercise") # This is correct
     # Optionally, add: module = relationship("Module")
@@ -95,13 +105,17 @@ class UserCourseEnrollment(Base): # This will serve as UserCourseProgress
 
 class UserModuleProgress(Base):
     __tablename__ = "user_module_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "module_id", name="uq_user_module_progress"),
+    )
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False) # Assuming User table exists elsewhere
+    user_id = Column(Integer, nullable=False)
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
     is_completed = Column(Boolean, default=False)
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)
     last_accessed_lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
+    is_unlocked = Column(Boolean, default=False)  # <-- Add this line
 
     # Relationships
     # user = relationship("User", back_populates="module_progress") # Assuming User model and relationship
@@ -186,3 +200,5 @@ class UserExamAttempt(Base):
     # Relationships
     # user = relationship("User", back_populates="exam_attempts") # Assuming User model
     exam = relationship("CourseExam", back_populates="attempts")
+
+# ... Make sure UserExerciseSubmission is defined if not already ...

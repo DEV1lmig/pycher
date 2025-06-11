@@ -1,40 +1,28 @@
-import { apiClient } from './api';
+import { apiClient}  from "./api"; // Assuming apiClient is your configured Axios instance
 
 /**
- * Execute Python code on the backend
- *
- * @param {string} code - The Python code to execute
- * @param {number} timeout - Maximum execution time in seconds
- * @returns {Promise<Object>} - Result containing output, error, and execution details
+ * Executes Python code against a specific exercise.
+ * @param {Object} params - The parameters for code execution.
+ * @param {number} params.exerciseId - The ID of the exercise.
+ * @param {string} params.code - The Python code to execute.
+ * @param {string} [params.inputData] - Optional input data for the code execution (for specific scenarios).
+ * @param {number} [params.timeout] - Optional timeout for the execution.
+ * @returns {Promise<Object>} The result from the execution service.
  */
-export const executeCode = async (code, timeout = 5) => {
+export const executeCode = async ({ exerciseId, code, inputData, timeout }) => {
   try {
+    // The backend endpoint is /execute, not /api/v1/execute, based on your main.py
+    // Adjust if your FastAPI app is mounted under /api/v1
     const response = await apiClient.post('/api/v1/execute', {
-      code,
-      timeout
+      exercise_id: exerciseId, // Ensure snake_case for the backend
+      code: code,
+      input_data: inputData,   // Ensure snake_case
+      timeout: timeout         // Ensure snake_case
     });
-
-    // Standardize the response format
-    return {
-      output: response.data.output || '',
-      error: response.data.error || '',
-      execution_time: response.data.execution_time || 0
-    };
+    return response.data;
   } catch (error) {
-    // Handle API errors
-    if (error.response && error.response.data) {
-      return {
-        output: error.response.data.output || '',
-        error: error.response.data.error || error.response.data.detail || 'Execution error',
-        execution_time: 0
-      };
-    }
-
-    // Handle network errors
-    return {
-      output: '',
-      error: 'Network error: Failed to connect to execution service',
-      execution_time: 0
-    };
+    console.error("Error executing code:", error.response ? error.response.data : error.message);
+    // Rethrow or return a structured error object for the component to handle
+    throw error.response ? error.response.data : new Error("Network error or server issue during code execution.");
   }
 };

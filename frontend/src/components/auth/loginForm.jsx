@@ -88,10 +88,10 @@ export function LoginForm() {
           value={formData.username}
           onChange={handleChange}
           placeholder="Tu username o correo electrónico"
-          className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.username ? "border-red-500" : ""}`}
+          className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.username ? "border-red" : ""}`}
         />
         {formErrors.username && (
-          <span className="text-red-500 text-xs">{formErrors.username._errors[0]}</span>
+          <span className="text-red text-xs">{formErrors.username._errors[0]}</span>
         )}
       </div>
       <div className="space-y-2">
@@ -99,9 +99,6 @@ export function LoginForm() {
           <Label htmlFor="password" className="text-white">
             Contraseña
           </Label>
-          <Link href="#" className="text-xs text-[#9980f2] hover:underline">
-            ¿Olvidaste tu contraseña?
-          </Link>
         </div>
         <Input
           id="password"
@@ -110,10 +107,10 @@ export function LoginForm() {
           value={formData.password}
           onChange={handleChange}
           placeholder="Contraseña"
-          className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.password ? "border-red-500" : ""}`}
+          className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.password ? "border-red" : ""}`}
         />
         {formErrors.password && (
-          <span className="text-red-500 text-xs">{formErrors.password._errors[0]}</span>
+          <span className="text-red text-xs">{formErrors.password._errors[0]}</span>
         )}
       </div>
       <div className="flex items-center space-x-2">

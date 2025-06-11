@@ -1,4 +1,23 @@
 import { apiClient } from './api';
+import axios from "axios";
+
+const API_URL = "/api/v1/users"; // Adjust as needed
+
+export async function updateUsername(newUsername) {
+    const response = await apiClient.post(`${API_URL}/change-username`, {
+        new_username: newUsername,
+    });
+    return response.data;
+}
+
+export async function updatePassword(currentPassword, newPassword) {
+    const response = await apiClient.post(`${API_URL}/change-password`, {
+        current_password: currentPassword,
+        new_password: newPassword,
+    });
+    return response.data;
+}
+
 
 export const registerUser = async (payload) => {
   const response = await apiClient.post('/api/v1/users/register', payload);

@@ -102,10 +102,10 @@ export function RegisterForm() {
             value={formData.firstName}
             onChange={handleChange}
             placeholder="Nombre"
-            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.firstName ? "border-red-500" : ""}`}
+            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.firstName ? "border-red" : ""}`}
           />
           {formErrors.firstName && (
-            <span className="text-red-500 text-xs">{formErrors.firstName._errors[0]}</span>
+            <span className="text-red text-xs">{formErrors.firstName._errors[0]}</span>
           )}
         </div>
         <div className="space-y-2">
@@ -118,10 +118,10 @@ export function RegisterForm() {
             value={formData.lastName}
             onChange={handleChange}
             placeholder="Apellido"
-            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.lastName ? "border-red-500" : ""}`}
+            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.lastName ? "border-red" : ""}`}
           />
           {formErrors.lastName && (
-            <span className="text-red-500 text-xs">{formErrors.lastName._errors[0]}</span>
+            <span className="text-red text-xs">{formErrors.lastName._errors[0]}</span>
           )}
         </div>
       </div>
@@ -136,10 +136,10 @@ export function RegisterForm() {
             value={formData.username}
             onChange={handleChange}
             placeholder="Username"
-            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.username ? "border-red-500" : ""}`}
+            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.username ? "border-red" : ""}`}
           />
           {formErrors.username && (
-            <span className="text-red-500 text-xs">{formErrors.username._errors[0]}</span>
+            <span className="text-red text-xs">{formErrors.username._errors[0]}</span>
           )}
         </div>
         <div className="space-y-2">
@@ -153,10 +153,10 @@ export function RegisterForm() {
             value={formData.email}
             onChange={handleChange}
             placeholder="Correo electrónico"
-            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.email ? "border-red-500" : ""}`}
+            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.email ? "border-red" : ""}`}
           />
           {formErrors.email && (
-            <span className="text-red-500 text-xs">{formErrors.email._errors[0]}</span>
+            <span className="text-red text-xs">{formErrors.email._errors[0]}</span>
           )}
         </div>
       </div>
@@ -172,10 +172,10 @@ export function RegisterForm() {
             value={formData.password}
             onChange={handleChange}
             placeholder="Contraseña"
-            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.password ? "border-red-500" : ""}`}
+            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.password ? "border-red" : ""}`}
           />
           {formErrors.password && (
-            <span className="text-red-500 text-xs">{formErrors.password._errors[0]}</span>
+            <span className="text-red text-xs">{formErrors.password._errors[0]}</span>
           )}
         </div>
         <div className="space-y-2">
@@ -189,10 +189,10 @@ export function RegisterForm() {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Repetir Contraseña"
-            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.confirmPassword ? "border-red-500" : ""}`}
+            className={`bg-[#1a1433] border-[#312a56] text-white ${formErrors.confirmPassword ? "border-red" : ""}`}
           />
           {formErrors.confirmPassword && (
-            <span className="text-red-500 text-xs">{formErrors.confirmPassword._errors[0]}</span>
+            <span className="text-red text-xs">{formErrors.confirmPassword._errors[0]}</span>
           )}
         </div>
       </div>
@@ -211,7 +211,7 @@ export function RegisterForm() {
         </label>
       </div>
       {formErrors.acceptTerms && (
-        <span className="text-red-500 text-xs block">{formErrors.acceptTerms._errors[0]}</span>
+        <span className="text-red text-xs block">{formErrors.acceptTerms._errors[0]}</span>
       )}
       <Button type="submit" className="w-full bg-[#5f2dee] hover:bg-[#4f25c5] text-white" disabled={loading}>
         {loading ? "Registrando..." : "Registrarse"}
