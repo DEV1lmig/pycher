@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { getUserProfile, updateUsername, updatePassword } from "../../services/userService";
+import { getUserProfile, updateUsername, updatePassword, logoutUser } from "../../services/userService";
 import { Input } from "../../components/ui/input";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Waves from "@/components/ui/waves";
-import { Link } from "@tanstack/react-router";
 import { FiUser, FiEye, FiEyeOff } from "react-icons/fi";
 import FadeContent from "../../components/ui/fade-content.jsx";
 import { loginSchema } from "@/lib/schemas"; // For username validation
+import { toast } from "react-hot-toast"; // or your preferred toast library
+import { router } from "@/router"; // for navigation
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -33,40 +34,40 @@ export default function ProfilePage() {
   }, []);
 
   // Username change handler
-const handleUsernameChange = async (e) => {
-  e.preventDefault();
-  setUsernameError("");
-  setUsernameSuccess("");
+  const handleUsernameChange = async (e) => {
+    e.preventDefault();
+    setUsernameError("");
+    setUsernameSuccess("");
 
-  // Prevent empty username
-  if (!username.trim()) {
-    setUsernameError("El nombre de usuario no puede estar vacío.");
-    return;
-  }
-  // Prevent unchanged username
-  if (user && username.trim() === user.username) {
-    setUsernameError("El nombre de usuario es igual al actual.");
-    return;
-  }
-
-  try {
-    loginSchema.shape.username.parse(username);
-    const res = await updateUsername(username);
-    // If backend returns {detail: "..."}
-    if (typeof res === "object" && res.detail) {
-      setUsernameSuccess(res.detail);
-    } else if (typeof res === "string") {
-      setUsernameSuccess(res);
-    } else {
-      setUsernameSuccess("Usuario actualizado correctamente");
+    // Prevent empty username
+    if (!username.trim()) {
+      setUsernameError("El nombre de usuario no puede estar vacío.");
+      return;
     }
-  } catch (err) {
-    if (err.errors) setUsernameError(err.errors[0].message);
-    else if (err.response?.data?.detail) setUsernameError(err.response.data.detail);
-    else if (err.detail) setUsernameError(err.detail);
-    else setUsernameError("Error al actualizar usuario");
-  }
-};
+    // Prevent unchanged username
+    if (user && username.trim() === user.username) {
+      setUsernameError("El nombre de usuario es igual al actual.");
+      return;
+    }
+
+    try {
+      loginSchema.shape.username.parse(username);
+      const res = await updateUsername(username);
+      // If backend returns {detail: "..."}
+      if (typeof res === "object" && res.detail) {
+        setUsernameSuccess(res.detail);
+      } else if (typeof res === "string") {
+        setUsernameSuccess(res);
+      } else {
+        setUsernameSuccess("Usuario actualizado correctamente");
+      }
+    } catch (err) {
+      if (err.errors) setUsernameError(err.errors[0].message);
+      else if (err.response?.data?.detail) setUsernameError(err.response.data.detail);
+      else if (err.detail) setUsernameError(err.detail);
+      else setUsernameError("Error al actualizar usuario");
+    }
+  };
   // Password change handler
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -83,10 +84,15 @@ const handleUsernameChange = async (e) => {
     }
     try {
       await updatePassword(currentPassword, newPassword);
-      setPasswordSuccess("Contraseña actualizada correctamente");
+      toast.success("Contraseña actualizada correctamente. Por seguridad, inicia sesión de nuevo.");
+      setPasswordSuccess("Contraseña actualizada correctamente. Redirigiendo al inicio de sesión...");
       setCurrentPassword("");
       setNewPassword("");
       setRepeatPassword("");
+      setTimeout(() => {
+        logoutUser();
+        router.navigate({ to: "/login" });
+      }, 2000); // 2 seconds for user to read the message
     } catch (err) {
       if (err.response?.data?.detail) setPasswordError(err.response.data.detail);
       else setPasswordError("Error al actualizar contraseña");

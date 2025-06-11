@@ -81,7 +81,7 @@ const ExamRoute = createRoute({
 })
 
 const ProfileRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => protectedRoute,
   path: '/profile',
   component: () => <ProfilePage />,
 })
@@ -91,7 +91,6 @@ const routeTree = rootRoute.addChildren([
   landingRoute,
   loginRoute,
   registerRoute,
-  ProfileRoute,
   protectedRoute.addChildren([
     homeRoute,
     helpRoute,
@@ -99,7 +98,8 @@ const routeTree = rootRoute.addChildren([
     courseDetailRoute,
     LessonWithCodeRoute,
     moduleLessonsRoute,
-    ExamRoute
+    ExamRoute,
+    ProfileRoute,
   ])
 ])
 

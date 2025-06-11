@@ -1,6 +1,7 @@
 // filepath: /home/dev1mig/Documents/projects/pycher/frontend/src/services/api.js
 import axios from 'axios';
 import { QueryClient } from '@tanstack/react-query';
+import { router } from '@/router'; // Adjust path as needed
 
 // Create API client with base URL
 export const apiClient = axios.create({
@@ -33,7 +34,7 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('token');
 
         // Navigate to login - use window.location to avoid router import issues
-        window.location.href = '/login';
+        router.navigate({ to: '/login' });
       }
     }
     return Promise.reject(error);
