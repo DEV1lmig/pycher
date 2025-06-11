@@ -1375,3 +1375,26 @@ def get_user_progress_report_data(db: Session, user_id: int) -> UserProgressRepo
         report_generated_at=dt.utcnow(),
         courses=report_courses_data
     )
+def change_user_username(db: Session, user: User, new_username: str):
+    # Check if username is already taken
+    existing = db.query(User).filter(User.username == new_username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Nombre de usuario ya registrado")
+    logger.info(f"Changing username for User ID {user.id} from {user.username} to {new_username}")
+    user.username = new_username
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"detail": "Nombre de usuario actualizado correctamente"}
+
+def change_user_password(db: Session, user: User, current_password: str, new_password: str):
+    from utils import verify_password, get_password_hash
+    if not verify_password(current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+    if verify_password(new_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="La nueva contraseña no puede ser igual a la anterior")
+    user.hashed_password = get_password_hash(new_password)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"detail": "Contraseña actualizada correctamente"}

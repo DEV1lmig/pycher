@@ -431,14 +431,19 @@ class BatchModuleProgressResponse(BaseModel):
 class BatchLessonProgressResponse(BaseModel):
     progress: Dict[int, bool] # lesson_id -> is_completed
 
-# ... (rest of your existing schemas like UserLessonProgressBase, UserModuleProgressBase, etc.)
-# Ensure LessonProgressDetailResponse is correctly defined as it's used in existing routes.
-# class LessonProgressDetailResponse(BaseModel):
-#     lesson_id: int
-#     is_completed: bool
-#     started_at: Optional[datetime] = None
-#     completed_at: Optional[datetime] = None
-#     exercises_progress: List[ExerciseProgressInfo] = [] # Expects a list of ExerciseProgressInfo
-#
-#     class Config:
-#         from_attributes = True
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=8, max_length=64)
+    new_password: str = Field(..., min_length=8, max_length=64)
+
+    @validator("new_password")
+    def password_strength(cls, v):
+        if (len(v) < 8 or len(v) > 64 or
+            not re.search(r"[A-Z]", v) or
+            not re.search(r"[a-z]", v) or
+            not re.search(r"\d", v) or
+            not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", v)):
+            raise ValueError("La contraseña debe tener entre 8 y 64 caracteres, mayúsculas, minúsculas, número y símbolo")
+        return v
+
+class ChangeUsernameRequest(BaseModel):
+    new_username: str = Field(..., min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_.-]+$")

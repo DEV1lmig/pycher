@@ -31,7 +31,7 @@ from schemas import (
     CourseExamSchema,
     LessonProgressDetailResponse, # Add this import
     ModuleIdsRequest, LessonIdsRequest,
-    BatchModuleProgressResponse, BatchLessonProgressResponse,
+    BatchModuleProgressResponse, BatchLessonProgressResponse, ChangePasswordRequest, ChangeUsernameRequest
 )
 
 from services import (
@@ -39,7 +39,7 @@ from services import (
     enroll_user_in_course, start_lesson, complete_exercise, get_last_accessed_progress,
     get_course_progress_summary, get_user_enrollments_with_progress, unenroll_user_from_course,
     get_user_lesson_progress_detail, get_user_progress_report_data,
-    get_batch_module_progress_details,
+    get_batch_module_progress_details, change_user_password, change_user_username,
     get_batch_lesson_progress_details,
     # --- ADDED MISSING SERVICE FUNCTION IMPORTS ---
     update_last_accessed,
@@ -584,6 +584,30 @@ def get_batch_lesson_progress_route(
     progress_map = get_batch_lesson_progress_details(db, current_user.id, request_data.lesson_ids)
     logger.info(f"Batch lesson progress check for U{current_user.id}, L_IDs {request_data.lesson_ids}. Result from service: {progress_map}")
     return BatchLessonProgressResponse(progress=progress_map)
+
+@router.post("/change-password")
+def change_password(request: ChangePasswordRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Changes the user's password.
+    """
+    # Log the password change attempt (omit new password)
+    logger.info(f"Password change attempt for user: {current_user.username}")
+
+    # Validate current password
+    if not authenticate_user(db, current_user.username, request.current_password):
+        logger.warning(f"Password change failed - Invalid current password for user: {current_user.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Contraseña actual incorrecta"
+        )
+
+    # Change the password
+    change_user_password(db, current_user, request.current_password, request.new_password)
+    logger.info(f"Password changed successfully for user: {current_user.username}")
+    return {"detail": "Contraseña cambiada correctamente"}
+@router.post("/change-username")
+def change_username(request: ChangeUsernameRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return change_user_username(db, current_user, request.new_username)
 
 # Ensure your router is included in your main FastAPI app
 # e.g., app.include_router(router)
