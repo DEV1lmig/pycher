@@ -517,17 +517,55 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
     """
     logger.info(f"Attempting to complete exercise ID {exercise_id} for user ID {user_id}.")
     exercise = db.query(Exercise).options(
-        selectinload(Exercise.lesson) # Eager load lesson for lesson_id
+        selectinload(Exercise.lesson)
     ).filter(Exercise.id == exercise_id).first()
 
     if not exercise:
         logger.warning(f"complete_exercise: Exercise ID {exercise_id} not found.")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
-    if not exercise.lesson_id: # Should always have a lesson
-        logger.error(f"complete_exercise: Exercise ID {exercise_id} is not associated with a lesson.")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Exercise misconfiguration: not linked to a lesson.")
 
-    # Ensure lesson progress exists, or create it (implicitly starting the lesson)
+    # --- NEW: Detect if this is a course exam exercise ---
+    is_exam_exercise = (
+        exercise.course_id is not None and
+        exercise.module_id is None and
+        exercise.lesson_id is None
+    )
+
+    if is_exam_exercise:
+        logger.info(f"User {user_id} is submitting a course exam exercise (ID {exercise_id}) for course {exercise.course_id}.")
+        # Evaluate the code as usual (reuse your validation logic)
+        # For simplicity, let's assume you have a function that returns pass/fail and output
+        validation_result = run_exam_code_validation(code_submitted, exercise, input_data)
+        passed = validation_result["passed"]
+        output = validation_result["output"]
+        error_message = validation_result.get("error", "")
+
+        # Create a UserExamAttempt record
+        exam_attempt = UserExamAttempt(
+            user_id=user_id,
+            exam_id=exercise.course_id,  # Or link to a CourseExam if you have one
+            started_at=dt.utcnow(),
+            completed_at=dt.utcnow(),
+            passed=passed,
+            answers=None  # Or store code/output if desired
+        )
+        db.add(exam_attempt)
+        db.commit()
+        db.refresh(exam_attempt)
+
+        # If passed, unlock the next course (implement this logic as needed)
+        if passed:
+            unlock_next_course_for_user(db, user_id, exercise.course_id)
+
+        return {
+            "exam_attempt_id": exam_attempt.id,
+            "passed": passed,
+            "output": output,
+            "error": error_message,
+            "message": "Examen enviado y registrado correctamente." if passed else "Examen enviado, pero no aprobado."
+        }
+
+    # --- existing code for regular exercises ---
     lesson_progress = db.query(UserLessonProgress).filter(
         UserLessonProgress.user_id == user_id,
         UserLessonProgress.lesson_id == exercise.lesson_id
@@ -1585,4 +1623,38 @@ def recalculate_and_update_course_progress(db: Session, user_id: int, course_id:
         enrollment.progress_percentage = final_progress_percentage
         db.add(enrollment)
         logger.info(f"User ID {user_id}, Course ID {course_id}: Staged UserCourseEnrollment.progress_percentage to {final_progress_percentage}.")
-    # REMOVE db.commit() from here. It will be handled by the calling function
+
+def run_exam_code_validation(code_submitted, exercise, input_data=None, timeout=10):
+    """
+    Calls the execution-service to validate exam code.
+    Returns a dict: {"passed": bool, "output": str, "error": str}
+    """
+    payload = {
+        "exercise_id": exercise.id,
+        "code": code_submitted,
+        "input_data": input_data,
+        "timeout": timeout
+    }
+    try:
+        url = f"{EXECUTION_SERVICE_URL}/api/v1/execute"
+        response = httpx.post(url, json=payload, timeout=timeout + 2)
+        response.raise_for_status()
+        data = response.json()
+        return {
+            "passed": data.get("passed", False),
+            "output": data.get("actual_output", ""),
+            "error": data.get("message", "") if not data.get("passed", False) else ""
+        }
+    except httpx.HTTPError as e:
+        return {
+            "passed": False,
+            "output": "",
+            "error": f"Error al validar el examen: {str(e)}"
+        }
+def unlock_next_course_for_user(db, user_id, current_course_id):
+    # Find the next course (by ID or order)
+    next_course = db.query(Course).filter(Course.id > current_course_id).order_by(Course.id.asc()).first()
+    if next_course:
+        # Enroll the user or mark as unlocked
+        enroll_user_in_course(db, user_id, next_course.id)
+        logger.info(f"User {user_id} unlocked next course {next_course.id}.")

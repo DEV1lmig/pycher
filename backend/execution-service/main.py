@@ -129,6 +129,16 @@ async def execute_and_validate_code(request: CodeRequest):
             # If your function_check validator *cannot* work this way, this should be an error:
             # final_run_result = DynamicValidationResult(passed=False, message="Direct input not directly applicable to function_check without a specific scenario context.", actual_output=None) #execution_time=0.0)
 
+        elif validation_type == "exam":
+            # Allow direct input run for exam type
+            final_run_result = validator_func(
+                user_code=request.code,
+                rules=exercise_rules_from_config,
+                input_data=request.input_data,
+                timeout=request.timeout,
+                direct_input_run=True  # <-- This enables the "run as script" mode in your validator
+            )
+
         else:
             final_run_result = DynamicValidationResult(passed=False, message=f"Unsupported validation type '{validation_type}' for direct input run.", actual_output=None)
 

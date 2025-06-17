@@ -10,10 +10,10 @@ from typing import Dict, Optional, List, Any, Tuple
 
 # --- Result Class ---
 class DynamicValidationResult:
-    def __init__(self, passed: bool, message: str = "", actual_output: Optional[str] = None, details: Optional[Dict] = None):
+    def __init__(self, passed: bool, message: str = "", actual_output: Optional[str] = None, details: Optional[Dict[str, Any]] = None): # Changed details to Dict[str, Any]
         self.passed = passed
-        self.message = message  # Error message if not passed, or success message
-        self.actual_output = actual_output  # stdout from user's code if run
+        self.message = message
+        self.actual_output = actual_output
         self.details = details or {}
 
 # --- Code Execution Helper ---
@@ -208,308 +208,387 @@ def validate_simple_print_exercise(
     input_data: Optional[str] = None, # Usually not needed for simple print
     timeout: int = 5
 ) -> DynamicValidationResult:
-    """
-    Validates exercises that require printing an exact string.
-    Rule: "expected_exact_output": "The string to be printed\n"
-    """
     security_res = general_security_check(user_code)
     if not security_res.passed:
         return security_res
 
-    expected_exact_output = rules.get("expected_exact_output")
-    if not isinstance(expected_exact_output, str): # Ensure it's a string
-        return DynamicValidationResult(False, "Validation config error: 'expected_exact_output' rule is missing or not a string.")
-
-    expected_print_arg_types = rules.get("expected_types") # e.g., ["str", "int"]
-
-    # Run with print type capture enabled
-    stdout, stderr, timed_out, exit_code, captured_prints_metadata = run_user_code_sandboxed(
+    stdout, stderr, timed_out, exit_code_res, captured_prints_metadata = run_user_code_sandboxed(
         user_code, input_data, timeout, capture_print_types=True
     )
 
-    if not stdout.strip() and not captured_prints_metadata: # If no visible output and no prints captured
-        return DynamicValidationResult(
-            False,
-            "No se detectó ninguna salida. ¿Has completado el ejercicio? Escribe tu código y usa print() para mostrar el resultado.",
-            actual_output=stdout
-        )
+    details: Dict[str, Any] = {
+        "stdout": stdout,
+        "stderr": stderr,
+        "timed_out": timed_out,
+        "exit_code": exit_code_res,
+        "captured_prints_metadata": captured_prints_metadata
+    }
+    feedback_messages = []
+    core_checks_passed = True
 
     if timed_out:
-        return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout)
-    if exit_code != 0:
+        return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout, details=details)
+    if exit_code_res != 0:
         error_message = stderr.strip() if stderr.strip() else "Runtime error occurred."
-        return DynamicValidationResult(False, f"Runtime error: {error_message}", actual_output=stdout)
+        return DynamicValidationResult(False, f"Runtime error: {error_message}", actual_output=stdout, details=details)
 
-    # 1. Check exact string output
-    if stdout != expected_exact_output:
-        expected_repr = repr(expected_exact_output)
-        actual_repr = repr(stdout)
-        # If type check is also required, we might want to hold off on failing immediately
-        # or combine messages. For now, let's prioritize exact output.
-        # If types are also wrong, that's a secondary issue if output string is already wrong.
-        # However, if output string is correct but types are wrong, that's the new check.
+    if not captured_prints_metadata and not stdout.strip(): # Check if any print occurred
+        return DynamicValidationResult(False, "No output detected. Ensure your code uses print() to display results.", actual_output=stdout, details=details)
 
-    # 2. Check captured print argument types if rule exists
-    type_check_passed = True
-    type_error_message = ""
-    if isinstance(expected_print_arg_types, list):
-        captured_actual_types = [item['type'] for item in captured_prints_metadata]
-        if len(captured_actual_types) != len(expected_print_arg_types):
-            type_check_passed = False
-            type_error_message = (
-                f"Type mismatch: Expected {len(expected_print_arg_types)} print operations, "
-                f"but captured {len(captured_actual_types)}. "
-                f"Expected types: {expected_print_arg_types}, Captured types: {captured_actual_types}."
-            )
-        else:
-            for i, expected_type in enumerate(expected_print_arg_types):
-                if captured_actual_types[i] != expected_type:
-                    type_check_passed = False
-                    type_error_message = (
-                        f"Type mismatch for print operation #{i+1}. "
-                        f"Expected type: '{expected_type}', Got type: '{captured_actual_types[i]}'. "
-                        f"Full expected types: {expected_print_arg_types}, Full captured types: {captured_actual_types}."
-                    )
-                    break # Stop on first type mismatch
+    # Metadata Check: Number of print calls
+    expected_print_count = rules.get("expected_print_count")
+    actual_print_count = len(captured_prints_metadata)
+    details["actual_print_count"] = actual_print_count
+    if expected_print_count is not None and actual_print_count != expected_print_count:
+        core_checks_passed = False
+        feedback_messages.append(f"Expected {expected_print_count} print operations, but found {actual_print_count}.")
+        details["print_count_check_passed"] = False
+    elif expected_print_count is not None:
+        details["print_count_check_passed"] = True
 
-    # Final result based on both checks
-    output_matches = (stdout == expected_exact_output)
 
-    if output_matches and type_check_passed:
-        return DynamicValidationResult(True, "Exercise passed!", actual_output=stdout)
-    elif not output_matches:
-        expected_repr = repr(expected_exact_output)
-        actual_repr = repr(stdout)
-        msg = f"Output mismatch. Expected: {expected_repr}\nGot: {actual_repr}"
-        if not type_check_passed and type_error_message: # Add type error if output also wrong
-             msg += f"\nAdditionally: {type_error_message}"
-        return DynamicValidationResult(False, msg, actual_output=stdout)
-    elif not type_check_passed: # Output matches, but types are wrong
-        # This is the new scenario we want to catch
-        return DynamicValidationResult(False, type_error_message, actual_output=stdout)
+    # Metadata Check: Types of printed items
+    expected_types = rules.get("expected_types") # list of type names as strings
+    actual_printed_types = [item['type'] for item in captured_prints_metadata]
+    details["actual_printed_types"] = actual_printed_types
+    if isinstance(expected_types, list):
+        details["type_check_rules_exist"] = True
+        if actual_print_count != len(expected_types) and expected_print_count is None: # If count wasn't primary, infer from types list
+            core_checks_passed = False
+            feedback_messages.append(f"Expected {len(expected_types)} printed items based on type rules, but found {actual_print_count}.")
+            details["type_check_passed"] = False
+        elif actual_print_count == len(expected_types): # Only check types if counts match
+            type_match_current_run = True
+            for i, exp_type in enumerate(expected_types):
+                if actual_printed_types[i] != exp_type:
+                    core_checks_passed = False
+                    type_match_current_run = False
+                    feedback_messages.append(f"Type mismatch for printed item #{i+1}: expected '{exp_type}', got '{actual_printed_types[i]}'.")
+                    break
+            details["type_check_passed"] = type_match_current_run
+        elif expected_print_count is not None and actual_print_count == expected_print_count: # Counts match from rule, but type list length differs
+             core_checks_passed = False
+             feedback_messages.append(f"Mismatch between expected_print_count ({expected_print_count}) and length of expected_types list ({len(expected_types)}). Review exercise rules.")
+             details["type_check_passed"] = False
 
-    # Should not be reached if logic is correct, but as a fallback:
-    return DynamicValidationResult(False, "Validation failed for an unknown reason.", actual_output=stdout)
+    # AST Check: Variable definitions (optional)
+    # This would require more complex AST parsing to check if specific variables were defined.
+    # For simple_print, this might be overkill unless rules explicitly demand it.
+
+    # Content Check (Secondary)
+    expected_exact_output = rules.get("expected_exact_output")
+    content_matches = True
+    if expected_exact_output is not None:
+        details["content_check_rules_exist"] = True
+        # Normalize line endings for comparison
+        normalized_stdout = stdout.replace('\r\n', '\n')
+        normalized_expected_output = expected_exact_output.replace('\r\n', '\n')
+        if normalized_stdout != normalized_expected_output:
+            content_matches = False
+            feedback_messages.append(f"Output content differs. Expected: {repr(normalized_expected_output)}, Got: {repr(normalized_stdout)}.")
+        details["content_check_passed"] = content_matches
+    else:
+        details["content_check_passed"] = True # No rule, so trivially passes content check
+
+    if core_checks_passed and content_matches:
+        final_message = "Exercise passed!"
+        if feedback_messages: # Should be empty if all passed, but for consistency
+            final_message += " " + " ".join(feedback_messages)
+        return DynamicValidationResult(True, final_message, actual_output=stdout, details=details)
+    elif core_checks_passed and not content_matches:
+        final_message = "Core requirements (like types and print counts) met, but the exact output content is different. " + " ".join(feedback_messages)
+        return DynamicValidationResult(False, final_message, actual_output=stdout, details=details) # Still False if content is a must
+    else: # Core checks failed
+        final_message = "Validation failed. " + " ".join(feedback_messages)
+        return DynamicValidationResult(False, final_message, actual_output=stdout, details=details)
 
 
 def validate_saludo_personalizado(
     user_code: str,
     rules: Dict[str, Any],
-    input_data: Optional[str] = None,
+    input_data: Optional[str] = None, # This is the name to be used for this validation run
     timeout: int = 5
 ) -> DynamicValidationResult:
-    """
-    Validates "Saludo Personalizado" type exercises.
-    Rules:
-      "target_variable_names": ["nombre", "name"] (list of allowed var names for AST check)
-      "output_format_template": "¡Hola, {var}!" ({var} is placeholder for the name)
-      "requires_input_function": true/false (Optional, to guide AST checks and feedback)
-    """
     security_res = general_security_check(user_code)
     if not security_res.passed:
         return security_res
 
-    target_vars = rules.get("target_variable_names", ["nombre"]) # Default to "nombre"
+    details: Dict[str, Any] = {}
+    feedback_messages = []
+    ast_checks_passed = True
+
+    target_vars = rules.get("target_variable_names", ["nombre"])
     format_template = rules.get("output_format_template")
-    requires_input_func = rules.get("requires_input_function", True) # Assume input() is expected by default
+    requires_input_func = rules.get("requires_input_function", True)
+    require_fstring_print = rules.get("require_fstring", True)
 
     if not format_template:
-        return DynamicValidationResult(False, "Validation config error: 'output_format_template' missing.")
-    if input_data is None and requires_input_func: # If input() is expected, scenario must provide data
-        return DynamicValidationResult(False, "Scenario config error: Input data (name) not provided for validation, but exercise expects input.")
+        return DynamicValidationResult(False, "Validation config error: 'output_format_template' missing.", details=details)
+    if input_data is None and requires_input_func:
+        return DynamicValidationResult(False, "Scenario config error: Input data (name) not provided for validation, but exercise expects input.", details=details)
 
-    # --- AST Checks (More detailed) ---
+    # AST Checks
     found_target_assignment = False
     assigned_var_is_from_input = False
     printed_var_name_in_fstring = None
-    fstring_structure_ok = False
+    fstring_structure_ok_ast = False
+    used_input_function_ast = False
+    used_fstring_for_print_ast = False
 
     try:
         tree = ast.parse(user_code)
         for node in ast.walk(tree):
-            # Check for variable assignment (e.g., nombre = "value" or nombre = input(...))
             if isinstance(node, ast.Assign) and len(node.targets) == 1:
                 target_node = node.targets[0]
                 if isinstance(target_node, ast.Name) and target_node.id in target_vars:
                     found_target_assignment = True
-                    if isinstance(node.value, ast.Call) and \
-                       isinstance(node.value.func, ast.Name) and \
-                       node.value.func.id == 'input':
+                    if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == 'input':
                         assigned_var_is_from_input = True
-
-            # Check for print(f"¡Hola, {var}!")
-            elif isinstance(node, ast.Call) and \
-                 isinstance(node.func, ast.Name) and node.func.id == 'print':
+                        used_input_function_ast = True
+            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'input':
+                 used_input_function_ast = True # Detect input() even if not assigned to target_vars
+            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'print':
                 if node.args and isinstance(node.args[0], ast.JoinedStr): # f-string
+                    used_fstring_for_print_ast = True
                     fstring_node = node.args[0]
-                    # Attempt to match "¡Hola, {var}!" structure
-                    # This is a simplified match, real templates can be more complex
-                    # Example: format_template = "¡Hola, {var}!"
-                    # We expect: Constant("¡Hola, ") + FormattedValue(Name(id='var')) + Constant("!")
                     parts = format_template.split("{var}")
                     prefix = parts[0]
                     suffix = parts[1] if len(parts) > 1 else ""
-
-                    if len(fstring_node.values) >= 1: # At least the prefix or the variable part
-                        # Check prefix
-                        if isinstance(fstring_node.values[0], ast.Constant) and \
-                           fstring_node.values[0].value == prefix:
-                            # Check variable part
-                            if len(fstring_node.values) >= 2 and \
-                               isinstance(fstring_node.values[1], ast.FormattedValue) and \
-                               isinstance(fstring_node.values[1].value, ast.Name):
+                    # Simplified AST check for f-string structure
+                    if len(fstring_node.values) >= 1:
+                        if isinstance(fstring_node.values[0], ast.Constant) and fstring_node.values[0].value == prefix:
+                            if len(fstring_node.values) >= 2 and isinstance(fstring_node.values[1], ast.FormattedValue) and isinstance(fstring_node.values[1].value, ast.Name):
                                 printed_var_name_in_fstring = fstring_node.values[1].value.id
-                                # Check suffix if present
                                 if suffix:
-                                    if len(fstring_node.values) >= 3 and \
-                                       isinstance(fstring_node.values[2], ast.Constant) and \
-                                       fstring_node.values[2].value == suffix:
-                                        fstring_structure_ok = True
-                                else: # No suffix
-                                    if len(fstring_node.values) == 2: # Prefix + Var
-                                        fstring_structure_ok = True
-                            elif not prefix and isinstance(fstring_node.values[0], ast.FormattedValue) and \
-                                 isinstance(fstring_node.values[0].value, ast.Name): # Case: print(f"{var}")
-                                 printed_var_name_in_fstring = fstring_node.values[0].value.id
-                                 if not suffix and len(fstring_node.values) == 1:
-                                     fstring_structure_ok = True
-
-
+                                    if len(fstring_node.values) >= 3 and isinstance(fstring_node.values[2], ast.Constant) and fstring_node.values[2].value == suffix:
+                                        fstring_structure_ok_ast = True
+                                elif len(fstring_node.values) == 2 : # No suffix, prefix + var
+                                    fstring_structure_ok_ast = True
+                        elif not prefix and isinstance(fstring_node.values[0], ast.FormattedValue) and isinstance(fstring_node.values[0].value, ast.Name): # Case: print(f"{var}")
+                            printed_var_name_in_fstring = fstring_node.values[0].value.id
+                            if not suffix and len(fstring_node.values) == 1:
+                                fstring_structure_ok_ast = True
     except SyntaxError:
-        return DynamicValidationResult(False, "Syntax error in your code.")
+        return DynamicValidationResult(False, "Syntax error in your code.", details=details)
 
-    # --- Behavioral Check ---
-    # Construct expected output using the provided input_data (name)
-    # The placeholder in the template should be consistent, e.g., "{var}"
-    expected_output = format_template.replace("{var}", input_data if input_data is not None else "") + "\n"
+    details["ast_found_target_assignment"] = found_target_assignment
+    details["ast_assigned_var_is_from_input"] = assigned_var_is_from_input
+    details["ast_used_input_function"] = used_input_function_ast
+    details["ast_used_fstring_for_print"] = used_fstring_for_print_ast
+    details["ast_fstring_structure_ok"] = fstring_structure_ok_ast
+    details["ast_printed_var_name_in_fstring"] = printed_var_name_in_fstring
 
-    # If the exercise doesn't require input(), but the user code uses it, input_data for sandbox should be None
-    # to potentially trigger EOFError if not handled, or to see if it prints a default.
-    # However, for this validator, input_data is the scenario's name.
-    sandbox_input = input_data if requires_input_func else None
+    if requires_input_func and not used_input_function_ast:
+        ast_checks_passed = False
+        feedback_messages.append("Hint: The `input()` function was expected but not found in your code.")
+    if requires_input_func and found_target_assignment and not assigned_var_is_from_input :
+        ast_checks_passed = False
+        feedback_messages.append(f"Hint: Variable '{target_vars[0]}' should be assigned the result of `input()`.")
+    if require_fstring_print and not used_fstring_for_print_ast:
+        ast_checks_passed = False
+        feedback_messages.append("Hint: An f-string was expected for the print statement.")
+    if used_fstring_for_print_ast and not fstring_structure_ok_ast:
+        ast_checks_passed = False
+        feedback_messages.append(f"Hint: The f-string structure seems incorrect. Expected something like `print(f\"{format_template.replace('{var}', '{your_variable_name}')}\")`.")
+    if printed_var_name_in_fstring and printed_var_name_in_fstring not in target_vars:
+        ast_checks_passed = False
+        feedback_messages.append(f"Hint: You printed '{printed_var_name_in_fstring}' in the f-string, but expected a variable like '{target_vars[0]}'.")
 
-    stdout, stderr, timed_out, exit_code = run_user_code_sandboxed(user_code, sandbox_input, timeout)
+
+    # Behavioral Check
+    stdout, stderr, timed_out, exit_code_res, captured_prints_metadata = run_user_code_sandboxed(
+        user_code, input_data if requires_input_func else None, timeout, capture_print_types=True
+    )
+    details.update({
+        "stdout": stdout, "stderr": stderr, "timed_out": timed_out, "exit_code": exit_code_res,
+        "captured_prints_metadata": captured_prints_metadata
+    })
 
     if timed_out:
-        return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout)
+        return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout, details=details)
+    if exit_code_res != 0:
+        err_msg = stderr.strip() if stderr.strip() else "Runtime error."
+        if "EOFError" in err_msg and requires_input_func and not assigned_var_is_from_input : # More specific EOF
+             err_msg = "Runtime error: Code tried to read input, but `input()` might not be used correctly or assigned to the expected variable."
+        return DynamicValidationResult(False, f"Runtime error: {err_msg}", actual_output=stdout, details=details)
 
-    if exit_code != 0:
-        error_message = stderr.strip() if stderr.strip() else "Runtime error occurred."
-        # If input was expected but not provided by user code (EOFError)
-        if "EOFError" in error_message and requires_input_func and not assigned_var_is_from_input:
-            error_message = "Runtime error: Your code tried to read input, but it might not be doing so correctly or the exercise scenario didn't provide it."
-        return DynamicValidationResult(False, f"Runtime error: {error_message}", actual_output=stdout)
+    # Metadata checks on output
+    behavioral_checks_passed = True
+    if not captured_prints_metadata:
+        behavioral_checks_passed = False
+        feedback_messages.append("No print output was captured.")
+    elif len(captured_prints_metadata) != 1:
+        behavioral_checks_passed = False
+        feedback_messages.append(f"Expected 1 print statement, but found {len(captured_prints_metadata)}.")
+    elif captured_prints_metadata[0]['type'] != 'str':
+        behavioral_checks_passed = False
+        feedback_messages.append(f"Expected the printed output to be a string, but got {captured_prints_metadata[0]['type']}.")
 
-    if stdout == expected_output:
-        feedback_msgs = []
-        if requires_input_func and not assigned_var_is_from_input:
-            feedback_msgs.append("Hint: Make sure you are using the `input()` function to get the name.")
-        if not found_target_assignment:
-            feedback_msgs.append(f"Hint: Consider assigning the input to a variable (e.g., one of {target_vars}).")
-        if not fstring_structure_ok or not printed_var_name_in_fstring:
-            feedback_msgs.append("Hint: Ensure you are using an f-string for printing, like `print(f\"" + format_template.replace("{var}", "{your_variable_name}") + "\")`.")
-        elif printed_var_name_in_fstring not in target_vars and found_target_assignment:
-             feedback_msgs.append(f"Hint: You assigned to a variable like '{', '.join(target_vars)}' but printed a different variable '{printed_var_name_in_fstring}' in the f-string.")
+    # Content Check (based on template)
+    expected_output_str = format_template.replace("{var}", input_data if input_data is not None else "") + "\n"
+    normalized_stdout = stdout.replace('\r\n', '\n')
+    content_matches = (normalized_stdout == expected_output_str)
+    details["content_check_passed"] = content_matches
+    if not content_matches:
+        feedback_messages.append(f"Output content differs. Expected: {repr(expected_output_str)}, Got: {repr(normalized_stdout)}.")
 
-        if feedback_msgs:
-            return DynamicValidationResult(True, "Exercise passed! " + " ".join(feedback_msgs), actual_output=stdout)
-        return DynamicValidationResult(True, "Exercise passed!", actual_output=stdout)
-    else:
-        msg = f"Output mismatch. Expected something like: '{expected_output.strip()}'\nGot: '{stdout.strip()}'"
-        if requires_input_func and not assigned_var_is_from_input:
-             msg += "\nHint: Did you use the `input()` function to get the name?"
-        return DynamicValidationResult(False, msg, actual_output=stdout)
+    # Final result
+    if ast_checks_passed and behavioral_checks_passed and content_matches:
+        return DynamicValidationResult(True, "Exercise passed! " + " ".join(feedback_messages), actual_output=stdout, details=details)
+    elif ast_checks_passed and behavioral_checks_passed and not content_matches:
+        msg = "Code structure and types are correct, but the exact output content is different. " + " ".join(feedback_messages)
+        return DynamicValidationResult(False, msg, actual_output=stdout, details=details) # Still fail if content is off
+    else: # AST or behavioral checks failed
+        return DynamicValidationResult(False, "Validation failed. " + " ".join(feedback_messages), actual_output=stdout, details=details)
 
 
-def validate_function_exercise(
+def validate_dynamic_output_exercise(
     user_code: str,
-    rules: Dict[str, Any], # Contains "function_name"
-    scenario_config: Dict[str, Any], # Contains "args", "expected_return_value", "expected_return_type"
-    timeout: int = 5 # Overall timeout for this validation step
+    rules: Dict[str, Any],
+    input_data: Optional[str] = None, # If provided, run as a single test case
+    timeout: int = 5
 ) -> DynamicValidationResult:
-    """
-    Validates exercises where user defines a function.
-    Rules: "function_name": "name_of_function_to_test"
-    Scenario_config:
-      "args": [arg1, arg2]
-      "expected_return_value": value (optional, checked if present)
-      "expected_return_type": "str" (optional, type name as string, checked if present)
-    """
-    # Security check on the entire user_code string first
     security_res = general_security_check(user_code)
     if not security_res.passed:
         return security_res
 
-    func_name = rules.get("function_name")
-    if not func_name:
-        return DynamicValidationResult(False, "Validation config error: 'function_name' missing in rules.")
+    details: Dict[str, Any] = {"test_case_results": []}
+    format_template = rules.get("output_format_template", "{var}\n")
+    transform_expr = rules.get("transform_for_template")
+    requires_input_func_rule = rules.get("requires_input_function", False) # Does the exercise fundamentally need input()
 
-    args = scenario_config.get("args", [])
-    expected_return_value = scenario_config.get("expected_return_value")
-    has_expected_return_check = "expected_return_value" in scenario_config # Explicitly check key presence
-    expected_type_str = scenario_config.get("expected_return_type")
+    if not transform_expr:
+        return DynamicValidationResult(False, "Validation config error: 'transform_for_template' missing.", details=details)
 
-    # Dynamically import and run the function.
-    # This execution happens within the main service process, so it's not sandboxed like
-    # run_user_code_sandboxed. The general_security_check is crucial here.
-    # For true sandboxing of function execution, one would need to use run_user_code_sandboxed
-    # with a wrapper script that calls the function and prints its result, then parse that.
-    # However, for direct type/value checking, dynamic import is more straightforward if security is managed.
+    test_cases_values: List[str]
+    if input_data is not None:
+        test_cases_values = [input_data]
+        details["run_mode"] = "single_case_direct_input"
+    else:
+        constraints = rules.get("input_constraints", {"type": "int", "min": 0, "max": 100})
+        num_cases = rules.get("num_cases", 5) # Reduced default for faster validation if many exercises
+        test_cases_values = generate_dynamic_test_cases(constraints, num_cases=num_cases)
+        if not test_cases_values:
+            return DynamicValidationResult(False, "Failed to generate dynamic test cases.", details=details)
+        details["run_mode"] = "multiple_generated_cases"
+        details["generated_case_count"] = len(test_cases_values)
 
-    code_string_lf = user_code.replace('\r\n', '\n')
-    temp_module_path = None
-    try:
-        # Create a temporary file to write the code
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, newline='\n', encoding='utf-8') as tmp_code_file:
-            tmp_code_file.write(code_string_lf) # Write the user's function definition
-            temp_module_path = tmp_code_file.name
-            # Use a unique module name to avoid conflicts if run multiple times
-            module_name = f"usermodule_{os.path.splitext(os.path.basename(temp_module_path))[0]}"
+    overall_passed = True
+    accumulated_feedback = []
+
+    # AST check for input() usage (once)
+    used_input_function_ast = False
+    if requires_input_func_rule:
+        try:
+            tree = ast.parse(user_code)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'input':
+                    used_input_function_ast = True
+                    break
+        except SyntaxError:
+             return DynamicValidationResult(False, "Syntax error in your code.", details=details)
+        if not used_input_function_ast:
+            overall_passed = False # If input() is required by rule but not found by AST, it's a fundamental failure
+            accumulated_feedback.append("AST Check: The `input()` function was expected but not found.")
+            # No need to run behavioral tests if this fundamental AST check fails
+            details["ast_input_check_failed"] = True
+            return DynamicValidationResult(False, " ".join(accumulated_feedback), details=details)
+        details["ast_input_check_passed"] = True
 
 
-        spec = importlib.util.spec_from_file_location(module_name, temp_module_path)
-        if spec is None or spec.loader is None: # Should not happen if file is created
-            return DynamicValidationResult(False, "Failed to create module spec for user code.")
+    for i, case_value_str in enumerate(test_cases_values):
+        case_details: Dict[str, Any] = {"input_case": case_value_str}
+        expected_var_transformed: Any
+        try:
+            # The 'value' in transform_expr refers to the current test case input
+            # Ensure 'value' is of the correct type for eval if constraints specify type
+            actual_case_value_for_eval: Any = case_value_str
+            input_type = rules.get("input_constraints", {}).get("type", "str")
+            if input_type == "int": actual_case_value_for_eval = int(case_value_str)
+            elif input_type == "bool": actual_case_value_for_eval = bool(case_value_str) # Simplified
 
-        user_module = importlib.util.module_from_spec(spec)
-        # Crucial: Execute the module to make definitions available
-        spec.loader.exec_module(user_module)
+            expected_var_transformed = eval(transform_expr, {"value": actual_case_value_for_eval, "int": int, "str": str, "bool": bool, "float": float})
+            case_details["expected_transformed_value"] = expected_var_transformed
+            expected_output_for_case = format_template.replace("{var}", str(expected_var_transformed))
+            case_details["expected_output_string_for_case"] = expected_output_for_case
+        except Exception as e:
+            overall_passed = False
+            accumulated_feedback.append(f"Case #{i+1} (Input: {case_value_str}): Error in validation transform: {e}")
+            case_details["error"] = f"Transform error: {e}"
+            details["test_case_results"].append(case_details)
+            continue # Skip to next case
 
-        if not hasattr(user_module, func_name):
-            return DynamicValidationResult(False, f"Function '{func_name}' not defined in your code.")
+        stdout, stderr, timed_out, exit_code_res, captured_prints = run_user_code_sandboxed(
+            user_code, input_data=case_value_str if requires_input_func_rule else None, timeout=timeout, capture_print_types=True
+        )
+        case_details.update({
+            "stdout": stdout, "stderr": stderr, "timed_out": timed_out, "exit_code": exit_code_res,
+            "captured_prints": captured_prints
+        })
 
-        actual_func = getattr(user_module, func_name)
+        if timed_out:
+            overall_passed = False
+            accumulated_feedback.append(f"Case #{i+1} (Input: {case_value_str}): Execution timed out.")
+            case_details["passed"] = False
+            details["test_case_results"].append(case_details)
+            continue
+        if exit_code_res != 0:
+            overall_passed = False
+            accumulated_feedback.append(f"Case #{i+1} (Input: {case_value_str}): Runtime error: {stderr.strip()}")
+            case_details["passed"] = False
+            details["test_case_results"].append(case_details)
+            continue
+        if not captured_prints:
+            overall_passed = False
+            accumulated_feedback.append(f"Case #{i+1} (Input: {case_value_str}): No print output detected.")
+            case_details["passed"] = False
+            details["test_case_results"].append(case_details)
+            continue
 
-        # Timeout for the function call itself is hard to implement here without
-        # complex mechanisms (threading/multiprocessing). The request timeout is the main guard.
-        actual_return_value = actual_func(*args) # Call the user's function
-        actual_return_type_str = type(actual_return_value).__name__
+        # Metadata: Check type of printed item (assuming one primary item printed per dynamic case)
+        # This might need refinement if multiple prints or complex outputs are expected per case.
+        # For now, let's assume the *first* print's first arg type should match the type of expected_var_transformed.
+        actual_printed_type = captured_prints[0]['type'] if captured_prints else "NoneType"
+        expected_transformed_value_type = type(expected_var_transformed).__name__
+        case_details["actual_printed_type"] = actual_printed_type
+        case_details["expected_transformed_value_type"] = expected_transformed_value_type
 
-        # Check 1: Return value
-        if has_expected_return_check:
-            if actual_return_value != expected_return_value:
-                return DynamicValidationResult(False, f"Function '{func_name}' with args {args} returned '{actual_return_value}', expected '{expected_return_value}'.")
+        if actual_printed_type != expected_transformed_value_type:
+            overall_passed = False
+            accumulated_feedback.append(f"Case #{i+1} (Input: {case_value_str}): Type mismatch. Expected printed type related to '{expected_transformed_value_type}', got '{actual_printed_type}'.")
+            case_details["passed"] = False
+            # details["test_case_results"].append(case_details) # Appended later
+            # continue # Don't necessarily stop if type is wrong but content might be right for some reason
 
-        # Check 2: Return type
-        if expected_type_str:
-            if actual_return_type_str != expected_type_str:
-                return DynamicValidationResult(False, f"Function '{func_name}' with args {args} returned type '{actual_return_type_str}', expected type '{expected_type_str}'.")
+        # Content check for this case
+        normalized_stdout = stdout.replace('\r\n', '\n')
+        normalized_expected_output = expected_output_for_case.replace('\r\n', '\n')
+        if normalized_stdout != normalized_expected_output:
+            overall_passed = False # Content mismatch is a failure for dynamic cases
+            accumulated_feedback.append(f"Case #{i+1} (Input: {case_value_str}): Output content mismatch. Expected: {repr(normalized_expected_output)}, Got: {repr(normalized_stdout)}.")
+            case_details["passed"] = False
+        else:
+            # If type was wrong but content was right, it's still a failure due to earlier overall_passed=False
+             if case_details.get("passed", True): # Only mark as passed if not already failed by type
+                 case_details["passed"] = True
 
-        # If all checks passed for this scenario
-        return DynamicValidationResult(True, "Function scenario passed.", actual_output=str(actual_return_value))
 
-    except SyntaxError:
-        return DynamicValidationResult(False, "Syntax error in your code.")
-    except Exception as e:
-        # This catches errors from the user's code during module execution or function call
-        return DynamicValidationResult(False, f"Error executing function '{func_name}': {type(e).__name__}: {e}")
-    finally:
-        # Clean up the temporary module file
-        if temp_module_path and os.path.exists(temp_module_path):
-            try:
-                os.unlink(temp_module_path)
-            except Exception: # Silently ignore cleanup errors
-                pass
+        details["test_case_results"].append(case_details)
+
+
+    final_message = " ".join(accumulated_feedback)
+    if overall_passed:
+        final_message = "All dynamic test cases passed!"
+        # For single input mode, actual_output is relevant. For multiple, it's less so.
+        return DynamicValidationResult(True, final_message, actual_output=details["test_case_results"][0]["stdout"] if input_data and details["test_case_results"] else None, details=details)
+    else:
+        # actual_output could be the stdout of the first failing case if desired
+        first_failing_stdout = None
+        for res in details["test_case_results"]:
+            if not res.get("passed", True):
+                first_failing_stdout = res.get("stdout")
+                break
+        return DynamicValidationResult(False, "One or more dynamic test cases failed. " + final_message, actual_output=first_failing_stdout, details=details)
 
 def generate_dynamic_test_cases(constraints: Dict[str, Any], num_cases: int = 10):
     """
@@ -532,97 +611,81 @@ def generate_dynamic_test_cases(constraints: Dict[str, Any], num_cases: int = 10
             cases.append(''.join(random.choices(charset, k=length)))
     return cases
 
-def validate_dynamic_output_exercise(
+def validate_function_exercise(
     user_code: str,
     rules: Dict[str, Any],
-    input_data: Optional[str] = None,
+    scenario_config: Dict[str, Any],
     timeout: int = 5
 ) -> DynamicValidationResult:
-    """
-    Dynamically validates output-based exercises.
-    If input_data is provided, it's used as a single test case.
-    Otherwise, generates multiple test cases based on "input_constraints".
-    Expects:
-      - "input_constraints" in rules (dict) - used if input_data is None
-      - "transform_for_template" in rules (str, Python expression using 'value')
-      - "output_format_template" in rules (str, e.g. "{var}\n")
-    """
     security_res = general_security_check(user_code)
     if not security_res.passed:
-        return security_res
+        return security_res # security_res already includes details
 
-    format_template = rules.get("output_format_template", "{var}\n")
-    transform_expr = rules.get("transform_for_template")
+    func_name = rules.get("function_name")
+    details: Dict[str, Any] = {"function_name_rule": func_name, "scenario_args": scenario_config.get("args")}
 
-    if not transform_expr:
-        return DynamicValidationResult(False, "Validation config error: 'transform_for_template' missing.")
+    if not func_name:
+        return DynamicValidationResult(False, "Validation config error: 'function_name' missing in rules.", details=details)
 
-    test_cases: List[str]
-    if input_data is not None:
-        # If direct input_data is provided (e.g., from textarea "Ejecutar Código"),
-        # use it as the *only* test case for this run.
-        test_cases = [input_data]
-    else:
-        # Original behavior: generate multiple test cases for submission ("Entregar")
-        constraints = rules.get("input_constraints", {"type": "int", "min": 0, "max": 100})
-        num_cases = rules.get("num_cases", 8)
-        test_cases = generate_dynamic_test_cases(constraints, num_cases=num_cases)
-        if not test_cases: # Should not happen if constraints are valid
-            return DynamicValidationResult(False, "Failed to generate dynamic test cases based on constraints.")
+    args = scenario_config.get("args", [])
+    expected_return_value = scenario_config.get("expected_return_value")
+    has_expected_return_check = "expected_return_value" in scenario_config
+    expected_type_str = scenario_config.get("expected_return_type")
+    details.update({
+        "expected_return_value": expected_return_value if has_expected_return_check else "N/A",
+        "expected_return_type": expected_type_str or "N/A"
+    })
 
-    errors = []
+    code_string_lf = user_code.replace('\r\n', '\n')
+    temp_module_path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, newline='\n', encoding='utf-8') as tmp_code_file:
+            tmp_code_file.write(code_string_lf)
+            temp_module_path = tmp_code_file.name
+            module_name = f"usermodule_{os.path.splitext(os.path.basename(temp_module_path))[0]}"
 
-    for case_value in test_cases:
-        # Compute expected output dynamically
-        try:
-            # The 'value' in transform_expr refers to the current test case input
-            expected_var = eval(transform_expr, {"value": case_value, "int": int, "str": str, "bool": bool})
-        except Exception as e:
-            # It's better to make this error specific to the case if possible,
-            # but a general transform error might stop all validation.
-            return DynamicValidationResult(False, f"Error in validation transform expression: {e}")
 
-        expected_output = format_template.replace("{var}", str(expected_var))
+        spec = importlib.util.spec_from_file_location(module_name, temp_module_path)
+        if spec is None or spec.loader is None:
+            return DynamicValidationResult(False, "Failed to create module spec for user code.", details=details)
 
-        # Pass the current test case value as input_data to the sandbox
-        stdout, stderr, timed_out, exit_code = run_user_code_sandboxed(user_code, input_data=case_value, timeout=timeout)
+        user_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(user_module)
+        details["module_loaded"] = True
 
-        # --- Add this check for each test case ---
-        if not stdout.strip():
-            return DynamicValidationResult(
-                False,
-                "No se detectó ninguna salida. ¿Has completado el ejercicio? Escribe tu código y usa print() para mostrar el resultado.",
-                actual_output=stdout
-            )
+        if not hasattr(user_module, func_name):
+            details["function_defined_in_module"] = False
+            return DynamicValidationResult(False, f"Function '{func_name}' not defined in your code.", details=details)
+        details["function_defined_in_module"] = True
+        actual_func = getattr(user_module, func_name)
 
-        if timed_out:
-            errors.append(f"Input '{case_value}': Execution timed out.")
-            continue
-        if exit_code != 0:
-            errors.append(f"Input '{case_value}': Runtime error: {stderr.strip()}")
-            continue
+        actual_return_value = actual_func(*args)
+        actual_return_type_str = type(actual_return_value).__name__
+        details["actual_return_value"] = repr(actual_return_value) # Use repr for clarity
+        details["actual_return_type"] = actual_return_type_str
 
-        # Normalize whitespace for comparison, or make this configurable via rules
-        actual_output_stripped = stdout.strip()
-        expected_output_stripped = expected_output.strip()
+        if has_expected_return_check:
+            if actual_return_value != expected_return_value:
+                return DynamicValidationResult(False, f"Function '{func_name}' with args {args} returned {repr(actual_return_value)}, expected {repr(expected_return_value)}.", details=details)
+        details["return_value_check_passed"] = True if not has_expected_return_check or actual_return_value == expected_return_value else False
 
-        if actual_output_stripped != expected_output_stripped:
-            # Provide more context in the error message
-            expected_repr = repr(expected_output_stripped)
-            actual_repr = repr(actual_output_stripped)
-            errors.append(f"Input '{case_value}': Expected {expected_repr}, got {actual_repr}.")
 
-    if errors:
-        error_message = "Algunos casos de prueba fallaron:\n" + "\n".join(errors)
-        # If only one test case (direct input), the actual_output is from that single run.
-        # If multiple, this stdout is from the last successful run, which might be fine.
-        # For simplicity, let's not set actual_output on batch failure here, or set it to the first error's output.
-        return DynamicValidationResult(False, error_message, actual_output=stdout if len(test_cases) == 1 else None)
+        if expected_type_str:
+            if actual_return_type_str != expected_type_str:
+                return DynamicValidationResult(False, f"Function '{func_name}' with args {args} returned type '{actual_return_type_str}', expected type '{expected_type_str}'.", details=details)
+        details["return_type_check_passed"] = True if not expected_type_str or actual_return_type_str == expected_type_str else False
 
-    # If all cases passed
-    # For a single direct input run, stdout would be from that run.
-    # For multiple generated cases, this stdout is from the last successful run, which might be fine.
-    return DynamicValidationResult(True, "¡Todos los casos dinámicos pasaron!", actual_output=stdout)
+        return DynamicValidationResult(True, "Function scenario passed.", actual_output=str(actual_return_value), details=details)
+    except SyntaxError:
+        return DynamicValidationResult(False, "Syntax error in your code.", details=details)
+    except Exception as e:
+        details["execution_exception_type"] = type(e).__name__
+        details["execution_exception_message"] = str(e)
+        return DynamicValidationResult(False, f"Error executing function '{func_name}': {type(e).__name__}: {e}", details=details)
+    finally:
+        if temp_module_path and os.path.exists(temp_module_path):
+            try: os.unlink(temp_module_path)
+            except Exception: pass
 
 def validate_function_and_output_exercise(
     user_code: str,
@@ -630,135 +693,194 @@ def validate_function_and_output_exercise(
     input_data: Optional[str] = None,
     timeout: int = 5
 ) -> DynamicValidationResult:
-    """
-    Validates both the function definition (with scenarios) and the script output.
-    """
-    # 1. Function check (like function_check)
+    details: Dict[str, Any] = {"validation_type": "function_and_output"}
+    # 1. Function check
     func_rules = rules.get("function_rules", {})
     scenarios = func_rules.get("scenarios", [])
-    func_name = func_rules.get("function_name")
-    for scenario in scenarios:
+    all_func_scenarios_passed = True
+    func_feedback = []
+    details["function_check_results"] = []
+
+    if not func_rules.get("function_name") or not scenarios:
+         # If no function rules, it's essentially a simple_print. Or a config error.
+         # For now, let's assume function_rules are expected if this validator is chosen.
+         return DynamicValidationResult(False, "Configuration error: 'function_rules' (with name and scenarios) are required for 'function_and_output' validation.", details=details)
+
+
+    for i, scenario_config in enumerate(scenarios):
         scenario_result = validate_function_exercise(
             user_code=user_code,
-            rules=func_rules,
-            scenario_config=scenario,
+            rules=func_rules, # func_rules contains the function_name
+            scenario_config=scenario_config,
             timeout=timeout
         )
+        details["function_check_results"].append(scenario_result.details) # Add details from func validation
         if not scenario_result.passed:
-            return scenario_result
+            all_func_scenarios_passed = False
+            func_feedback.append(f"Function scenario #{i+1} (args: {scenario_config.get('args')}): {scenario_result.message}")
+            # No need to break, collect all function scenario failures
 
-    # 2. Output check (like simple_print)
-    expected_output = rules.get("expected_exact_output")
-    stdout = ""
-    if expected_output:
-        stdout, stderr, timed_out, exit_code = run_user_code_sandboxed(user_code, input_data, timeout)
-        if not stdout.strip():
-            return DynamicValidationResult(
-                False,
-                "No se detectó ninguna salida. ¿Has completado el ejercicio? Escribe tu código y usa print() para mostrar el resultado.",
-                actual_output=stdout
-            )
-        if timed_out:
-            return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout)
-        if exit_code != 0:
-            error_message = stderr.strip() if stderr.strip() else "Runtime error occurred."
-            return DynamicValidationResult(False, f"Runtime error: {error_message}", actual_output=stdout)
-        if stdout != expected_output:
-            return DynamicValidationResult(
-                False,
-                f"Output mismatch. Expected: {repr(expected_output)}\nGot: {repr(stdout)}",
-                actual_output=stdout
-            )
-    return DynamicValidationResult(True, "¡Función y salida correctas!", actual_output=stdout)
+    if not all_func_scenarios_passed:
+        return DynamicValidationResult(False, "Function validation failed. " + " | ".join(func_feedback), details=details)
+
+    # 2. Output check (similar to simple_print, but less emphasis on types if function already checked them)
+    output_checks_passed = True
+    output_feedback = []
+    expected_exact_output = rules.get("expected_exact_output")
+    stdout_final = "" # To store the stdout from the sandboxed run for output check
+
+    if expected_exact_output is not None: # Only run for output if expected_exact_output is defined
+        details["output_check_rules_exist"] = True
+        stdout_final, stderr_final, timed_out_final, exit_code_final, prints_meta_final = run_user_code_sandboxed(
+            user_code, input_data, timeout, capture_print_types=True # Capture types for output part too
+        )
+        details["output_check_run"] = {
+            "stdout": stdout_final, "stderr": stderr_final, "timed_out": timed_out_final,
+            "exit_code": exit_code_final, "captured_prints": prints_meta_final
+        }
+
+        if timed_out_final:
+            output_checks_passed = False
+            output_feedback.append("Execution for output check timed out.")
+        elif exit_code_final != 0:
+            output_checks_passed = False
+            output_feedback.append(f"Runtime error during output check: {stderr_final.strip()}")
+        elif not prints_meta_final and not stdout_final.strip():
+             output_checks_passed = False
+             output_feedback.append("No output detected for the script's print part.")
+        else:
+            normalized_stdout = stdout_final.replace('\r\n', '\n')
+            normalized_expected = expected_exact_output.replace('\r\n', '\n')
+            if normalized_stdout != normalized_expected:
+                output_checks_passed = False
+                output_feedback.append(f"Script output content mismatch. Expected: {repr(normalized_expected)}, Got: {repr(normalized_stdout)}.")
+            details["output_content_check_passed"] = output_checks_passed
+    else:
+        details["output_check_rules_exist"] = False # No output check rule
+        output_checks_passed = True # Trivially true if no output expected
+
+    if all_func_scenarios_passed and output_checks_passed:
+        return DynamicValidationResult(True, "Function and script output are correct!", actual_output=stdout_final, details=details)
+    else:
+        full_feedback = []
+        if not all_func_scenarios_passed: full_feedback.extend(func_feedback) # Should not happen due to early exit
+        if not output_checks_passed: full_feedback.extend(output_feedback)
+        return DynamicValidationResult(False, "Validation failed. " + " | ".join(full_feedback), actual_output=stdout_final, details=details)
+
+
+def run_exam_script_only(
+    user_code: str,
+    timeout: int = 10
+) -> DynamicValidationResult:
+    """
+    Runs the user's code as a script (for direct input run of 'exam' type).
+    Only captures stdout/stderr and syntax/runtime errors.
+    Does NOT validate function scenarios.
+    """
+    stdout, stderr, timed_out, exit_code, _ = run_user_code_sandboxed(
+        user_code, input_data=None, timeout=timeout, capture_print_types=False
+    )
+    if timed_out:
+        return DynamicValidationResult(
+            passed=False,
+            message=f"Execution timed out after {timeout} seconds.",
+            actual_output=stdout,
+            details={"stderr": stderr, "timed_out": timed_out, "exit_code": exit_code}
+        )
+    if exit_code != 0:
+        return DynamicValidationResult(
+            passed=False,
+            message=f"Error: {stderr.strip()}",
+            actual_output=stdout,
+            details={"stderr": stderr, "timed_out": timed_out, "exit_code": exit_code}
+        )
+    return DynamicValidationResult(
+        passed=True,
+        message="Código ejecutado. Recuerda que la validación completa se realiza al enviar.",
+        actual_output=stdout,
+        details={"stdout": stdout}
+    )
 
 def validate_exam_exercise(
     user_code: str,
-    rules: Dict[str, Any], # Contains "functions" list
-    input_data: Optional[str] = None, # Typically not used for exam validation directly
-    timeout: int = 10 # Allow a bit more time for multiple function checks
+    rules: Dict[str, Any],
+    input_data: Optional[str] = None,
+    timeout: int = 10,
+    direct_input_run: bool = False  # <-- NEW PARAM
 ) -> DynamicValidationResult:
-    """
-    Validates "exam" type exercises, which consist of multiple function checks.
-    Rules:
-      "functions": [
-        {
-          "function_name": "name_of_function",
-          "scenarios": [
-            {"args": [...], "expected_return_value": ..., "expected_return_type": "..."},
-            ...
-          ]
-        },
-        ...
-      ]
-    """
-    # General security check on the entire user code submission
+    # If this is a direct input run, just run the script and return output/errors
+    if direct_input_run:
+        return run_exam_script_only(user_code, timeout=timeout)
+
     security_res = general_security_check(user_code)
     if not security_res.passed:
         return security_res
 
-    function_definitions = rules.get("functions")
-    if not isinstance(function_definitions, list) or not function_definitions:
-        return DynamicValidationResult(False, "Validation config error: 'functions' list is missing or empty in rules for exam.")
+    function_definitions_rules = rules.get("functions")
+    details: Dict[str, Any] = {"validation_type": "exam", "function_results": []}
 
-    all_passed = True
+    if not isinstance(function_definitions_rules, list) or not function_definitions_rules:
+        return DynamicValidationResult(False, "Validation config error: 'functions' list is missing or empty in rules for exam.", details=details)
+
+    overall_exam_passed = True
     passed_function_count = 0
-    total_function_count = len(function_definitions)
-    detailed_feedback = []
+    total_function_count = len(function_definitions_rules)
+    master_feedback_list = []
 
-    for func_def in function_definitions:
-        func_name = func_def.get("function_name")
-        scenarios = func_def.get("scenarios")
+    for func_idx, func_def_rules in enumerate(function_definitions_rules):
+        func_name = func_def_rules.get("function_name")
+        scenarios = func_def_rules.get("scenarios")
+        current_func_details: Dict[str, Any] = {"function_name": func_name, "scenario_results": []}
 
         if not func_name or not isinstance(scenarios, list):
-            detailed_feedback.append(f"Skipping invalid function definition in exam rules: {func_def.get('function_name', 'Unknown function')}")
-            all_passed = False # Consider misconfiguration a failure
+            master_feedback_list.append(f"Exam Config Error: Invalid definition for function #{func_idx+1} ('{func_name or 'Unknown'}').")
+            overall_exam_passed = False
+            details["function_results"].append(current_func_details)
             continue
 
-        # Create a temporary "rules" dict for validate_function_exercise
-        # as it expects "function_name" directly in its rules.
-        single_function_rules = {"function_name": func_name}
-        # We could also pass other function-specific rules from func_def if needed
+        single_function_rules_for_validator = {"function_name": func_name} # Validator expects this structure
+        current_function_all_scenarios_passed = True
 
-        function_all_scenarios_passed = True
-        for scenario_config in scenarios:
-            # Use the existing validate_function_exercise for each scenario of each function
+        for scen_idx, scenario_config in enumerate(scenarios):
             scenario_result = validate_function_exercise(
                 user_code=user_code,
-                rules=single_function_rules, # Pass the name of the current function
-                scenario_config=scenario_config, # Pass the specific scenario
-                timeout=timeout # Use the overall timeout, or a smaller per-scenario timeout
+                rules=single_function_rules_for_validator,
+                scenario_config=scenario_config,
+                timeout=timeout # Use overall exam timeout per function scenario for simplicity
             )
+            current_func_details["scenario_results"].append(scenario_result.details) # Store detailed result of each scenario
             if not scenario_result.passed:
-                detailed_feedback.append(
-                    f"Function '{func_name}', scenario with args {scenario_config.get('args')}: FAILED - {scenario_result.message}"
+                master_feedback_list.append(
+                    f"Function '{func_name}', Scenario #{scen_idx+1} (Args: {scenario_config.get('args')}): FAILED - {scenario_result.message}"
                 )
-                all_passed = False
-                function_all_scenarios_passed = False
-                break # Stop checking scenarios for this function if one fails
+                overall_exam_passed = False
+                current_function_all_scenarios_passed = False
 
-        if function_all_scenarios_passed:
-            detailed_feedback.append(f"Function '{func_name}': PASSED all scenarios.")
+        if current_function_all_scenarios_passed:
+            master_feedback_list.append(f"Function '{func_name}': PASSED all scenarios.")
             passed_function_count += 1
-        # else: feedback already added for the failing scenario
+            current_func_details["all_scenarios_passed"] = True
+        else:
+            current_func_details["all_scenarios_passed"] = False
+        details["function_results"].append(current_func_details)
 
-    if all_passed:
-        return DynamicValidationResult(True, f"¡Examen completado con éxito! Todas las {total_function_count} funciones pasaron.", details={"feedback": detailed_feedback})
+
+    if overall_exam_passed:
+        final_message = f"¡Examen completado con éxito! Todas las {total_function_count} funciones pasaron."
+        return DynamicValidationResult(True, final_message, details=details)
     else:
         summary_message = (
             f"Examen parcialmente completado. {passed_function_count}/{total_function_count} funciones pasaron. "
-            "Revisa los detalles:\n" + "\n".join(detailed_feedback)
+            "Revisa los detalles:\n" + "\n".join(master_feedback_list)
         )
-        return DynamicValidationResult(False, summary_message, details={"feedback": detailed_feedback})
-
+        return DynamicValidationResult(False, summary_message, details=details)
 
 # --- Validator Dispatcher Map ---
 VALIDATOR_MAP = {
     "simple_print": validate_simple_print_exercise,
     "saludo_personalizado": validate_saludo_personalizado,
-    "function_check": validate_function_exercise,
+    "function_check": validate_function_exercise, # For single function validation
     "dynamic_output": validate_dynamic_output_exercise,
     "function_and_output": validate_function_and_output_exercise,
-    "exam": validate_exam_exercise,  # <-- ADDED EXAM VALIDATOR
-    # Add more mappings as you define validation_types and implement new validators
-    # e.g., "loop_check", "class_method_check", etc.
+    "exam": validate_exam_exercise,
 }

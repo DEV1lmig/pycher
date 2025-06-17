@@ -4,12 +4,12 @@ from sqlalchemy.orm import Session as SQLAlchemySession # Renamed to avoid confl
 from sqlalchemy import create_engine, inspect, text # ADDED text
 from sqlalchemy.orm import sessionmaker
 import logging
-import hashlib # For future JSON change detection
+import hashlib # Ensure hashlib is imported at the top
 # Ensure all models that need to be cleared are imported
 from models import (
     Base, Course, Module, Lesson, User, Progress, Exercise,
     UserCourseEnrollment, UserModuleProgress, UserLessonProgress,
-    UserExerciseSubmission, CourseExam, UserExamAttempt, ExamQuestion # Added ExamQuestion
+    UserExerciseSubmission, ExamQuestion, CourseExam # Added CourseExam
 )
 
 # Database connection
@@ -21,12 +21,65 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+SEED_DATA_DIR = os.path.join(os.path.dirname(__file__), "seed_data")
+SEED_FILES_TO_TRACK = {
+    "courses": "seed_courses.json",
+    "modules": "seed_modules.json",
+    "lessons": "seed_lessons.json",
+    "exercises": "seed_exercises.json"
+}
+SEED_FILE_HASHES_PATH = os.path.join(os.path.dirname(__file__), ".seed_file_hashes.json")
+
 # --- Helper Functions ---
 def is_database_empty(session: SQLAlchemySession) -> bool:
     """Checks if a core table (e.g., Course) is empty to determine if DB is fresh."""
     course_count = session.query(Course).count()
     logger.info(f"Course count: {course_count}. Database empty: {course_count == 0}")
     return course_count == 0
+
+def get_file_hash(filepath):
+    """Computes SHA256 hash of a file."""
+    h = hashlib.sha256()
+    if not os.path.exists(filepath):
+        return None # Or raise error
+    with open(filepath, 'rb') as file:
+        while True:
+            chunk = file.read(h.block_size)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+def get_current_seed_file_hashes():
+    """Calculates current hashes for all tracked seed files."""
+    current_hashes = {}
+    for key, filename in SEED_FILES_TO_TRACK.items():
+        filepath = os.path.join(SEED_DATA_DIR, filename)
+        current_hashes[key] = get_file_hash(filepath)
+    return current_hashes
+
+def load_last_seed_file_hashes():
+    """Loads the last known seed file hashes from .seed_file_hashes.json."""
+    if not os.path.exists(SEED_FILE_HASHES_PATH):
+        return {}
+    try:
+        with open(SEED_FILE_HASHES_PATH, 'r') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        logger.warning(f"Could not decode {SEED_FILE_HASHES_PATH}. Returning empty hashes.")
+        return {}
+    except Exception as e:
+        logger.error(f"Error loading {SEED_FILE_HASHES_PATH}: {e}", exc_info=True)
+        return {}
+
+def save_seed_file_hashes(hashes_to_save):
+    """Saves the given seed file hashes to .seed_file_hashes.json."""
+    try:
+        with open(SEED_FILE_HASHES_PATH, 'w') as f:
+            json.dump(hashes_to_save, f, indent=2)
+        logger.info(f"Successfully saved seed file hashes to {SEED_FILE_HASHES_PATH}")
+    except Exception as e:
+        logger.error(f"Error saving {SEED_FILE_HASHES_PATH}: {e}", exc_info=True)
 
 def get_current_migration_hash():
     # Example: read from alembic_version table or migration files
@@ -63,6 +116,23 @@ def check_for_json_seed_file_changes() -> bool:
     logger.info("Placeholder: JSON seed file change check not implemented. Returning False.")
     return False
 
+# Define levels for clearing and resetting (order matters for clearing)
+CLEAR_LEVEL_HIERARCHY = ["exercises", "lessons", "modules", "courses"]
+
+TABLES_FOR_LEVEL = {
+    "courses": [Course, UserCourseEnrollment],
+    "modules": [Module, UserModuleProgress],
+    "lessons": [Lesson, UserLessonProgress],
+    "exercises": [Exercise, UserExerciseSubmission, Progress]
+}
+
+SEQUENCES_FOR_LEVEL = {
+    "courses": ["courses_id_seq", "user_course_enrollments_id_seq"],
+    "modules": ["modules_id_seq", "user_module_progress_id_seq"],
+    "lessons": ["lessons_id_seq", "user_lesson_progress_id_seq"],
+    "exercises": ["exercises_id_seq", "user_exercise_submissions_id_seq"]
+}
+
 def clear_data(session: SQLAlchemySession):
     """Deletes all data from relevant tables to allow fresh seeding."""
     logger.info("Clearing existing data...")
@@ -72,12 +142,10 @@ def clear_data(session: SQLAlchemySession):
         session.query(Progress).delete(synchronize_session=False)
         session.query(UserLessonProgress).delete(synchronize_session=False)
         session.query(UserModuleProgress).delete(synchronize_session=False)
-        session.query(UserExamAttempt).delete(synchronize_session=False)
         session.query(UserCourseEnrollment).delete(synchronize_session=False)
         session.query(ExamQuestion).delete(synchronize_session=False) # Added
         session.query(Exercise).delete(synchronize_session=False)
         session.query(Lesson).delete(synchronize_session=False)
-        session.query(CourseExam).delete(synchronize_session=False)
         session.query(Module).delete(synchronize_session=False)
         session.query(Course).delete(synchronize_session=False)
         # session.query(User).delete(synchronize_session=False) # Typically users are not cleared on reseed unless intended
@@ -87,6 +155,64 @@ def clear_data(session: SQLAlchemySession):
         session.rollback()
         logger.error(f"Error clearing data: {e}", exc_info=True)
         raise
+
+def clear_data_from_level(session: SQLAlchemySession, highest_level_changed: str):
+    logger.info(f"Clearing data from level '{highest_level_changed}' downwards...")
+    try:
+        # Always delete in dependency order for a full clear
+        session.query(UserExerciseSubmission).delete(synchronize_session=False)
+        session.query(UserLessonProgress).delete(synchronize_session=False)
+        session.query(UserModuleProgress).delete(synchronize_session=False)
+        session.query(UserCourseEnrollment).delete(synchronize_session=False)
+        session.query(Progress).delete(synchronize_session=False)
+        session.query(Exercise).delete(synchronize_session=False)
+        session.query(Lesson).delete(synchronize_session=False)
+        session.query(Module).delete(synchronize_session=False)
+        session.query(Course).delete(synchronize_session=False)
+        session.commit()
+        logger.info("Successfully cleared all data in dependency order.")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error clearing data: {e}", exc_info=True)
+        raise
+
+def reset_sequences_for_level(session: SQLAlchemySession, highest_level_changed: str):
+    """Resets sequences from the specified level downwards."""
+    logger.info(f"Resetting sequences from level '{highest_level_changed}' downwards...")
+    sequences_to_reset_names = set()
+
+    start_index = -1
+    try:
+        start_index = CLEAR_LEVEL_HIERARCHY.index(highest_level_changed)
+    except ValueError:
+        logger.error(f"Invalid reset level: {highest_level_changed}. Will attempt to reset all known sequences.")
+        # Add all sequences if level is unknown or if it's 'courses'
+        for key in SEQUENCES_FOR_LEVEL:
+            sequences_to_reset_names.update(SEQUENCES_FOR_LEVEL[key])
+
+    if start_index != -1:
+         levels_for_sequence_reset = CLEAR_LEVEL_HIERARCHY[start_index:]
+         for level in levels_for_sequence_reset:
+             if level in SEQUENCES_FOR_LEVEL:
+                 sequences_to_reset_names.update(SEQUENCES_FOR_LEVEL[level])
+
+    # Always include user sequence if users are reseeded, but user reseeding is separate.
+    # For now, let's assume users_id_seq is reset if 'courses' level is reset (full reset).
+    if highest_level_changed == "courses":
+         sequences_to_reset_names.add("users_id_seq")
+
+    logger.info(f"Sequences to reset: {list(sequences_to_reset_names)}")
+    if not sequences_to_reset_names:
+        logger.info("No sequences identified for reset based on level.")
+        return
+
+    for seq_name in sequences_to_reset_names:
+        try:
+            session.execute(text(f'ALTER SEQUENCE public.{seq_name} RESTART WITH 1;'))
+        except Exception as e:
+            logger.warning(f"Could not reset sequence {seq_name}: {e}")
+    session.commit()
+    logger.info(f"PostgreSQL sequences reset for level '{highest_level_changed}'.")
 
 def seed_courses(session: SQLAlchemySession):
     logger.info("Seeding courses...")
@@ -166,24 +292,6 @@ def seed_users(session: SQLAlchemySession):
     logger.info("Users seeding process complete.")
 
 
-def seed_course_exams(session: SQLAlchemySession):
-    logger.info("Seeding course exams (placeholder)...")
-    # Implement if you have seed_course_exams.json and seed_exam_questions.json
-    # Example:
-    # with open(os.path.join(os.path.dirname(__file__), "seed_data/seed_course_exams.json"), encoding="utf-8") as f:
-    #     exams_data = json.load(f)
-    #     for exam_item_data in exams_data:
-    #         if not session.query(CourseExam).filter_by(id=exam_item_data["id"]).first():
-    #             # Pop questions if they are to be seeded separately or handled by relationships
-    #             questions_list = exam_item_data.pop("questions", [])
-    #             exam = CourseExam(**exam_item_data)
-    #             session.add(exam)
-    #             # If questions are in the same file and need to be added:
-    #             # for q_data in questions_list:
-    #             #    session.add(ExamQuestion(exam=exam, **q_data))
-    #     session.commit()
-    logger.info("Course exams seeding process complete.")
-
 def reset_postgres_sequences(session):
     """
     Resets the auto-increment (serial/sequence) counters for all main tables to 1.
@@ -198,7 +306,6 @@ def reset_postgres_sequences(session):
         "user_module_progress_id_seq",
         "user_lesson_progress_id_seq",
         "user_exercise_submissions_id_seq",
-        "course_exams_id_seq",
         "exam_questions_id_seq",
         "user_exam_attempts_id_seq",
         "users_id_seq"
@@ -211,42 +318,106 @@ def reset_postgres_sequences(session):
     session.commit()
     logger.info("PostgreSQL sequences reset to 1.")
 
+def seed_course_exams(session: SQLAlchemySession):
+    logger.info("Seeding course exams from exam exercises...")
+    exercises_path = os.path.join(SEED_DATA_DIR, "seed_exercises.json")
+    if not os.path.exists(exercises_path):
+        logger.warning("seed_exercises.json not found, skipping course exam seeding.")
+        return
+
+    with open(exercises_path, encoding="utf-8") as f:
+        exercises_data = json.load(f)
+        for exercise in exercises_data:
+            # Identify exam exercises: only course_id, no module_id or lesson_id, and validation_type == "exam"
+            if (
+                exercise.get("course_id") is not None
+                and exercise.get("module_id") is None
+                and exercise.get("lesson_id") is None
+                and exercise.get("validation_type") == "exam"
+            ):
+                # Only create if not already present for this course
+                existing = session.query(CourseExam).filter_by(course_id=exercise["course_id"]).first()
+                if not existing:
+                    course_exam = CourseExam(
+                        course_id=exercise["course_id"],
+                        title=exercise.get("title", "Examen Final"),
+                        description=exercise.get("description", ""),
+                        pass_threshold_percentage=70.0  # Or set as needed
+                    )
+                    session.add(course_exam)
+    session.commit()
+    logger.info("Course exams seeded.")
+
 if __name__ == "__main__":
     logger.info("Starting database seeding process...")
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine) # Ensure tables exist
     session = SessionLocal()
 
     try:
-        # --- Migration detection logic ---
         current_migration_hash = get_current_migration_hash()
-        last_seeded_hash = get_last_seeded_migration_hash()
-        progress_tables_need_reset = current_migration_hash != last_seeded_hash
+        last_seeded_migration_hash = get_last_seeded_migration_hash()
+        logger.info(f"Current migration hash: {current_migration_hash}")
+        logger.info(f"Last seeded migration hash: {last_seeded_migration_hash}")
 
-        if progress_tables_need_reset:
-            logger.warning("Migration affecting progress tables detected. Clearing progress data.")
-            # Only clear progress tables, not content tables!
-            session.query(UserExerciseSubmission).delete(synchronize_session=False)
-            session.query(UserLessonProgress).delete(synchronize_session=False)
-            session.query(UserModuleProgress).delete(synchronize_session=False)
-            session.query(UserExamAttempt).delete(synchronize_session=False)
-            session.query(UserCourseEnrollment).delete(synchronize_session=False)
-            session.commit()
-            # --- RESET SEQUENCES HERE ---
-            reset_postgres_sequences(session)
+        current_seed_files_hashes = get_current_seed_file_hashes()
+        last_seed_files_hashes = load_last_seed_file_hashes()
+        logger.info(f"Current seed file hashes: {current_seed_files_hashes}")
+        logger.info(f"Last seed file hashes: {last_seed_files_hashes}")
+
+        reseed_level = None # Will store the highest level that needs reseeding ("courses", "modules", etc.)
+
+        if current_migration_hash != last_seeded_migration_hash:
+            logger.warning("Migration change detected. Full reseed required.")
+            reseed_level = "courses" # Highest level, triggers full clear and reseed
             set_last_seeded_migration_hash(current_migration_hash)
         else:
-            logger.info("No migration affecting progress tables detected. Progress data will be preserved.")
+            # Check seed file changes in hierarchical order
+            if current_seed_files_hashes.get("courses") != last_seed_files_hashes.get("courses"):
+                logger.info("Change detected in seed_courses.json.")
+                reseed_level = "courses"
+            elif current_seed_files_hashes.get("modules") != last_seed_files_hashes.get("modules"):
+                logger.info("Change detected in seed_modules.json.")
+                reseed_level = "modules"
+            elif current_seed_files_hashes.get("lessons") != last_seed_files_hashes.get("lessons"):
+                logger.info("Change detected in seed_lessons.json.")
+                reseed_level = "lessons"
+            elif current_seed_files_hashes.get("exercises") != last_seed_files_hashes.get("exercises"):
+                logger.info("Change detected in seed_exercises.json.")
+                reseed_level = "exercises"
 
-        # Always seed content tables (idempotent)
-        logger.info("Seeding core content (courses, modules, lessons, exercises, users, exams)...")
-        seed_courses(session)
-        seed_modules(session)
-        seed_lessons(session)
-        seed_exercises(session)
-        seed_course_exams(session)
-        seed_users(session)
-        logger.info("Core content seeding complete.")
+        if reseed_level:
+            logger.warning(f"Reseeding data from level '{reseed_level}' due to changes.")
+            clear_data_from_level(session, reseed_level)
+            reset_sequences_for_level(session, reseed_level)
 
+            if reseed_level == "courses":
+                seed_courses(session)
+                seed_modules(session)
+                seed_lessons(session)
+                seed_course_exams(session)   # <-- ADD THIS LINE
+                seed_exercises(session)
+            elif reseed_level == "modules":
+                seed_modules(session)
+                seed_lessons(session)
+                seed_course_exams(session)   # <-- ADD THIS LINE
+                seed_exercises(session)
+            elif reseed_level == "lessons":
+                seed_lessons(session)
+                seed_course_exams(session)   # <-- ADD THIS LINE
+                seed_exercises(session)
+            elif reseed_level == "exercises":
+                seed_course_exams(session)   # <-- ADD THIS LINE
+                seed_exercises(session)
+
+            save_seed_file_hashes(current_seed_files_hashes)
+            logger.info(f"Reseeding from level '{reseed_level}' complete.")
+        else:
+            logger.info("No migration or seed file changes detected that require a targeted reseed. Running idempotent seeders for consistency.")
+            seed_courses(session)
+            seed_modules(session)
+            seed_lessons(session)
+            seed_course_exams(session)       # <-- ADD THIS LINE
+            seed_exercises(session)
     except Exception as e:
         logger.error(f"CRITICAL ERROR during seeding process: {e}", exc_info=True)
         session.rollback()

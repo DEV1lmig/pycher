@@ -12,12 +12,16 @@
     "validation_type": "simple_print",
     "validation_rules": {
       "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": ["str"],
       "strict_whitespace": true,
       "case_sensitive": true,
       "custom_feedback": {
         "missing_newline": "Recuerda terminar tu print con un salto de línea.",
         "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio."
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
       }
     }
   },
@@ -35,6 +39,8 @@
     "validation_rules": {
       "requires_input_function": true,
       "output_format_template": "¡Hola, {var}!",
+      "expected_print_count": 1,
+      "expected_types": ["str"],
       "submission_test_strategy": {
         "type": "generated_inputs",
         "count": 3,
@@ -45,12 +51,13 @@
           "charset": "alpha"
         }
       },
-      "strict_variable_name": "nombre",
+      "target_variable_names": ["nombre"],
       "require_fstring": true,
       "custom_feedback": {
         "missing_input": "Debes usar la función input() para leer el nombre.",
-        "wrong_variable": "La variable debe llamarse 'nombre'.",
-        "not_fstring": "Usa un f-string para imprimir el saludo."
+        "wrong_variable": "La variable debe llamarse 'nombre' y usarse en el print.",
+        "not_fstring": "Usa un f-string para imprimir el saludo.",
+        "wrong_print_count": "Se esperaba una sola operación de print."
       }
     },
     "difficulty": "Fácil",
@@ -70,13 +77,15 @@
     "validation_type": "simple_print",
     "validation_rules": {
       "expected_exact_output": "Madrid\n3300000\n",
+      "expected_print_count": 2,
       "strict_variable_names": ["ciudad", "poblacion"],
       "expected_types": ["str", "int"],
       "strict_whitespace": true,
       "case_sensitive": true,
       "custom_feedback": {
-        "wrong_type": "Verifica que 'ciudad' sea string y 'poblacion' sea int.",
-        "wrong_variable": "Debes usar los nombres de variable exactos: 'ciudad' y 'poblacion'."
+        "wrong_type": "Verifica que el primer print sea de un string ('ciudad') y el segundo de un entero ('poblacion').",
+        "wrong_variable": "Debes usar los nombres de variable exactos: 'ciudad' y 'poblacion', y asegurarte de que se definan y usen correctamente.",
+        "wrong_print_count": "Se esperaban dos operaciones de print."
       }
     }
   },
@@ -88,18 +97,18 @@
     "order_index": 1,
     "title": "Ejercicio 2.1.1: Operaciones Básicas",
     "description": "Calcula el resultado de la expresión matemática (15 + 5) * 2 / 4 - 1 e imprímelo en la consola.",
-    "instructions": "Escribe la expresión matemática directamente en tu código y usa print para mostrar el resultado.",
-    "starter_code": "resultado_calculo = 0\nprint(resultado_calculo)",
+    "instructions": "Escribe la expresión matemática directamente en tu código y usa print para mostrar el resultado. Puedes asignar el resultado a una variable `resultado_calculo` antes de imprimirla.",
+    "starter_code": "# resultado_calculo = (15 + 5) * 2 / 4 - 1\n# print(resultado_calculo)",
     "validation_type": "simple_print",
     "validation_rules": {
       "expected_exact_output": "9.0\n",
+      "expected_print_count": 1,
       "expected_types": ["float"],
-      "strict_variable_names": ["resultado_calculo"],
       "strict_whitespace": true,
       "case_sensitive": true,
       "custom_feedback": {
-        "wrong_type": "El resultado debe ser un número decimal (float).",
-        "wrong_variable": "La variable debe llamarse 'resultado_calculo'."
+        "wrong_type": "El resultado impreso debe ser un número decimal (float).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
       }
     }
   },
@@ -110,19 +119,21 @@
     "lesson_id": 5,
     "order_index": 1,
     "title": "Ejercicio 2.2.1: ¿Puede Conducir?",
-    "description": "Dadas las variables edad_usuario y tiene_permiso_padres, determina si el usuario puede conducir. Imprime True si puede conducir, o False en caso contrario.",
-    "instructions": "Usa operadores lógicos y asigna el resultado a la variable puede_conducir. Imprime el resultado.",
-    "starter_code": "edad_usuario = 17\ntiene_permiso_padres = True\npuede_conducir = False\nprint(puede_conducir)",
+    "description": "Dadas las variables edad_usuario y tiene_permiso_padres, determina si el usuario puede conducir. Imprime True si puede conducir, o False en caso contrario. Considera que se puede conducir si edad_usuario es >= 18, o si edad_usuario es >= 16 Y tiene_permiso_padres es True.",
+    "instructions": "Usa operadores lógicos para determinar si se puede conducir. Asigna el resultado booleano a la variable `puede_conducir`. Finalmente, imprime el valor de `puede_conducir`.",
+    "starter_code": "edad_usuario = 17\ntiene_permiso_padres = True\n# Calcula puede_conducir aquí\npuede_conducir = (edad_usuario >= 18) or (edad_usuario >= 16 and tiene_permiso_padres)\nprint(puede_conducir)",
     "validation_type": "simple_print",
     "validation_rules": {
       "expected_exact_output": "True\n",
+      "expected_print_count": 1,
       "expected_types": ["bool"],
-      "strict_variable_names": ["puede_conducir"],
+      "strict_variable_names": ["puede_conducir", "edad_usuario", "tiene_permiso_padres"],
       "strict_whitespace": true,
       "case_sensitive": true,
       "custom_feedback": {
-        "wrong_type": "El resultado debe ser booleano (True o False).",
-        "wrong_variable": "La variable debe llamarse 'puede_conducir'."
+        "wrong_type": "El resultado impreso debe ser booleano (True o False).",
+        "wrong_variable": "Asegúrate de definir y usar las variables 'edad_usuario', 'tiene_permiso_padres', y que 'puede_conducir' contenga el resultado lógico.",
+        "wrong_print_count": "Se esperaba una sola operación de print."
       }
     }
   },
@@ -134,20 +145,24 @@
     "order_index": 1,
     "title": "Ejercicio 2.3.1: Calculadora de Edad en Días",
     "description": "Convierte la edad en años a días y muestra el resultado en el formato 'Tienes aproximadamente [X] días de vida.'.",
-    "instructions": "Convierte edad_str a entero, calcula los días y usa un f-string para imprimir el mensaje.",
-    "starter_code": "edad_str = input()\nedad_anios = int(edad_str)\nedad_dias = edad_anios * 365\nprint(f\"Tienes aproximadamente {edad_dias} días de vida.\")",
+    "instructions": "1. Lee la edad en años usando `input()`. Asume que siempre será un número.\n2. Convierte la edad leída (que es un string) a un número entero.\n3. Calcula la edad en días (multiplica por 365).\n4. Usa un f-string para imprimir el mensaje en el formato exacto: `Tienes aproximadamente [valor_calculado_dias] días de vida.`.",
+    "starter_code": "# Lee la edad como string\nedad_str = input()\n# Convierte a entero\nedad_anios = int(edad_str)\n# Calcula días\nedad_dias = edad_anios * 365\n# Imprime usando f-string\nprint(f\"Tienes aproximadamente {edad_dias} días de vida.\")",
     "validation_type": "dynamic_output",
     "validation_rules": {
       "requires_input_function": true,
       "input_constraints": { "type": "int", "min": 0, "max": 120 },
       "transform_for_template": "f'Tienes aproximadamente {int(value)*365} días de vida.'",
-      "output_format_template": "{var}",
-      "num_cases": 8,
+      "output_format_template": "{var}\n",
+      "expected_print_count_per_case": 1,
+      "expected_types_per_case": ["str"],
+      "num_cases": 5,
       "strict_whitespace": true,
       "case_sensitive": true,
       "require_fstring": true,
       "custom_feedback": {
-        "not_fstring": "Usa un f-string para imprimir el mensaje."
+        "not_fstring": "Usa un f-string para imprimir el mensaje.",
+        "wrong_type": "El mensaje impreso debe ser un string.",
+        "wrong_print_count": "Se esperaba una sola operación de print por cada caso de prueba."
       }
     }
   },
@@ -159,15 +174,20 @@
     "order_index": 1,
     "title": "Ejercicio 2.4.1: Iniciales y Longitud",
     "description": "Dada la variable nombre_completo, imprime la primera letra del nombre, la primera letra del apellido y la longitud total del nombre completo, cada resultado en una nueva línea.",
-    "instructions": "Accede a los caracteres y usa len(). Imprime cada resultado en una línea.",
-    "starter_code": "nombre_completo = \"Juan Perez\"\n# ...",
+    "instructions": "1. Se te da una variable `nombre_completo` (ej: \"Juan Perez\").\n2. Imprime la primera letra del nombre (el primer carácter de `nombre_completo`).\n3. Imprime la primera letra del apellido (asume que el apellido empieza después del primer espacio).\n4. Imprime la longitud total de `nombre_completo` usando `len()`.\n5. Cada uno de estos tres resultados debe imprimirse en una nueva línea.",
+    "starter_code": "nombre_completo = \"Juan Perez\"\n# Imprime la primera letra del nombre\n# print(nombre_completo[0])\n# Encuentra el espacio y luego imprime la primera letra del apellido\n# espacio_idx = nombre_completo.find(' ')\n# print(nombre_completo[espacio_idx+1])\n# Imprime la longitud total\n# print(len(nombre_completo))",
     "validation_type": "simple_print",
     "validation_rules": {
       "expected_exact_output": "J\nP\n10\n",
+      "expected_print_count": 3,
       "expected_types": ["str", "str", "int"],
       "strict_variable_names": ["nombre_completo"],
       "strict_whitespace": true,
-      "case_sensitive": true
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_type": "Verifica los tipos: str para iniciales, int para longitud.",
+        "wrong_print_count": "Se esperaban tres operaciones de print."
+      }
     }
   },
 {
@@ -178,17 +198,23 @@
 "order_index": 1,
 "title": "Ejercicio 3.1.1: Par o Impar",
 "description": "Dado un número, imprime 'Par' si el número es par, o 'Impar' si es impar.",
-"instructions": "Convierte numero_str a entero, usa if-else y print.",
-"starter_code": "numero_str = input()\nnumero = int(numero_str)\n# ...",
+"instructions": "1. Lee un número usando `input()`. Asume que siempre será un número.\n2. Conviértelo a entero.\n3. Usa una estructura `if-else` para determinar si es par o impar.\n4. Imprime la palabra \"Par\" o la palabra \"Impar\" según corresponda.",
+"starter_code": "# Lee el número como string\nnumero_str = input()\n# Conviértelo a entero\nnumero = int(numero_str)\n# Usa if-else para imprimir 'Par' o 'Impar'\n# if ...\n# else ...",
 "validation_type": "dynamic_output",
 "validation_rules": {
+    "requires_input_function": true,
     "input_constraints": { "type": "int", "min": 0, "max": 100 },
     "transform_for_template": "'Par' if int(value) % 2 == 0 else 'Impar'",
     "output_format_template": "{var}\n",
-    "num_cases": 8,
+    "expected_print_count_per_case": 1,
+    "expected_types_per_case": ["str"],
+    "num_cases": 5,
     "strict_whitespace": true,
     "case_sensitive": true,
-    "requires_input_function": true
+    "custom_feedback": {
+        "wrong_type": "El resultado impreso debe ser un string ('Par' o 'Impar').",
+        "wrong_print_count": "Se esperaba una sola operación de print por cada caso de prueba."
+      }
  }
 },
   {
@@ -198,16 +224,21 @@
     "lesson_id": 9,
     "order_index": 1,
     "title": "Ejercicio 3.2.1: Suma con For",
-    "description": "Calcula la suma de todos los números enteros desde 1 hasta 5 utilizando un bucle for. Imprime el resultado.",
-    "instructions": "Usa un bucle for y suma_total. Imprime el resultado.",
-    "starter_code": "suma_total = 0\n# ...\nprint(suma_total)",
+    "description": "Calcula la suma de todos los números enteros desde 1 hasta 5 (inclusive) utilizando un bucle for. Imprime el resultado.",
+    "instructions": "1. Inicializa una variable `suma_total` a 0.\n2. Usa un bucle `for` con `range()` para iterar desde 1 hasta 5.\n3. En cada iteración, añade el número actual a `suma_total`.\n4. Después del bucle, imprime el valor final de `suma_total`.",
+    "starter_code": "suma_total = 0\n# Escribe tu bucle for aquí\nfor i in range(1, 6):\n    suma_total += i\nprint(suma_total)",
     "validation_type": "simple_print",
     "validation_rules": {
       "expected_exact_output": "15\n",
+      "expected_print_count": 1,
       "expected_types": ["int"],
       "strict_variable_names": ["suma_total"],
       "strict_whitespace": true,
-      "case_sensitive": true
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_type": "El resultado impreso debe ser un entero.",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -217,16 +248,21 @@
     "lesson_id": 10,
     "order_index": 1,
     "title": "Ejercicio 3.3.1: Lista de Compras",
-    "description": "Crea una lista llamada compras, añade 'huevos' y muestra el segundo elemento.",
-    "instructions": "Define la lista, usa append y print.",
-    "starter_code": "compras = []\n# ...",
+    "description": "Crea una lista llamada `compras`. Añade 'huevos' y luego 'pan' a la lista. Finalmente, imprime el segundo elemento de la lista (que debería ser 'pan').",
+    "instructions": "1. Define una lista vacía llamada `compras`.\n2. Usa el método `append()` para añadir el string 'huevos' a la lista.\n3. Usa `append()` nuevamente para añadir 'pan'.\n4. Imprime el elemento en el índice 1 de la lista `compras`.",
+    "starter_code": "compras = []\n# Añade 'huevos'\n# compras.append('huevos')\n# Añade 'pan'\n# compras.append('pan')\n# Imprime el segundo elemento\n# print(compras[1])",
     "validation_type": "simple_print",
     "validation_rules": {
       "expected_exact_output": "pan\n",
+      "expected_print_count": 1,
       "expected_types": ["str"],
       "strict_variable_names": ["compras"],
       "strict_whitespace": true,
-      "case_sensitive": true
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_type": "El elemento impreso debe ser un string.",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -236,9 +272,9 @@
     "lesson_id": 11,
     "order_index": 1,
     "title": "Ejercicio 3.4.1: Función Área Rectángulo",
-    "description": "Define una función area_rectangulo que acepte dos argumentos y devuelva el área.",
-    "instructions": "Define la función, llama con base=4 y altura=6, imprime el resultado.",
-    "starter_code": "def area_rectangulo(base, altura):\n    # ...\n# ...",
+    "description": "Define una función `area_rectangulo` que acepte dos argumentos (base y altura) y devuelva el área. Luego, llama a la función con base=4 y altura=6, e imprime el resultado devuelto por la función.",
+    "instructions": "1. Define una función llamada `area_rectangulo` que tome dos parámetros: `base` y `altura`.\n2. Dentro de la función, calcula el área (base * altura) y devuélvela usando `return`.\n3. Fuera de la función, llama a `area_rectangulo` con los valores 4 para la base y 6 para la altura.\n4. Imprime el valor que te devuelve la función.",
+    "starter_code": "def area_rectangulo(base, altura):\n    # Calcula y devuelve el área\n    return base * altura\n\n# Llama a la función e imprime el resultado\n# resultado = area_rectangulo(4, 6)\n# print(resultado)",
     "validation_type": "function_and_output",
     "validation_rules": {
       "function_rules": {
@@ -250,7 +286,9 @@
         ],
         "require_return_statement": true
       },
-      "expected_exact_output": "24\n"
+      "expected_exact_output": "24\n",
+      "expected_print_count": 1,
+      "expected_types": ["int"]
     }
   },
   {
@@ -262,7 +300,7 @@
   "title": "Examen Final: Fundamentos de Python",
   "description": "Resuelve los siguientes ejercicios para demostrar tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones en Python.",
   "instructions": "1. Implementa todas las funciones y tareas solicitadas.\n2. Cada función debe tener el nombre exacto indicado y cumplir con los tipos de entrada y salida especificados.\n3. Lee cuidadosamente cada consigna y asegúrate de que tu código pase todos los casos de prueba.\n\n**Nota sobre 'Ejecutar Código':** Para los exámenes, el botón 'Ejecutar Código' te permitirá probar tus `print()` statements y ver errores de sintaxis. La validación completa de todas las funciones del examen se realizará únicamente cuando presiones 'Enviar Solución'. Es posible que veas un mensaje indicando que el tipo de validación no es soportado para ejecución directa; esto es normal para el modo examen si intentas usar la entrada estándar, concéntrate en la salida de tus `print()` y la correcta definición de las funciones.",
-  "starter_code": "def es_par(n):\n    # Tu código aquí\n\n\ndef dias_en_anios(anios):\n    # Tu código aquí\n\n\ndef obtener_segundo(lista):\n    # Tu código aquí\n\n\ndef suma_rango(inicio, fin):\n    # Tu código aquí\n\n# Puedes agregar más funciones si lo deseas.",
+  "starter_code": "def es_par(n):\n    # Tu código aquí\n    return n % 2 == 0\n\n\ndef dias_en_anios(anios):\n    # Tu código aquí\n    return anios * 365\n\n\ndef obtener_segundo(lista):\n    # Tu código aquí\n    if len(lista) >= 2:\n        return lista[1]\n    return None\n\n\ndef suma_rango(inicio, fin):\n    # Tu código aquí\n    suma = 0\n    for i in range(inicio, fin + 1):\n        suma += i\n    return suma\n\n# Si el examen requiere una salida específica de print() en el cuerpo del script,\n# agrégala aquí y define las reglas de validación correspondientes abajo.\n# Ejemplo:\n# print(es_par(4))\n# print(dias_en_anios(1))\n# print(obtener_segundo(['a', 'b']))\n# print(suma_rango(1,3))",
   "validation_type": "exam",
   "validation_rules": {
     "functions": [
@@ -286,7 +324,8 @@
         "function_name": "obtener_segundo",
         "scenarios": [
           {"args": [[1,2,3]], "expected_return_value": 2, "expected_return_type": "int"},
-          {"args": [["a","b","c"]], "expected_return_value": "b", "expected_return_type": "str"}
+          {"args": [["a","b","c"]], "expected_return_value": "b", "expected_return_type": "str"},
+          {"args": [["uno"]], "expected_return_value": null, "expected_return_type": "NoneType"}
         ]
       },
       {
