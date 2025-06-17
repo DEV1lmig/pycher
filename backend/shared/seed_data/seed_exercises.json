@@ -261,7 +261,7 @@
   "order_index": 1,
   "title": "Examen Final: Fundamentos de Python",
   "description": "Resuelve los siguientes ejercicios para demostrar tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones en Python.",
-  "instructions": "1. Implementa todas las funciones y tareas solicitadas.\n2. Cada función debe tener el nombre exacto indicado y cumplir con los tipos de entrada y salida especificados.\n3. Lee cuidadosamente cada consigna y asegúrate de que tu código pase todos los casos de prueba.",
+  "instructions": "1. Implementa todas las funciones y tareas solicitadas.\n2. Cada función debe tener el nombre exacto indicado y cumplir con los tipos de entrada y salida especificados.\n3. Lee cuidadosamente cada consigna y asegúrate de que tu código pase todos los casos de prueba.\n\n**Nota sobre 'Ejecutar Código':** Para los exámenes, el botón 'Ejecutar Código' te permitirá probar tus `print()` statements y ver errores de sintaxis. La validación completa de todas las funciones del examen se realizará únicamente cuando presiones 'Enviar Solución'. Es posible que veas un mensaje indicando que el tipo de validación no es soportado para ejecución directa; esto es normal para el modo examen si intentas usar la entrada estándar, concéntrate en la salida de tus `print()` y la correcta definición de las funciones.",
   "starter_code": "def es_par(n):\n    # Tu código aquí\n\n\ndef dias_en_anios(anios):\n    # Tu código aquí\n\n\ndef obtener_segundo(lista):\n    # Tu código aquí\n\n\ndef suma_rango(inicio, fin):\n    # Tu código aquí\n\n# Puedes agregar más funciones si lo deseas.",
   "validation_type": "exam",
   "validation_rules": {

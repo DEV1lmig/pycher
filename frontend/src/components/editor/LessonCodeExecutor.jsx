@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Import useEffect
 import { CodeEditor } from "./CodeEditor";
 import { Button } from "../ui/button";
 import { OutputDisplay } from "@/components/editor/OutputDisplay";
@@ -12,7 +12,7 @@ export default function LessonCodeExecutor({
   isSubmitting,
   isCorrect,
   onRunResult,
-  currentUserStdin, // <--- ACCEPT THE PROP
+  currentUserStdin,
 }) {
   const [tab, setTab] = useState("editor");
   const [code, setCode] = useState(initialCode);
@@ -22,6 +22,13 @@ export default function LessonCodeExecutor({
   const [aiHint, setAiHint] = useState("");
   const [isLoadingHint, setIsLoadingHint] = useState(false);
   const [passed, setPassed] = useState(null);
+  // New state to control visibility of the submit button
+  const [canSubmitSolution, setCanSubmitSolution] = useState(false);
+
+  // Effect to hide submit button if code changes after a successful execution
+  useEffect(() => {
+    setCanSubmitSolution(false); // Reset when code changes
+  }, [code]);
 
   const handleExecute = async () => {
     setIsExecuting(true);
@@ -29,32 +36,42 @@ export default function LessonCodeExecutor({
     setError("");
     setAiHint("");
     setPassed(null);
+    setCanSubmitSolution(false); // Hide submit button before execution
     try {
       const result = await executeCode({
         exerciseId,
         code,
-        inputData: currentUserStdin, // <--- USE THE PROP HERE
+        inputData: currentUserStdin,
       });
       setOutput(result.output || "");
       setError(result.error || "");
       setPassed(result.passed ?? null);
       setTab("output");
       if (onRunResult) onRunResult(result);
+
+      // If execution had no errors, allow submission
+      if (!result.error) {
+        setCanSubmitSolution(true);
+      }
+
     } catch (err) {
       setOutput("");
       setError("Network error: " + (err.detail || err.message));
       setPassed(false);
       setTab("output");
+      setCanSubmitSolution(false); // Ensure it's false on network or other catchable errors
     }
     setIsExecuting(false);
   };
 
   const handleSubmitSolution = async () => {
     if (onSubmitCode) {
-      // For formal submission, onSubmitCode (which calls submitExerciseFromHook)
-      // already gets userStdin from LessonWithCodePage's state.
-      // So, no change needed here for handleSubmitSolution regarding stdin.
       await onSubmitCode(code);
+      // After submission, the `isCorrect` prop will eventually update from the parent.
+      // If the submission was successful and `isCorrect` becomes true,
+      // the button will be hidden by the `!isCorrect` condition.
+      // If submission failed, `canSubmitSolution` remains true, allowing another attempt
+      // unless `isCorrect` changed or code was modified.
     }
   };
 
@@ -100,10 +117,11 @@ export default function LessonCodeExecutor({
           >
             {isExecuting ? "Ejecutando..." : "Ejecutar Código"}
           </Button>
-          {onSubmitCode && !isCorrect && (
+          {/* MODIFIED: Conditional rendering for Submit Solution button */}
+          {onSubmitCode && !isCorrect && canSubmitSolution && (
             <Button
               onClick={handleSubmitSolution}
-              disabled={isSubmitting || isExecuting}
+              disabled={isSubmitting || isExecuting} // Disable if already submitting or executing
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               {isSubmitting ? "Enviando..." : "Enviar Solución"}

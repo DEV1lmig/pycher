@@ -5,6 +5,7 @@ import os
 import signal
 import importlib.util
 import random
+import json
 from typing import Dict, Optional, List, Any, Tuple
 
 # --- Result Class ---
@@ -16,81 +17,151 @@ class DynamicValidationResult:
         self.details = details or {}
 
 # --- Code Execution Helper ---
+
+PRINT_INTERCEPT_PREAMBLE = """
+import builtins as _builtins_for_print_capture
+import json as _json_for_print_capture
+import sys as _sys_for_print_capture
+
+_original_print_func_for_capture = _builtins_for_print_capture.print
+_captured_print_args_list_for_validation = []
+
+def _custom_print_for_validation_capture(*args, **kwargs):
+    global _captured_print_args_list_for_validation
+    # Capture type of the first argument if it exists
+    # This is a simplification; for multiple args in one print, or complex sep/end,
+    # more sophisticated capture would be needed if rules demand it.
+    # For now, we assume exercises with expected_types usually print one main item per call.
+    if args:
+        first_arg = args[0]
+        _captured_print_args_list_for_validation.append({
+            "type": type(first_arg).__name__
+            # "value_repr": repr(first_arg) # Could be added for debugging
+        })
+    # Call the original print to ensure output still goes to actual stdout
+    _original_print_func_for_capture(*args, **kwargs)
+
+_builtins_for_print_capture.print = _custom_print_for_validation_capture
+
+# User code will be injected after this line by the calling function
+"""
+
+PRINT_INTERCEPT_EPILOGUE_MARKER = "###PRINT_METADATA_SEPARATOR_D7A3F###"
+PRINT_INTERCEPT_EPILOGUE = f"""
+# This epilogue code runs after the user's script.
+# It prints the captured print argument types using the original stdout.
+_sys_for_print_capture.stdout.write("{PRINT_INTERCEPT_EPILOGUE_MARKER}\\n")
+_sys_for_print_capture.stdout.write(_json_for_print_capture.dumps(_captured_print_args_list_for_validation) + "\\n")
+_sys_for_print_capture.stdout.flush()
+"""
+
 def run_user_code_sandboxed(
     code_string: str,
     input_data: Optional[str] = None,
-    timeout: int = 5
-) -> Tuple[str, str, bool, int]:
+    timeout: int = 5,
+    capture_print_types: bool = False # New flag
+) -> Tuple[str, str, bool, int, List[Dict[str, str]]]: # Added List for captured types
     """
     Runs user code in a sandbox.
-    Returns: (stdout, stderr, timed_out, exit_code)
+    If capture_print_types is True, injects code to capture print() arg types.
+    Returns: (user_stdout, stderr, timed_out, exit_code, captured_print_metadata_list)
     """
-    code_string_lf = code_string.replace('\r\n', '\n')
-    stdout_res, stderr_res, timed_out_res, exit_code_res = "", "", False, -1
+    code_to_run = code_string.replace('\r\n', '\n')
+    if capture_print_types:
+        code_to_run = PRINT_INTERCEPT_PREAMBLE + code_to_run + PRINT_INTERCEPT_EPILOGUE
 
-    # Create a temporary file with .py extension
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, newline='\n', encoding='utf-8') as tmp_file:
-        tmp_file_path = tmp_file.name
-        tmp_file.write(code_string_lf)
+    user_stdout_res, stderr_res, timed_out_res, exit_code_res = "", "", False, -1
+    captured_print_metadata = [] # Initialize
 
+    tmp_file_path = None # Ensure tmp_file_path is defined for finally block
     try:
-        # Use "python" which is more generic; ensure it's Python 3 in the environment.
-        # Or explicitly use "python3" if that's standard for your deployment.
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, newline='\n', encoding='utf-8') as tmp_file:
+            tmp_file_path = tmp_file.name
+            tmp_file.write(code_to_run)
+
+        # ... (rest of the subprocess.Popen and communicate logic remains the same) ...
         process_args = ["python", tmp_file_path]
         process = subprocess.Popen(
             process_args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
-            encoding='utf-8',
-            preexec_fn=os.setsid if hasattr(os, 'setsid') else None # For POSIX systems to kill process group
+            text=True, # Keep as text for easier splitting later
+            encoding='utf-8', # Specify encoding
+            errors='replace', # Handle potential decoding errors in output
+            preexec_fn=os.setsid if hasattr(os, 'setsid') else None
         )
         try:
-            stdout_res, stderr_res = process.communicate(input=input_data, timeout=timeout)
+            # stdout_bytes, stderr_bytes = process.communicate(input=input_data.encode('utf-8') if input_data else None, timeout=timeout)
+            # stdout_res = stdout_bytes.decode('utf-8', errors='replace')
+            # stderr_res = stderr_bytes.decode('utf-8', errors='replace')
+            # Using text=True handles encoding/decoding, but be mindful of raw stdout for parsing
+            raw_stdout, raw_stderr = process.communicate(input=input_data, timeout=timeout)
             exit_code_res = process.returncode
-        except subprocess.TimeoutExpired:
-            if hasattr(os, 'killpg') and hasattr(os, 'getpgid'): # POSIX
-                try:
-                    os.killpg(os.getpgid(process.pid), signal.SIGTERM) # Send SIGTERM to the process group
-                    process.wait(timeout=1) # Wait a bit for graceful termination
-                    if process.poll() is None: # If still running
-                         os.killpg(os.getpgid(process.pid), signal.SIGKILL) # Force kill
-                except ProcessLookupError: # Process might have already exited
-                    pass
-                except AttributeError: # os.getpgid might not be available (e.g. Windows)
-                    process.kill() # Fallback for non-POSIX or if setsid wasn't used
-            else: # Non-POSIX (e.g. Windows)
-                process.kill()
 
-            process.wait() # Ensure process is reaped
-            stderr_res += "\nExecution timed out." # Append to any existing stderr
-            timed_out_res = True
-            exit_code_res = -9 # Standard for timeout (like kill -9)
-            # Try to get any partial output
-            if process.stdout and not stdout_res:
+            # Now, parse raw_stdout if capture_print_types was True
+            if capture_print_types:
+                parts = raw_stdout.split(f"{PRINT_INTERCEPT_EPILOGUE_MARKER}\n", 1)
+                user_stdout_res = parts[0]
+                if len(parts) > 1:
+                    try:
+                        # The second part should be the JSON list, potentially with a trailing newline
+                        json_data_str = parts[1].strip()
+                        if json_data_str: # Ensure it's not empty before parsing
+                            captured_print_metadata = json.loads(json_data_str)
+                    except json.JSONDecodeError as e:
+                        # If JSON parsing fails, log it or add to stderr for debugging
+                        # This indicates an issue with the injected code or unexpected output
+                        stderr_res += f"\n[Validator Info] Failed to parse print type metadata: {e}. Raw metadata part: {parts[1][:200]}"
+                        # user_stdout_res might contain the marker if splitting failed as expected
+                else:
+                    # Marker not found, something went wrong with injection or output
+                    user_stdout_res = raw_stdout # Assume all output is user's
+                    stderr_res += "\n[Validator Info] Print type metadata marker not found in output."
+            else:
+                user_stdout_res = raw_stdout
+
+            stderr_res = raw_stderr # Keep stderr as is
+
+        except subprocess.TimeoutExpired:
+            if hasattr(os, 'killpg') and hasattr(os, 'getpgid'):
                 try:
-                    stdout_res = process.stdout.read()
-                except: pass # Ignore errors reading from already closed streams
-            if process.stderr and not stderr_res:
-                try:
-                    stderr_res = process.stderr.read()
+                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                    process.wait(timeout=1)
+                    if process.poll() is None: os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                except Exception: pass
+            else: process.kill()
+            process.wait()
+
+            # Try to get partial output even on timeout
+            partial_stdout = ""
+            if process.stdout:
+                try: partial_stdout = process.stdout.read()
                 except: pass
 
+            if capture_print_types: # Attempt to parse even partial output
+                parts = partial_stdout.split(f"{PRINT_INTERCEPT_EPILOGUE_MARKER}\n", 1)
+                user_stdout_res = parts[0]
+                # No metadata parsing on timeout, too unreliable
+            else:
+                user_stdout_res = partial_stdout
 
-    except FileNotFoundError:
-        stderr_res = "Python interpreter not found. Please ensure 'python' is in your system PATH."
-        exit_code_res = -127 # Common exit code for command not found
-    except Exception as e:
-        stderr_res = f"Error during sandboxed execution: {str(e)}"
-        exit_code_res = -1 # Generic execution error
+            stderr_res += "\nExecution timed out."
+            timed_out_res = True
+            exit_code_res = -9
+        except FileNotFoundError:
+            stderr_res = "Python interpreter not found. Please ensure 'python' is in your system PATH."
+            exit_code_res = -127 # Common exit code for command not found
+        except Exception as e:
+            stderr_res = f"Error during sandboxed execution: {str(e)}"
+            exit_code_res = -1 # Generic execution error
     finally:
-        if os.path.exists(tmp_file_path):
+        if tmp_file_path and os.path.exists(tmp_file_path):
             try:
                 os.unlink(tmp_file_path)
-            except Exception: # Ignore errors during cleanup if file is locked or already deleted
+            except Exception:
                 pass
-    return stdout_res, stderr_res, timed_out_res, exit_code_res
+    return user_stdout_res, stderr_res, timed_out_res, exit_code_res, captured_print_metadata
 
 # --- General Security Check ---
 def general_security_check(user_code: str) -> DynamicValidationResult:
@@ -149,10 +220,14 @@ def validate_simple_print_exercise(
     if not isinstance(expected_exact_output, str): # Ensure it's a string
         return DynamicValidationResult(False, "Validation config error: 'expected_exact_output' rule is missing or not a string.")
 
-    stdout, stderr, timed_out, exit_code = run_user_code_sandboxed(user_code, input_data, timeout)
+    expected_print_arg_types = rules.get("expected_types") # e.g., ["str", "int"]
 
-    # --- Add this check after running the code ---
-    if not stdout.strip():
+    # Run with print type capture enabled
+    stdout, stderr, timed_out, exit_code, captured_prints_metadata = run_user_code_sandboxed(
+        user_code, input_data, timeout, capture_print_types=True
+    )
+
+    if not stdout.strip() and not captured_prints_metadata: # If no visible output and no prints captured
         return DynamicValidationResult(
             False,
             "No se detectó ninguna salida. ¿Has completado el ejercicio? Escribe tu código y usa print() para mostrar el resultado.",
@@ -162,26 +237,60 @@ def validate_simple_print_exercise(
     if timed_out:
         return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout)
     if exit_code != 0:
-        # Provide stderr if it's not empty, otherwise a generic runtime error message
         error_message = stderr.strip() if stderr.strip() else "Runtime error occurred."
         return DynamicValidationResult(False, f"Runtime error: {error_message}", actual_output=stdout)
 
-    # For simple print, stderr should ideally be empty.
-    # However, if user mistakenly uses input(), it might generate a prompt on stderr.
-    # We might want to be lenient or strict based on exercise design.
-    # For now, if exit_code is 0, we primarily check stdout.
-
-    if stdout == expected_exact_output:
-        return DynamicValidationResult(True, "Exercise passed!", actual_output=stdout)
-    else:
-        # Escape newlines for clearer comparison in messages
+    # 1. Check exact string output
+    if stdout != expected_exact_output:
         expected_repr = repr(expected_exact_output)
         actual_repr = repr(stdout)
-        return DynamicValidationResult(
-            False,
-            f"Output mismatch. Expected: {expected_repr}\nGot: {actual_repr}",
-            actual_output=stdout
-        )
+        # If type check is also required, we might want to hold off on failing immediately
+        # or combine messages. For now, let's prioritize exact output.
+        # If types are also wrong, that's a secondary issue if output string is already wrong.
+        # However, if output string is correct but types are wrong, that's the new check.
+
+    # 2. Check captured print argument types if rule exists
+    type_check_passed = True
+    type_error_message = ""
+    if isinstance(expected_print_arg_types, list):
+        captured_actual_types = [item['type'] for item in captured_prints_metadata]
+        if len(captured_actual_types) != len(expected_print_arg_types):
+            type_check_passed = False
+            type_error_message = (
+                f"Type mismatch: Expected {len(expected_print_arg_types)} print operations, "
+                f"but captured {len(captured_actual_types)}. "
+                f"Expected types: {expected_print_arg_types}, Captured types: {captured_actual_types}."
+            )
+        else:
+            for i, expected_type in enumerate(expected_print_arg_types):
+                if captured_actual_types[i] != expected_type:
+                    type_check_passed = False
+                    type_error_message = (
+                        f"Type mismatch for print operation #{i+1}. "
+                        f"Expected type: '{expected_type}', Got type: '{captured_actual_types[i]}'. "
+                        f"Full expected types: {expected_print_arg_types}, Full captured types: {captured_actual_types}."
+                    )
+                    break # Stop on first type mismatch
+
+    # Final result based on both checks
+    output_matches = (stdout == expected_exact_output)
+
+    if output_matches and type_check_passed:
+        return DynamicValidationResult(True, "Exercise passed!", actual_output=stdout)
+    elif not output_matches:
+        expected_repr = repr(expected_exact_output)
+        actual_repr = repr(stdout)
+        msg = f"Output mismatch. Expected: {expected_repr}\nGot: {actual_repr}"
+        if not type_check_passed and type_error_message: # Add type error if output also wrong
+             msg += f"\nAdditionally: {type_error_message}"
+        return DynamicValidationResult(False, msg, actual_output=stdout)
+    elif not type_check_passed: # Output matches, but types are wrong
+        # This is the new scenario we want to catch
+        return DynamicValidationResult(False, type_error_message, actual_output=stdout)
+
+    # Should not be reached if logic is correct, but as a fallback:
+    return DynamicValidationResult(False, "Validation failed for an unknown reason.", actual_output=stdout)
+
 
 def validate_saludo_personalizado(
     user_code: str,
@@ -561,13 +670,95 @@ def validate_function_and_output_exercise(
                 actual_output=stdout
             )
     return DynamicValidationResult(True, "¡Función y salida correctas!", actual_output=stdout)
+
+def validate_exam_exercise(
+    user_code: str,
+    rules: Dict[str, Any], # Contains "functions" list
+    input_data: Optional[str] = None, # Typically not used for exam validation directly
+    timeout: int = 10 # Allow a bit more time for multiple function checks
+) -> DynamicValidationResult:
+    """
+    Validates "exam" type exercises, which consist of multiple function checks.
+    Rules:
+      "functions": [
+        {
+          "function_name": "name_of_function",
+          "scenarios": [
+            {"args": [...], "expected_return_value": ..., "expected_return_type": "..."},
+            ...
+          ]
+        },
+        ...
+      ]
+    """
+    # General security check on the entire user code submission
+    security_res = general_security_check(user_code)
+    if not security_res.passed:
+        return security_res
+
+    function_definitions = rules.get("functions")
+    if not isinstance(function_definitions, list) or not function_definitions:
+        return DynamicValidationResult(False, "Validation config error: 'functions' list is missing or empty in rules for exam.")
+
+    all_passed = True
+    passed_function_count = 0
+    total_function_count = len(function_definitions)
+    detailed_feedback = []
+
+    for func_def in function_definitions:
+        func_name = func_def.get("function_name")
+        scenarios = func_def.get("scenarios")
+
+        if not func_name or not isinstance(scenarios, list):
+            detailed_feedback.append(f"Skipping invalid function definition in exam rules: {func_def.get('function_name', 'Unknown function')}")
+            all_passed = False # Consider misconfiguration a failure
+            continue
+
+        # Create a temporary "rules" dict for validate_function_exercise
+        # as it expects "function_name" directly in its rules.
+        single_function_rules = {"function_name": func_name}
+        # We could also pass other function-specific rules from func_def if needed
+
+        function_all_scenarios_passed = True
+        for scenario_config in scenarios:
+            # Use the existing validate_function_exercise for each scenario of each function
+            scenario_result = validate_function_exercise(
+                user_code=user_code,
+                rules=single_function_rules, # Pass the name of the current function
+                scenario_config=scenario_config, # Pass the specific scenario
+                timeout=timeout # Use the overall timeout, or a smaller per-scenario timeout
+            )
+            if not scenario_result.passed:
+                detailed_feedback.append(
+                    f"Function '{func_name}', scenario with args {scenario_config.get('args')}: FAILED - {scenario_result.message}"
+                )
+                all_passed = False
+                function_all_scenarios_passed = False
+                break # Stop checking scenarios for this function if one fails
+
+        if function_all_scenarios_passed:
+            detailed_feedback.append(f"Function '{func_name}': PASSED all scenarios.")
+            passed_function_count += 1
+        # else: feedback already added for the failing scenario
+
+    if all_passed:
+        return DynamicValidationResult(True, f"¡Examen completado con éxito! Todas las {total_function_count} funciones pasaron.", details={"feedback": detailed_feedback})
+    else:
+        summary_message = (
+            f"Examen parcialmente completado. {passed_function_count}/{total_function_count} funciones pasaron. "
+            "Revisa los detalles:\n" + "\n".join(detailed_feedback)
+        )
+        return DynamicValidationResult(False, summary_message, details={"feedback": detailed_feedback})
+
+
 # --- Validator Dispatcher Map ---
 VALIDATOR_MAP = {
     "simple_print": validate_simple_print_exercise,
     "saludo_personalizado": validate_saludo_personalizado,
     "function_check": validate_function_exercise,
-    "dynamic_output": validate_dynamic_output_exercise,  # <-- new dynamic validator
-    "function_and_output": validate_function_and_output_exercise, # <-- added combined validator
+    "dynamic_output": validate_dynamic_output_exercise,
+    "function_and_output": validate_function_and_output_exercise,
+    "exam": validate_exam_exercise,  # <-- ADDED EXAM VALIDATOR
     # Add more mappings as you define validation_types and implement new validators
     # e.g., "loop_check", "class_method_check", etc.
 }

@@ -17,7 +17,7 @@ from jose import jwt, JWTError
 from models import User, UserCourseEnrollment, UserModuleProgress, UserLessonProgress, UserExerciseSubmission, CourseExam, UserExamAttempt
 
 from schemas import (
-    UserCreate, UserResponse, Token, UserLogin,
+    UserCreate, UserExamAttemptBase, UserResponse, Token, UserLogin,
     UserCourseProgressResponse,
     UserModuleProgressResponse,
     UserLessonProgressResponse, # Ensure this is imported
@@ -35,7 +35,7 @@ from schemas import (
 )
 
 from services import (
-    get_user, get_user_by_username, get_user_by_email, create_user, authenticate_user,
+    create_user_exam_attempt, get_user, get_user_by_username, get_user_by_email, create_user, authenticate_user,
     enroll_user_in_course, start_lesson, complete_exercise, get_last_accessed_progress,
     get_course_progress_summary, get_user_enrollments_with_progress, unenroll_user_from_course,
     get_user_lesson_progress_detail, get_user_progress_report_data,
@@ -241,7 +241,7 @@ def enroll_in_course_route(
     enrollment = enroll_user_in_course(db, current_user.id, course_id)
     return enrollment
 
-@router.get("/users/me/enrollments", response_model=List[UserEnrollmentWithProgressResponse])
+@router.get("/me/enrollments", response_model=List[UserEnrollmentWithProgressResponse])
 def get_my_enrollments_route(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -370,11 +370,17 @@ def submit_exercise_route(
     # Call the updated service function.
     # `is_correct` and `output` are no longer passed from here.
     # The service function `complete_exercise` now handles execution and evaluation.
-    return complete_exercise(
+    result = complete_exercise(
         db, current_user.id, exercise_id,
         submission_data.submitted_code,
         submission_data.input_data # This is now being passed
     )
+    if result.lesson_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exercise not found or not part of a lesson"
+        )
+    return result
 
 @router.get("/courses/{course_id}/progress-summary", response_model=CourseProgressSummaryResponse)
 def get_course_progress_summary_route(
@@ -608,6 +614,10 @@ def change_password(request: ChangePasswordRequest, current_user: User = Depends
 @router.post("/change-username")
 def change_username(request: ChangeUsernameRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return change_user_username(db, current_user, request.new_username)
+
+@router.post("/exam-attempts", response_model=UserExamAttemptResponse)
+def submit_exam_attempt(attempt: UserExamAttemptBase, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return create_user_exam_attempt(db, current_user.id, attempt.exam_id, attempt.answers)
 
 # Ensure your router is included in your main FastAPI app
 # e.g., app.include_router(router)

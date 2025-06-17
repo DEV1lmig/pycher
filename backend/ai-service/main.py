@@ -8,7 +8,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from azure.ai.inference import ChatCompletionsClient
 from azure.core.credentials import AzureKeyCredential
 from fastapi.responses import StreamingResponse
-import asyncio
+import asyncio # Ensure asyncio is imported
+import anyio # Import anyio for to_thread
 
 # --- Configuration ---
 
@@ -19,15 +20,16 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 if not GITHUB_TOKEN:
     raise ValueError("GITHUB_TOKEN environment variable not set. Please set it.")
 
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "Eres un asistente de IA útil.") # Added a default for SYSTEM_PROMPT
+
 # Endpoint for GitHub Models API (see docs)
-GITHUB_MODELS_ENDPOINT = "https://models.github.ai/inference"
-MODEL_NAME = "openai/gpt-4.1-mini"  # Or the model you select in the GitHub Models Marketplace
+GITHUB_MODELS_ENDPOINT = os.getenv("GITHUB_MODELS_ENDPOINT", "https://models.github.ai/inference") # Added default
+MODEL_NAME = os.getenv("GITHUB_MODELS_MODEL", "openai/gpt-4.1-mini")  # Added default and changed env var name for consistency
 
 client = ChatCompletionsClient(
     endpoint=GITHUB_MODELS_ENDPOINT,
     credential=AzureKeyCredential(GITHUB_TOKEN),
-    model=MODEL_NAME
-)
+) # Removed model=MODEL_NAME from client instantiation, will pass it in complete()
 
 # --- Pydantic Models ---
 
@@ -61,25 +63,30 @@ retry_decorator = retry(
 )
 
 @retry_decorator
-async def generate_ai_response(prompt: str) -> Dict[str, Any]:
+async def generate_ai_response(prompt: str, model_name: str = MODEL_NAME) -> Dict[str, Any]: # Added model_name parameter
     try:
-        logger.info(f"Sending prompt to GitHub Models GPT-4.1 mini...")
-        response = client.complete(
+        logger.info(f"Sending prompt to GitHub Models {model_name}...")
+        response = client.complete( # Pass model_name here
+            model=model_name,
             messages=[
-                {"role": "system", "content": "You are a helpful programming tutor for Python learners."},
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=512,
+            max_tokens=1024,
             temperature=0.7,
         )
-        content = response.choices[0].message.content.strip()
-        return {"content": content}
+        # Check if choices exist and are not empty
+        if response.choices and len(response.choices) > 0:
+            content = response.choices[0].message.content.strip()
+            return {"content": content}
+        else:
+            logger.warning(f"Received no choices from model {model_name} for prompt.")
+            return {"content": ""} # Return empty content or handle as an error
     except Exception as e:
-        logger.exception(f"GitHub Models API Error: {e}", exc_info=True)
-        # Optionally, log the response if available
+        logger.exception(f"GitHub Models API Error with {model_name}: {e}", exc_info=True)
         if hasattr(e, 'response') and e.response is not None:
             logger.error(f"API response: {e.response.text}")
-        raise HTTPException(status_code=502, detail=f"GitHub Models API Error: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"GitHub Models API Error with {model_name}: {str(e)}")
 
 # --- FastAPI Application ---
 
@@ -254,29 +261,44 @@ async def chat_stream(request: HintRequest):
     {f"Error: {request.error}" if request.error else ""}
     """
 
-    def sync_streamer():
-        # Use stream=True for streaming response
-        response = client.complete(
-            messages=[
-                {"role": "system", "content": "Eres un tutor de Python. Responde siempre en español."},
-                {"role": "user", "content": prompt}
-            ],
-            stream=True,
-            max_tokens=512,
-            temperature=0.7,
-        )
-        for chunk in response:
-            delta = chunk.choices[0].delta.content
-            if delta:
-                yield delta
+    # This is a synchronous iterator
+    response_stream = client.complete(
+        model=MODEL_NAME,
+        messages=[
+            {"role": "system", "content": "Eres un tutor de Python. Responde siempre en español."},
+            {"role": "user", "content": prompt}
+        ],
+        stream=True,
+        max_tokens=512,
+        temperature=0.7,
+    )
 
-    return StreamingResponse(sync_streamer(), media_type="text/plain")
+    async def streamer_wrapper():
+        try:
+            # Iterate over the synchronous iterator in a thread pool
+            for chunk in response_stream:
+                if chunk.choices and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if delta and delta.content:
+                        yield delta.content
+                        await asyncio.sleep(0) # Yield control to the event loop
+                else:
+                    # Handle chunks without choices or content if necessary, or just skip
+                    await asyncio.sleep(0) # Yield control even if not yielding data
+        except Exception as e:
+            logger.error(f"Error during streaming: {e}", exc_info=True)
+            # Optionally yield an error message to the client
+            # yield f"STREAM_ERROR: {str(e)}"
+        finally:
+            # Ensure any resources held by response_stream are cleaned up if applicable
+            # For some SDKs, a close() method might be available.
+            # Check azure-ai-inference docs for StreamingChatCompletions cleanup.
+            if hasattr(response_stream, 'close') and callable(response_stream.close):
+                try:
+                    response_stream.close()
+                    logger.info("Closed response_stream.")
+                except Exception as e_close:
+                    logger.error(f"Error closing response_stream: {e_close}", exc_info=True)
 
 
-# --- Run the Application ---
-# Note: Changed port slightly to 8005 to avoid potential conflicts if 8004 is stuck
-if __name__ == "__main__":
-    import uvicorn
-    logger.info("Starting AI Code Assistant Service...")
-    # Consider using environment variables for host and port in production
-    uvicorn.run(app, host="0.0.0.0", port=8005, log_level="info") # Match uvicorn log level
+    return StreamingResponse(streamer_wrapper(), media_type="text/event-stream")

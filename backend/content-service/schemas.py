@@ -35,6 +35,7 @@ class ModuleSchema(BaseModel): # Renamed from Module for clarity
     # image_url: Optional[str] = None # From your get_modules example
     lessons: List[LessonSchema] = [] # ADDED: To nest lessons with their lock status
     is_locked: bool = False # ADDED
+    is_exam: Optional[bool] = None # ADDED: If modules can be exams
 
     class Config:
         from_attributes = True
@@ -105,14 +106,17 @@ class ModuleBase(BaseModel):
     title: str
     description: str
     order_index: int
+    is_exam: Optional[bool] = None
     duration_minutes: Optional[int] = None
 
 class ModuleCreate(ModuleBase):
+    is_exam: bool = False
     pass
 
 class Module(ModuleBase):
     lesson_count: Optional[int] = 0
-
+    is_exam: bool
+    lessons: List[LessonSchema] = []
     class Config:
         from_attributes = True
 

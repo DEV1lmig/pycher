@@ -31,7 +31,7 @@ services:
     build: ./backend/user-service
     volumes:
       - ./backend/user-service:/app
-      - ./backend/shared:/app/shared:ro
+      - ./backend/shared:/app/shared
     depends_on:
       - postgres
       - redis
@@ -48,7 +48,7 @@ services:
     build: ./backend/content-service
     volumes:
       - ./backend/content-service:/app
-      - ./backend/shared:/app/shared:ro
+      - ./backend/shared:/app/shared
     depends_on:
       - postgres
       - redis

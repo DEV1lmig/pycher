@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "@tanstack/react-router"; // Added useNavigate
 import { getCourseById, getModulesByCourseId, getCourseExamExercises } from "@/services/contentService";
 import { getCourseProgressSummary, getBatchModuleProgress } from "@/services/progressService"; // Importing progress service
-import { enrollInCourse, unenrollFromCourse } from "@/services/userService"; // Added unenrollFromCourse
+import { enrollInCourse, unenrollFromCourse } from "@/services/userService"; // Remove isNextCourseUnlocked
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Clock, Users, Star, Home, Lock, CheckCircle, LogOut, PlusCircle } from "lucide-react"; // Added LogOut, PlusCircle
 import { ModuleCard } from "@/components/courses/ModuleCard";
@@ -21,16 +21,17 @@ export default function CourseDetailPage() {
   const { courseId } = useParams({ from: courseDetailRoute.id });
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
-  const [courseProgress, setCourseProgress] = useState(null);
+  const [courseProgress, setCourseProgress] = useState(null); // Summary progress
   const [moduleProgresses, setModuleProgresses] = useState({});
   const [examExercise, setExamExercise] = useState(null);
-  // const [enrolling, setEnrolling] = useState(false); // Will be handled by modalState
+  const [examUnlocked, setExamUnlocked] = useState(false);
 
   const { hasAccessToCourse, getCourseProgress, refreshEnrollments, loading: courseAccessLoading } = useCourseAccess();
+  const userCourseProgress = getCourseProgress(parseInt(courseId)); // Detailed enrollment progress for this course
 
   const [modalState, setModalState] = useState({
     isOpen: false,
-    actionType: null, // 'enroll' or 'unenroll'
+    actionType: null,
     title: "",
     description: "",
     confirmText: "",
@@ -38,7 +39,6 @@ export default function CourseDetailPage() {
     isLoading: false,
   });
 
-  // DRY: Extract fetch logic
   const fetchModulesAndProgress = useCallback(async () => {
     if (!courseId) return;
     const data = await getModulesByCourseId(courseId);
@@ -57,17 +57,34 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     fetchModulesAndProgress();
-    getCourseProgressSummary(courseId).then(setCourseProgress);
+    getCourseProgressSummary(courseId).then(setCourseProgress); // Sets overall summary
   }, [courseId, fetchModulesAndProgress]);
 
   useEffect(() => {
     if (course && modules.length > 0) {
+      console.log("CourseDetailPage: Attempting to fetch exam exercises for course ID:", course.id);
       getCourseExamExercises(course.id)
-        .then(setExamExercise)
-        .catch(() => setExamExercise(null));
+        .then(data => {
+          console.log("CourseDetailPage: Fetched examExercise data:", data);
+          setExamExercise(data);
+        })
+        .catch(error => {
+          console.error("CourseDetailPage: Error fetching examExercise:", error);
+          setExamExercise(null);
+        });
     }
   }, [course, modules]);
 
+  useEffect(() => {
+    console.log("CourseDetailPage: userCourseProgress changed:", userCourseProgress);
+    if (userCourseProgress) {
+      setExamUnlocked(!!userCourseProgress.exam_unlocked);
+      console.log("CourseDetailPage: examUnlocked set to:", !!userCourseProgress.exam_unlocked, "(from userCourseProgress.exam_unlocked:", userCourseProgress.exam_unlocked, ")");
+    } else {
+      setExamUnlocked(false);
+      console.log("CourseDetailPage: examUnlocked set to false (no userCourseProgress)");
+    }
+  }, [userCourseProgress]); // Re-run when userCourseProgress data (detailed enrollment) changes
 
   const handleOpenEnrollModal = () => {
     if (!course) return;
@@ -188,15 +205,20 @@ export default function CourseDetailPage() {
   }
 
   const courseAccessInfo = hasAccessToCourse(parseInt(courseId));
-  const userCourseProgress = getCourseProgress(parseInt(courseId));
-
   const isCourseLockedByPrerequisite = !courseAccessInfo.hasAccess;
   const isUserEnrolledInThisCourse = !!userCourseProgress;
   const isCourseCompleted = userCourseProgress?.is_completed;
 
-  // Modules are effectively locked if the course has prerequisites not met OR if the user is not enrolled
   const allModulesLockedDueToCourse = isCourseLockedByPrerequisite || !isUserEnrolledInThisCourse;
   const overallLockReason = isCourseLockedByPrerequisite ? courseAccessInfo.reason : (!isUserEnrolledInThisCourse ? "Debes inscribirte en este curso para acceder a los módulos." : null);
+
+  // ADD CONSOLE LOGS HERE before returning JSX
+  console.log("CourseDetailPage: Rendering checks for ExamCard:");
+  console.log("  - isUserEnrolledInThisCourse:", isUserEnrolledInThisCourse);
+  console.log("  - isCourseCompleted:", isCourseCompleted);
+  console.log("  - examExercise (raw):", examExercise);
+  console.log("  - examUnlocked:", examUnlocked);
+  console.log("  - userCourseProgress (for context):", userCourseProgress);
 
 
   return (
@@ -254,12 +276,12 @@ export default function CourseDetailPage() {
                   <h3 className="text-white font-semibold mb-2">Tu Progreso</h3>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-gray-300">Completado:</span>
-                    <span className="text-white font-bold">{Math.round(courseProgress.progress_percentage)}%</span>
+                    <span className="text-white font-bold">{Math.round(courseProgress.progress_percentage ?? 1)}%</span>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2">
                     <div
                       className="bg-secondary h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${courseProgress.progress_percentage}%` }}
+                      style={{ width: `${courseProgress.progress_percentage ?? 1}%` }}
                     ></div>
                   </div>
                 </div>
@@ -385,7 +407,7 @@ export default function CourseDetailPage() {
       />
 
       {/* After the modules grid */}
-      {isUserEnrolledInThisCourse && isCourseCompleted && examExercise && (
+      {isUserEnrolledInThisCourse && isCourseCompleted && examExercise && examUnlocked && (
         <div className="mx-6 mt-8">
           <ExamCard exam={examExercise} isLocked={false} />
         </div>

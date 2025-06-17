@@ -1,5 +1,4 @@
 import { apiClient } from './api';
-import axios from "axios";
 
 const API_URL = "/api/v1/users"; // Adjust as needed
 
@@ -20,7 +19,7 @@ export async function updatePassword(currentPassword, newPassword) {
 
 
 export const registerUser = async (payload) => {
-  const response = await apiClient.post('/api/v1/users/register', payload);
+  const response = await apiClient.post(`${API_URL}/register`, payload);
   return response.data;
 };
 
@@ -29,7 +28,7 @@ export const loginUser = async (credentials) => {
   formData.append('username', credentials.username);
   formData.append('password', credentials.password);
 
-  const response = await apiClient.post('/api/v1/users/token', formData, {
+  const response = await apiClient.post(`${API_URL}/token`, formData, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
@@ -48,7 +47,7 @@ export const logoutUser = async () => {
   // Only try to call the logout endpoint if we have a token
   if (token) {
     try {
-      await apiClient.post('/api/v1/users/logout', {}, {
+      await apiClient.post(`${API_URL}/logout`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -61,37 +60,38 @@ export const logoutUser = async () => {
 };
 
 export const getUserProgress = async (userId, moduleId) => {
-  const response = await apiClient.get(`/api/v1/users/progress/${userId}/${moduleId}`);
+  const response = await apiClient.get(`${API_URL}/progress/${userId}/${moduleId}`);
   return response.data;
 };
 
 export const updateLessonProgress = async (progressData) => {
-  const response = await apiClient.post('/api/v1/users/progress', progressData);
+  const response = await apiClient.post(`${API_URL}/progress`, progressData);
   return response.data;
 };
 
 export const getUserProfile = async () => {
-  const response = await apiClient.get('/api/v1/users/me');
+  const response = await apiClient.get(`${API_URL}/me`);
   return response.data;
 };
 
 export const updateUserProfile = async (userData) => {
-  const response = await apiClient.put('/api/v1/users/me', userData);
+  const response = await apiClient.put(`${API_URL}/me`, userData);
   return response.data;
 };
 
 export const enrollInCourse = async (courseId) => {
-  const response = await apiClient.post(`/api/v1/users/courses/${courseId}/enroll`);
+  const response = await apiClient.post(`${API_URL}/courses/${courseId}/enroll`);
   return response.data;
 };
 
 export const getUserEnrollments = async () => {
-  const response = await apiClient.get('/api/v1/users/users/me/enrollments');
+  // OLD URL: const response = await apiClient.get('/api/v1/users/users/me/enrollments');
+  const response = await apiClient.get(`${API_URL}/me/enrollments`); // CORRECTED URL
   return response.data;
 };
 
 export const getCourseProgressSummary = async (courseId) => {
-  const response = await apiClient.get(`/api/v1/users/courses/${courseId}/progress-summary`);
+  const response = await apiClient.get(`${API_URL}/courses/${courseId}/progress-summary`);
   return response.data;
 };
 
@@ -129,7 +129,7 @@ export const unenrollFromCourse = async (courseId) => {
   if (!token) {
     throw new Error("User not authenticated. Cannot unenroll.");
   }
-  const response = await apiClient.delete(`/api/v1/users/courses/${courseId}/unenroll`, {
+  const response = await apiClient.delete(`${API_URL}/courses/${courseId}/unenroll`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -145,7 +145,7 @@ export const unenrollFromCourse = async (courseId) => {
  * @returns {Promise<object>} The response data from the API.
  */
 export const startLesson = async (lessonId) => {
-  const response = await apiClient.post(`/api/v1/users/lessons/${lessonId}/start`);
+  const response = await apiClient.post(`${API_URL}/lessons/${lessonId}/start`);
   return response.data; // Assuming backend returns UserLessonProgress or similar
 };
 
@@ -160,7 +160,7 @@ export const submitExerciseAttempt = async (exerciseId, submittedCode) => {
   // user_id (from token), exercise_id, submitted_code, is_correct, output
   // The frontend will send submitted_code. The backend should evaluate it.
   // Let's assume the endpoint /submit handles this and then calls complete_exercise.
-  const response = await apiClient.post(`/api/v1/users/exercises/${exerciseId}/submit`, {
+  const response = await apiClient.post(`${API_URL}/exercises/${exerciseId}/submit`, {
     submitted_code: submittedCode,
     // is_correct and output will be determined by the backend after evaluation
   });
@@ -228,4 +228,44 @@ export const downloadProgressReport = async () => {
     }
     throw new Error(error.message || 'Failed to download progress report.');
   }
+};
+
+/**
+ * Checks if the next course is unlocked for the user.
+ * @param {number} currentCourseId - The current course's ID.
+ * @returns {Promise<{unlocked: boolean, nextCourseId: number|null, reason: string|null}>}
+ */
+export const isNextCourseUnlocked = async (currentCourseId) => {
+  // Get all enrollments for the user
+  const enrollments = await getUserEnrollments();
+
+  // Find the current course enrollment and check if it's completed
+  const currentEnrollment = enrollments.find(e => e.course_id === currentCourseId);
+  if (!currentEnrollment || !currentEnrollment.is_completed) {
+    return {
+      unlocked: false,
+      nextCourseId: null,
+      reason: "Debes completar el curso actual para desbloquear el siguiente."
+    };
+  }
+
+  // Find the next course (assuming sequential IDs)
+  const nextCourseId = currentCourseId + 1;
+  const nextEnrollment = enrollments.find(e => e.course_id === nextCourseId);
+
+  // If already enrolled in next course, it's unlocked
+  if (nextEnrollment) {
+    return {
+      unlocked: true,
+      nextCourseId,
+      reason: null
+    };
+  }
+
+  // Otherwise, allow unlock if current is completed
+  return {
+    unlocked: true,
+    nextCourseId,
+    reason: null
+  };
 };

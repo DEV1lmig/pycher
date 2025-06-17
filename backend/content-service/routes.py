@@ -1,13 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-import models
-from typing import List, Optional, Dict
-import services
-import schemas
-from database import get_db
-from models import Lesson
+import models # Ensure models is imported (e.g., from ..shared import models or similar)
+from typing import List, Optional, Dict # Ensure List and Optional are imported
+import services # Ensure services is imported
+import schemas # Ensure schemas is imported
+from database import get_db # Ensure get_db is imported
 import logging
-
 from services import get_user_context
 
 logger = logging.getLogger("content-service")
@@ -168,12 +166,36 @@ def get_module_final_exercise(module_id: int, db: Session = Depends(get_db)):
     if not exercise:
         raise HTTPException(status_code=404, detail="Final exercise not found")
     return exercise
-@router.get("/courses/{course_id}/exam-exercise")
-def get_course_exam_exercise_route(course_id: int, db: Session = Depends(get_db)):
+
+@router.get(
+    "/courses/{course_id}/exam-exercises",
+    response_model=List[schemas.Exercise], # Frontend expects an array
+    summary="Get all exam exercises for a specific course (direct from exercise table)",
+    tags=["courses", "exercises", "exams"]
+)
+def read_course_exam_exercises( # Renamed for clarity if needed, but name is fine
+    course_id: int,
+    db: Session = Depends(get_db)
+):
     """
-    Get the exam exercise for a course.
+    Fetches exercises for a given course_id that are marked as exams
+    by having module_id and lesson_id as NULL.
+    Optionally, could also filter by validation_type == 'exam'.
     """
-    exam_ex = services.get_course_exam_exercise(db, course_id)
-    if not exam_ex:
-        raise HTTPException(status_code=404, detail="Exam exercise not found")
-    return exam_ex
+    exam_exercises = db.query(models.Exercise).filter(
+        models.Exercise.course_id == course_id,
+        models.Exercise.module_id == None,  # Check for NULL module_id
+        models.Exercise.lesson_id == None,  # Check for NULL lesson_id
+        # models.Exercise.validation_type == "exam" # Optional: for more specificity
+    ).order_by(models.Exercise.order_index).all() # Use order_index if that's the column name
+
+    # The frontend already handles the case where exam_exercises is an empty list.
+    # if not exam_exercises:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail=f"No direct exam exercises found for course ID {course_id} with null module/lesson IDs."
+    #     )
+
+    return exam_exercises
+
+# ...rest of your routes.py file...

@@ -171,7 +171,7 @@ class UserExerciseSubmissionResponse(BaseModel):
     id: int
     user_id: int
     exercise_id: int
-    lesson_id: int
+    lesson_id: Optional[int] = None
     submitted_code: Optional[str] = None
     is_correct: bool
     output: Optional[str] = None
@@ -231,12 +231,10 @@ class CourseExamSchema(BaseModel):
 class UserExamAttemptBase(BaseModel):
     exam_id: int
     course_id: int
-    score: Optional[int] = Field(default=0)
     is_passed: bool = False
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
-    time_spent_minutes: Optional[int] = Field(default=0)
-    # answers: Optional[dict] = None # Or a more structured schema
+    # answers: Optional[dict] = None
 
 class UserExamAttemptResponse(UserExamAttemptBase):
     id: int
@@ -283,6 +281,7 @@ class UserEnrollmentWithProgressResponse(BaseModel):
     total_time_spent_minutes: int = 0
     last_accessed_module_id: Optional[int] = None
     last_accessed_lesson_id: Optional[int] = None
+    exam_unlocked: bool
 
     # This assumes UserCourseEnrollment instance passed to it has 'course' eager loaded
     @computed_field

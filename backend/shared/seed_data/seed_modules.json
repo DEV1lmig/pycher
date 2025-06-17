@@ -22,5 +22,14 @@
     "description": "Aprende a tomar decisiones en tu código con sentencias condicionales, a repetir tareas con bucles, y a organizar datos con listas. También tendrás una introducción a la creación de tus propias funciones.",
     "order_index": 3,
     "duration_minutes": 75
+  },
+  {
+    "id": 4,
+    "course_id": 1,
+    "title": "Examen Final: Fundamentos de Python",
+    "description": "Evaluación final de los conceptos básicos de Python. Demuestra tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones.",
+    "order_index": 4,
+    "duration_minutes": 60,
+    "is_exam": true
   }
 ]

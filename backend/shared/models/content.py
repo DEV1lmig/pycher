@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Foreign
 from sqlalchemy.sql import func
 from typing import Optional, List, Dict, Any, Union, Tuple, Callable
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import JSONB # Ensure JSONB is imported
+from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 
 from . import Base
@@ -38,6 +38,7 @@ class Module(Base):  # <-- Change from Modules to Module
     order_index = Column(Integer, nullable=False)
     duration_minutes = Column(Integer)
     is_active = Column(Boolean, default=True)  # New field for soft delete
+    is_exam = Column(Boolean, default=False, nullable=True) # ADDED: Flag to identify exam modules
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
     course = relationship("Course", back_populates="modules")
     user_progress = relationship("UserModuleProgress", back_populates="module") # New relationship
@@ -95,6 +96,7 @@ class UserCourseEnrollment(Base): # This will serve as UserCourseProgress
     last_accessed_module_id = Column(Integer, ForeignKey("modules.id"), nullable=True)
     last_accessed_lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
     is_active_enrollment = Column(Boolean, default=True, nullable=False) # New field for soft delete
+    exam_unlocked = Column(Boolean, default=False, nullable=False) # New field for exam unlock status
 
     course = relationship("Course", back_populates="enrollments")
     # Assuming user_id links to a User table not defined in this file
@@ -173,32 +175,35 @@ class CourseExam(Base):
     __tablename__ = "course_exams"
     id = Column(Integer, primary_key=True, autoincrement=True)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
-    title = Column(String, nullable=False) # Title is directly on CourseExam
+    title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    questions = Column(JSONB, nullable=False)
-    order_index = Column(Integer, nullable=False, default=1) # Order index is directly on CourseExam
     pass_threshold_percentage = Column(Float, default=70.0, nullable=False)
+    time_limit_minutes = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    # Relationships
-    course = relationship("Course", back_populates="exams")
+    questions = relationship("ExamQuestion", back_populates="exam", cascade="all, delete-orphan")
     attempts = relationship("UserExamAttempt", back_populates="exam", cascade="all, delete-orphan")
+    course = relationship("Course", back_populates="exams")
+
+class ExamQuestion(Base):
+    __tablename__ = "exam_questions"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    exam_id = Column(Integer, ForeignKey("course_exams.id"), nullable=False)
+    prompt = Column(Text, nullable=False)
+    correct_answer = Column(JSONB, nullable=False)
+    order_index = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    exam = relationship("CourseExam", back_populates="questions")
 
 class UserExamAttempt(Base):
     __tablename__ = "user_exam_attempts"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False) # Assuming User table exists elsewhere
+    user_id = Column(Integer, nullable=False)
     exam_id = Column(Integer, ForeignKey("course_exams.id"), nullable=False)
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)
-    score = Column(Float, nullable=True) # Percentage score
-    answers = Column(JSONB, nullable=True) # Store user's answers as JSON
-    # Example structure for answers: [{"question_id": 1, "answer": "B"}, ...]
-    passed = Column(Boolean, nullable=True) # Calculated based on score and pass_threshold_percentage
-
-    # Relationships
-    # user = relationship("User", back_populates="exam_attempts") # Assuming User model
+    passed = Column(Boolean, nullable=True)  # Only pass/fail, no score
+    answers = Column(JSONB, nullable=True)
     exam = relationship("CourseExam", back_populates="attempts")
 
 # ... Make sure UserExerciseSubmission is defined if not already ...
