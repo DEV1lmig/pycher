@@ -21,7 +21,6 @@ export const executeCode = async ({ exerciseId, code, inputData, timeout }) => {
     });
     return response.data;
   } catch (error) {
-    console.error("Error executing code:", error.response ? error.response.data : error.message);
     // Rethrow or return a structured error object for the component to handle
     throw error.response ? error.response.data : new Error("Network error or server issue during code execution.");
   }

@@ -71,7 +71,7 @@
     "lesson_id": 3,
     "order_index": 1,
     "title": "Ejercicio 1.3.1: Variables y Tipos",
-    "description": "Crea una variable `ciudad` con el valor \"Madrid\" y una variable `poblacion` con el valor 3300000. Imprime ambas variables, cada una en una nueva línea.",
+    "description": "Crea una variable 'ciudad' con el valor \"Madrid\" y una variable `poblacion` con el valor 3300000. Imprime ambas variables, cada una en una nueva línea.",
     "instructions": "1. Define una variable llamada `ciudad` y asígnale el valor de string \"Madrid\".\n2. Define otra variable llamada `poblacion` y asígnale el valor numérico (entero) 3300000.\n3. Utiliza la función `print()` para mostrar el valor de la variable `ciudad` en la consola.\n4. En una línea separada, utiliza nuevamente la función `print()` para mostrar el valor de la variable `poblacion`.",
     "starter_code": "# 1. Define la variable ciudad\n\n# 2. Define la variable poblacion\n\n# 3. Imprime la variable ciudad\n\n# 4. Imprime la variable poblacion",
     "validation_type": "simple_print",
@@ -173,7 +173,7 @@
     "lesson_id": 7,
     "order_index": 1,
     "title": "Ejercicio 2.4.1: Iniciales y Longitud",
-    "description": "Dada la variable nombre_completo, imprime la primera letra del nombre, la primera letra del apellido y la longitud total del nombre completo, cada resultado en una nueva línea.",
+    "description": "Dada la variable nombre_completo, muestre la primera letra del nombre, la primera letra del apellido y la longitud total del nombre completo, cada resultado en una nueva línea.",
     "instructions": "1. Se te da una variable `nombre_completo` (ej: \"Juan Perez\").\n2. Imprime la primera letra del nombre (el primer carácter de `nombre_completo`).\n3. Imprime la primera letra del apellido (asume que el apellido empieza después del primer espacio).\n4. Imprime la longitud total de `nombre_completo` usando `len()`.\n5. Cada uno de estos tres resultados debe imprimirse en una nueva línea.",
     "starter_code": "nombre_completo = \"Juan Perez\"\n# Imprime la primera letra del nombre\n# print(nombre_completo[0])\n# Encuentra el espacio y luego imprime la primera letra del apellido\n# espacio_idx = nombre_completo.find(' ')\n# print(nombre_completo[espacio_idx+1])\n# Imprime la longitud total\n# print(len(nombre_completo))",
     "validation_type": "simple_print",
@@ -190,33 +190,33 @@
       }
     }
   },
-{
-"id": 8,
-"course_id": 1,
-"module_id": 3,
-"lesson_id": 8,
-"order_index": 1,
-"title": "Ejercicio 3.1.1: Par o Impar",
-"description": "Dado un número, imprime 'Par' si el número es par, o 'Impar' si es impar.",
-"instructions": "1. Lee un número usando `input()`. Asume que siempre será un número.\n2. Conviértelo a entero.\n3. Usa una estructura `if-else` para determinar si es par o impar.\n4. Imprime la palabra \"Par\" o la palabra \"Impar\" según corresponda.",
-"starter_code": "# Lee el número como string\nnumero_str = input()\n# Conviértelo a entero\nnumero = int(numero_str)\n# Usa if-else para imprimir 'Par' o 'Impar'\n# if ...\n# else ...",
-"validation_type": "dynamic_output",
-"validation_rules": {
-    "requires_input_function": true,
-    "input_constraints": { "type": "int", "min": 0, "max": 100 },
-    "transform_for_template": "'Par' if int(value) % 2 == 0 else 'Impar'",
-    "output_format_template": "{var}\n",
-    "expected_print_count_per_case": 1,
-    "expected_types_per_case": ["str"],
-    "num_cases": 5,
-    "strict_whitespace": true,
-    "case_sensitive": true,
-    "custom_feedback": {
+  {
+    "id": 8,
+    "course_id": 1,
+    "module_id": 3,
+    "lesson_id": 8,
+    "order_index": 1,
+    "title": "Ejercicio 3.1.1: Par o Impar",
+    "description": "Dado un número, imprime 'Par' si el número es par, o 'Impar' si es impar.",
+    "instructions": "1. Lee un número usando `input()`. Asume que siempre será un número.\n2. Conviértelo a entero.\n3. Usa una estructura `if-else` para determinar si es par o impar.\n4. Imprime la palabra \"Par\" o la palabra \"Impar\" según corresponda.",
+    "starter_code": "# Lee el número como string\nnumero_str = input()\n# Conviértelo a entero\nnumero = int(numero_str)\n# Usa if-else para imprimir 'Par' o 'Impar'\n# if ...\n# else ...",
+    "validation_type": "dynamic_output",
+    "validation_rules": {
+      "requires_input_function": true,
+      "input_constraints": { "type": "int", "min": 0, "max": 100 },
+      "transform_for_template": "'Par' if int(value) % 2 == 0 else 'Impar'",
+      "output_format_template": "{var}\n",
+      "expected_print_count_per_case": 1,
+      "expected_types_per_case": ["str"],
+      "num_cases": 5,
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
         "wrong_type": "El resultado impreso debe ser un string ('Par' o 'Impar').",
         "wrong_print_count": "Se esperaba una sola operación de print por cada caso de prueba."
       }
- }
-},
+    }
+  },
   {
     "id": 9,
     "course_id": 1,
@@ -292,53 +292,133 @@
     }
   },
   {
-  "id": 12,
-  "course_id": 1,
-  "module_id": null,
-  "lesson_id": null,
-  "order_index": 1,
-  "title": "Examen Final: Fundamentos de Python",
-  "description": "Resuelve los siguientes ejercicios para demostrar tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones en Python.",
-  "instructions": "1. Implementa todas las funciones y tareas solicitadas.\n2. Cada función debe tener el nombre exacto indicado y cumplir con los tipos de entrada y salida especificados.\n3. Lee cuidadosamente cada consigna y asegúrate de que tu código pase todos los casos de prueba.\n\n**Nota sobre 'Ejecutar Código':** Para los exámenes, el botón 'Ejecutar Código' te permitirá probar tus `print()` statements y ver errores de sintaxis. La validación completa de todas las funciones del examen se realizará únicamente cuando presiones 'Enviar Solución'. Es posible que veas un mensaje indicando que el tipo de validación no es soportado para ejecución directa; esto es normal para el modo examen si intentas usar la entrada estándar, concéntrate en la salida de tus `print()` y la correcta definición de las funciones.",
-  "starter_code": "def es_par(n):\n    # Tu código aquí\n    return n % 2 == 0\n\n\ndef dias_en_anios(anios):\n    # Tu código aquí\n    return anios * 365\n\n\ndef obtener_segundo(lista):\n    # Tu código aquí\n    if len(lista) >= 2:\n        return lista[1]\n    return None\n\n\ndef suma_rango(inicio, fin):\n    # Tu código aquí\n    suma = 0\n    for i in range(inicio, fin + 1):\n        suma += i\n    return suma\n\n# Si el examen requiere una salida específica de print() en el cuerpo del script,\n# agrégala aquí y define las reglas de validación correspondientes abajo.\n# Ejemplo:\n# print(es_par(4))\n# print(dias_en_anios(1))\n# print(obtener_segundo(['a', 'b']))\n# print(suma_rango(1,3))",
-  "validation_type": "exam",
-  "validation_rules": {
-    "functions": [
-      {
-        "function_name": "es_par",
-        "scenarios": [
-          {"args": [2], "expected_return_value": true, "expected_return_type": "bool"},
-          {"args": [3], "expected_return_value": false, "expected_return_type": "bool"},
-          {"args": [0], "expected_return_value": true, "expected_return_type": "bool"}
-        ]
-      },
-      {
-        "function_name": "dias_en_anios",
-        "scenarios": [
-          {"args": [1], "expected_return_value": 365, "expected_return_type": "int"},
-          {"args": [0], "expected_return_value": 0, "expected_return_type": "int"},
-          {"args": [10], "expected_return_value": 3650, "expected_return_type": "int"}
-        ]
-      },
-      {
-        "function_name": "obtener_segundo",
-        "scenarios": [
-          {"args": [[1,2,3]], "expected_return_value": 2, "expected_return_type": "int"},
-          {"args": [["a","b","c"]], "expected_return_value": "b", "expected_return_type": "str"},
-          {"args": [["uno"]], "expected_return_value": null, "expected_return_type": "NoneType"}
-        ]
-      },
-      {
-        "function_name": "suma_rango",
-        "scenarios": [
-          {"args": [1, 5], "expected_return_value": 15, "expected_return_type": "int"},
-          {"args": [3, 3], "expected_return_value": 3, "expected_return_type": "int"},
-          {"args": [0, 2], "expected_return_value": 3, "expected_return_type": "int"}
-        ]
-      }
-    ],
-    "require_return_statement": true,
-    "strict_function_names": ["es_par", "dias_en_anios", "obtener_segundo", "suma_rango"]
+    "id": 12,
+    "course_id": 1,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 1,
+    "title": "Examen Final: Fundamentos de Python",
+    "description": "Resuelve los siguientes ejercicios para demostrar tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones en Python.",
+    "instructions": "1. Implementa todas las funciones y tareas solicitadas.\n2. Cada función debe tener el nombre exacto indicado y cumplir con los tipos de entrada y salida especificados.\n3. Lee cuidadosamente cada consigna y asegúrate de que tu código pase todos los casos de prueba.\n\n**Nota sobre 'Ejecutar Código':** Para los exámenes, el botón 'Ejecutar Código' te permitirá probar tus `print()` statements y ver errores de sintaxis. La validación completa de todas las funciones del examen se realizará únicamente cuando presiones 'Enviar Solución'. Es posible que veas un mensaje indicando que el tipo de validación no es soportado para ejecución directa; esto es normal para el modo examen si intentas usar la entrada estándar, concéntrate en la salida de tus `print()` y la correcta definición de las funciones.",
+    "starter_code": "def es_par(n):\n    # Tu código aquí\n    return n % 2 == 0\n\n\ndef dias_en_anios(anios):\n    # Tu código aquí\n    return anios * 365\n\n\ndef obtener_segundo(lista):\n    # Tu código aquí\n    if len(lista) >= 2:\n        return lista[1]\n    return None\n\n\ndef suma_rango(inicio, fin):\n    # Tu código aquí\n    suma = 0\n    for i in range(inicio, fin + 1):\n        suma += i\n    return suma\n\n# Si el examen requiere una salida específica de print() en el cuerpo del script,\n# agrégala aquí y define las reglas de validación correspondientes abajo.\n# Ejemplo:\n# print(es_par(4))\n# print(dias_en_anios(1))\n# print(obtener_segundo(['a', 'b']))\n# print(suma_rango(1,3))",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {
+          "function_name": "es_par",
+          "scenarios": [
+            {"args": [2], "expected_return_value": true, "expected_return_type": "bool"},
+            {"args": [3], "expected_return_value": false, "expected_return_type": "bool"},
+            {"args": [0], "expected_return_value": true, "expected_return_type": "bool"}
+          ]
+        },
+        {
+          "function_name": "dias_en_anios",
+          "scenarios": [
+            {"args": [1], "expected_return_value": 365, "expected_return_type": "int"},
+            {"args": [0], "expected_return_value": 0, "expected_return_type": "int"},
+            {"args": [10], "expected_return_value": 3650, "expected_return_type": "int"}
+          ]
+        },
+        {
+          "function_name": "obtener_segundo",
+          "scenarios": [
+            {"args": [[1,2,3]], "expected_return_value": 2, "expected_return_type": "int"},
+            {"args": [["a","b","c"]], "expected_return_value": "b", "expected_return_type": "str"},
+            {"args": [["uno"]], "expected_return_value": null, "expected_return_type": "NoneType"}
+          ]
+        },
+        {
+          "function_name": "suma_rango",
+          "scenarios": [
+            {"args": [1, 5], "expected_return_value": 15, "expected_return_type": "int"},
+            {"args": [3, 3], "expected_return_value": 3, "expected_return_type": "int"},
+            {"args": [0, 2], "expected_return_value": 3, "expected_return_type": "int"}
+          ]
+        }
+      ],
+      "require_return_statement": true,
+      "strict_function_names": ["es_par", "dias_en_anios", "obtener_segundo", "suma_rango"]
+    }
+  },
+  {
+    "id": 13,
+    "course_id": 1,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 2,
+    "title": "Examen Final: Lógica y Cadenas",
+    "description": "Demuestra tu habilidad con la manipulación de strings y la lógica de programación.",
+    "instructions": "Implementa las funciones solicitadas para pasar este examen. Cada función debe devolver el valor esperado, no imprimirlo.",
+    "starter_code": "def invertir_cadena(s):\n    # Devuelve la cadena 's' invertida.\n    pass\n\ndef es_palindromo(s):\n    # Devuelve True si 's' es un palíndromo, False si no.\n    # Ignora mayúsculas/minúsculas y espacios.\n    pass\n\ndef contar_vocales(s):\n    # Devuelve el número de vocales (a, e, i, o, u) en 's'.\n    pass\n\ndef es_mayor_de_edad(edad):\n    # Devuelve True si la edad es 18 o más, False en caso contrario.\n    pass",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {"function_name": "invertir_cadena", "scenarios": [{"args": ["hola"], "expected_return_value": "aloh"}, {"args": ["Python"], "expected_return_value": "nohtyP"}, {"args": [""], "expected_return_value": ""}]},
+        {"function_name": "es_palindromo", "scenarios": [{"args": ["Anita lava la tina"], "expected_return_value": true}, {"args": ["python"], "expected_return_value": false}, {"args": ["Ojo"], "expected_return_value": true}]},
+        {"function_name": "contar_vocales", "scenarios": [{"args": ["murcielago"], "expected_return_value": 5}, {"args": ["xyz"], "expected_return_value": 0}, {"args": ["AEIOU"], "expected_return_value": 5}]},
+        {"function_name": "es_mayor_de_edad", "scenarios": [{"args": [20], "expected_return_value": true}, {"args": [18], "expected_return_value": true}, {"args": [17], "expected_return_value": false}]}
+      ]
+    }
+  },
+  {
+    "id": 14,
+    "course_id": 1,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 3,
+    "title": "Examen Final: Algoritmos y Listas",
+    "description": "Implementa algoritmos fundamentales de matemáticas y listas.",
+    "instructions": "Completa el código de las funciones para que pasen las pruebas. No uses funciones integradas como max() o sum() a menos que se permita.",
+    "starter_code": "def factorial(n):\n    # Devuelve el factorial de n.\n    pass\n\ndef encontrar_maximo(lista):\n    # Devuelve el número más grande en la lista sin usar max().\n    pass\n\ndef filtrar_pares(lista):\n    # Devuelve una nueva lista solo con los números pares de la lista original.\n    pass\n\ndef generar_saludo(nombre, edad):\n    # Devuelve un string con el formato 'Hola [nombre], tienes [edad] años.'\n    pass",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {"function_name": "factorial", "scenarios": [{"args": [5], "expected_return_value": 120}, {"args": [0], "expected_return_value": 1}, {"args": [1], "expected_return_value": 1}]},
+        {"function_name": "encontrar_maximo", "scenarios": [{"args": [[1, 5, 2, 9, 3]], "expected_return_value": 9}, {"args": [[-1, -5, -2]], "expected_return_value": -1}, {"args": [[10]], "expected_return_value": 10}]},
+        {"function_name": "filtrar_pares", "scenarios": [{"args": [[1, 2, 3, 4, 5, 6]], "expected_return_value": [2, 4, 6]}, {"args": [[1, 3, 5]], "expected_return_value": []}, {"args": [[-2, 0, 2]], "expected_return_value": [-2, 0, 2]}]},
+        {"function_name": "generar_saludo", "scenarios": [{"args": ["Carlos", 30], "expected_return_value": "Hola Carlos, tienes 30 años."}, {"args": ["Maria", 22], "expected_return_value": "Hola Maria, tienes 22 años."}]}
+      ]
+    }
+  },
+  {
+    "id": 15,
+    "course_id": 1,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 4,
+    "title": "Examen Final: Procesamiento de Datos",
+    "description": "Escribe funciones para procesar colecciones de datos como listas.",
+    "instructions": "Asegúrate de que cada función devuelva el tipo de dato correcto y maneje casos especiales como listas vacías.",
+    "starter_code": "def promedio_de_lista(lista):\n    # Devuelve el promedio de los números en la lista. Si la lista está vacía, devuelve 0.\n    pass\n\ndef eliminar_duplicados(lista):\n    # Devuelve una nueva lista sin elementos duplicados, manteniendo el orden original.\n    pass\n\ndef unir_listas(lista1, lista2):\n    # Devuelve una nueva lista que es la unión de lista1 y lista2.\n    pass\n\ndef convertir_a_fahrenheit(celsius):\n    # Convierte grados Celsius a Fahrenheit usando la fórmula (C * 9/5) + 32.\n    pass",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {"function_name": "promedio_de_lista", "scenarios": [{"args": [[10, 20, 30]], "expected_return_value": 20.0}, {"args": [[5, 5, 5]], "expected_return_value": 5.0}, {"args": [[]], "expected_return_value": 0}]},
+        {"function_name": "eliminar_duplicados", "scenarios": [{"args": [[1, 2, 2, 3, 1]], "expected_return_value": [1, 2, 3]}, {"args": [["a", "b", "a"]], "expected_return_value": ["a", "b"]}, {"args": [[4, 5, 6]], "expected_return_value": [4, 5, 6]}]},
+        {"function_name": "unir_listas", "scenarios": [{"args": [[1, 2], [3, 4]], "expected_return_value": [1, 2, 3, 4]}, {"args": [[], [1, 2]], "expected_return_value": [1, 2]}]},
+        {"function_name": "convertir_a_fahrenheit", "scenarios": [{"args": [0], "expected_return_value": 32.0}, {"args": [100], "expected_return_value": 212.0}, {"args": [-10], "expected_return_value": 14.0}]}
+      ]
+    }
+  },
+  {
+    "id": 16,
+    "course_id": 1,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 5,
+    "title": "Examen Final: Lógica Condicional y Bucles",
+    "description": "Resuelve problemas que requieren una lógica condicional más compleja y el uso de bucles.",
+    "instructions": "Presta atención a los casos borde en cada función y asegúrate de que los bucles terminen correctamente.",
+    "starter_code": "def clasificar_calificacion(nota):\n    # Devuelve 'Aprobado' (50-69), 'Notable' (70-89), o 'Sobresaliente' (90-100). 'Suspenso' para el resto.\n    pass\n\ndef es_bisiesto(anio):\n    # Devuelve True si el año es bisiesto, False si no.\n    # Un año es bisiesto si es divisible por 4, excepto los años que son divisibles por 100 pero no por 400.\n    pass\n\ndef suma_acumulada(lista):\n    # Devuelve una lista donde cada elemento es la suma de los elementos hasta esa posición.\n    # Ejemplo: [1, 2, 3] -> [1, 3, 6]\n    pass\n\ndef adivina_numero(secreto, intento):\n    # Devuelve 'Correcto', 'Muy alto' o 'Muy bajo'.\n    pass",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {"function_name": "clasificar_calificacion", "scenarios": [{"args": [95], "expected_return_value": "Sobresaliente"}, {"args": [80], "expected_return_value": "Notable"}, {"args": [60], "expected_return_value": "Aprobado"}, {"args": [40], "expected_return_value": "Suspenso"}]},
+        {"function_name": "es_bisiesto", "scenarios": [{"args": [2024], "expected_return_value": true}, {"args": [1900], "expected_return_value": false}, {"args": [2000], "expected_return_value": true}, {"args": [2023], "expected_return_value": false}]},
+        {"function_name": "suma_acumulada", "scenarios": [{"args": [[1, 2, 3, 4]], "expected_return_value": [1, 3, 6, 10]}, {"args": [[10, -5, 3]], "expected_return_value": [10, 5, 8]}, {"args": [[]], "expected_return_value": []}]},
+        {"function_name": "adivina_numero", "scenarios": [{"args": [50, 50], "expected_return_value": "Correcto"}, {"args": [50, 70], "expected_return_value": "Muy alto"}, {"args": [50, 30], "expected_return_value": "Muy bajo"}]}
+      ]
+    }
   }
-}
 ]

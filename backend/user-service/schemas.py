@@ -167,18 +167,31 @@ class UserCourseProgressResponse(UserCourseProgressBase):
     class Config:
         from_attributes = True
 
+# Add a basic schema for the nested exercise object
+class ExerciseBasicInfo(BaseModel):
+    id: int
+    title: str
+    class Config:
+        from_attributes = True
+
 class UserExerciseSubmissionResponse(BaseModel):
     id: int
     user_id: int
     exercise_id: int
-    lesson_id: Optional[int] = None
-    submitted_code: Optional[str] = None
-    is_correct: bool
-    output: Optional[str] = None
-    attempt_number: int
+    lesson_id: Optional[int]
     submitted_at: datetime
-    score: Optional[int] = None
-    execution_time_ms: Optional[int] = None
+    is_correct: bool
+    output: Optional[str]
+    attempt_number: int
+
+    # This will be populated from the eager-loaded relationship in the service
+    exercise: ExerciseBasicInfo
+
+    # This computed field makes the title directly accessible as `exercise_title`
+    @computed_field
+    @property
+    def exercise_title(self) -> str:
+        return self.exercise.title
 
     class Config:
         from_attributes = True

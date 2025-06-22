@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import models # Ensure models is imported (e.g., from ..shared import models or similar)
 from typing import List, Optional, Dict # Ensure List and Optional are imported
-import services # Ensure services is imported
-import schemas # Ensure schemas is imported
+import services, schemas # Ensure services and schemas are imported
 from database import get_db # Ensure get_db is imported
 import logging
 from services import get_user_context
@@ -76,19 +75,26 @@ async def read_lessons_for_module_with_lock_status_standalone_route( # Renamed
     return lessons
 
 @router.get("/lessons/{lesson_id}", response_model=schemas.Lesson)
-def get_lesson(lesson_id: int, db: Session = Depends(get_db)):
+def get_lesson_route(lesson_id: int, db: Session = Depends(get_db)):
     lesson = services.get_lesson(db, lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
+
+    # Calculate and attach the next lesson info before returning
+    next_lesson_info = services.get_next_lesson_info(db, lesson_id)
+
+    # Pydantic will automatically pick up this attribute when creating the response
+    lesson.next_lesson = next_lesson_info
+
     return lesson
 
 @router.get("/lessons/{lesson_id}/exercises", response_model=List[schemas.Exercise])
-def get_exercises(lesson_id: str, db: Session = Depends(get_db)):
+def get_exercises_for_lesson_route(lesson_id: int, db: Session = Depends(get_db)):
     lesson = services.get_lesson(db, lesson_id=lesson_id)
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
-    exercises = services.get_exercises(db, lesson_id=lesson_id)
+    exercises = services.get_exercises(db, lesson_id=lesson.id)
     return exercises
 
 @router.get("/exercises/{exercise_id}", response_model=schemas.Exercise)
@@ -198,4 +204,25 @@ def read_course_exam_exercises( # Renamed for clarity if needed, but name is fin
 
     return exam_exercises
 
-# ...rest of your routes.py file...
+@router.get(
+    "/courses/{course_id}/exam-random",
+    response_model=schemas.Exercise,
+    summary="Get a single random exam exercise for a course",
+    tags=["courses", "exercises", "exams"]
+)
+def get_random_course_exam_route(
+    course_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Provides a single, randomly selected exam exercise for the given course.
+    """
+    # This now calls your modified, randomized service function
+    exam_exercise = services.get_course_exam_exercise(db, course_id=course_id)
+    if not exam_exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No exam exercises found for this course."
+        )
+    logger.info(f"Random exam exercise retrieved for course {course_id}: {exam_exercise.id}")
+    return exam_exercise

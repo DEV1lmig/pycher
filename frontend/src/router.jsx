@@ -3,6 +3,8 @@ import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import LandingPage from '@/pages/LandingPage';
 import DashboardPage from '@/pages/home/Dashboard';
+/* import HelpPage from '@/pages/home/HelpPage';
+import ProfilePage from '@/pages/profile/ProfilePage'; */
 import CoursesPage from '@/pages/courses/CoursesPage';
 import CourseDetailPage from "./pages/courses/CourseDetailPage";
 import ModuleLessonsPage from "./pages/courses/modules/ModuleLessonsPage";
@@ -74,12 +76,27 @@ const lessonWithCodeRoute = createRoute({
   component: LessonWithCodePage,
 });
 
+
+const helpRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/home/help',
+  component: () => <HelpPage />,
+})
+
+const ProfileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/profile',
+  component: () => <ProfilePage />,
+})
+
 const routeTree = rootRoute.addChildren([
   landingRoute,
   loginRoute,
   registerRoute,
   protectedRoute.addChildren([
     homeRoute,
+    ProfileRoute, // Added ProfileRoute under protectedRoute
+    helpRoute,
     coursesListRoute,     // Renders CoursesPage at /courses
     courseDetailRoute,    // Renders CourseDetailPage at /courses/$courseId
     examInterfaceRoute,   // Renders LessonWithCodePage at /courses/$courseId/exam-interface

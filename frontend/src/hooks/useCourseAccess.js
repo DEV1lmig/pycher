@@ -13,7 +13,6 @@ export function useCourseAccess() {
       const data = await getUserEnrollments();
       setEnrollments(data || []);
     } catch (err) {
-      console.error("Failed to fetch enrollments:", err);
       setError(err);
       setEnrollments([]); // Clear enrollments on error
     } finally {

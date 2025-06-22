@@ -184,7 +184,6 @@ export const downloadProgressReport = async () => {
     if (!token) {
       // Handle case where user is not authenticated or token is missing
       // You might want to redirect to login or show an error
-      console.error("No token found. User might not be authenticated.");
       throw new Error("Authentication required to download the report.");
     }
 
@@ -219,7 +218,6 @@ export const downloadProgressReport = async () => {
 
     return { success: true, filename };
   } catch (error) {
-    console.error('Error downloading progress report:', error);
     // Try to parse error response if it's a JSON blob (some errors might be returned as JSON)
     if (error.response && error.response.data instanceof Blob && error.response.data.type === "application/json") {
       const errorText = await error.response.data.text();

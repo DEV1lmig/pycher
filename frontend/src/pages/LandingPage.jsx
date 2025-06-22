@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import { Link } from '@tanstack/react-router';
 import NavBar from './landing/NavBar';
-import logo from '../assets/img/logo.png'; 
+import logo from '../assets/img/logo.png';
 
 import AnimatedContent from '../components/ui/animated-content.jsx';
 import LetterGlitch from '../components/ui/letter-glitch.jsx';
@@ -25,7 +25,7 @@ export default function LandingPage() {
     { title: "Curso rápido y directo", content: "Enseña algoritmos esenciales (regresión, clasificación) con proyectos reales. Ideal para quienes tienen prisa." },
       { title: "Conocimiento de Programación", content: "No se requiere de conocimiento de programación para empezar, una maravilla!" },
     { title: "Aprender Python", content: "Para aquellas personas que les interesa aprender Python, échenle un ojo a esto!" },
-  
+
   ];
 
   useEffect(() => {
@@ -43,10 +43,6 @@ export default function LandingPage() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
-
-  const handleAnimationComplete = () => {
-    console.log('Animation completed!');
-  };
 
   return (
   <div className="relative group min-h-screen bg-dark text-white ">
@@ -69,7 +65,7 @@ export default function LandingPage() {
             pycher
             <span className="text-primary">.</span>
           </div>
-          
+
         </AnimatedContent>
     </div>
 
@@ -187,7 +183,7 @@ export default function LandingPage() {
     </header>
 
       </div>
-    
+
       {/* Courses Section */}
       <section className="flex flex-wrap gap-8 justify-center bg-dark mx-auto px-4">
       <div className='w-full flex justify-center items-center'>
@@ -201,7 +197,7 @@ export default function LandingPage() {
       />
 
       </div>
-      
+
 
       {[...Array(3)].map((_, index) => (
         <FadeContent
@@ -240,7 +236,7 @@ export default function LandingPage() {
             <Squares
               speed={0.3}
               squareSize={30}
-              direction="down" 
+              direction="down"
               borderColor="#9880f2"
               hoverFillColor="#222"
             />
@@ -303,7 +299,7 @@ export default function LandingPage() {
 
       <FadeContent blur={true} duration={1600} easing="ease-out" initialOpacity={0}>
       <section className='bg-dark'>
-        <div className="flex flex-col items-center justify-center mt-12 "> 
+        <div className="flex flex-col items-center justify-center mt-12 ">
             <h1 className="text-4xl font-bold text-white">Esto es lo que dicen nuestros usuarios</h1>
             <p className="mt-3 text-lg text-secondary">Ellos piensan que nuestros cursos son increíbles, tú también puedes pensarlo!</p>
         </div>

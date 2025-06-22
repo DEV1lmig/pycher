@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useMatch } from "@tanstack/react-router"; // Ensure useMatch is imported
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { getModuleById, getCourseById, getCourseExamExercises } from "@/services/contentService"; // #contentService.js
+import { getModuleById, getCourseById, getRandomCourseExam  } from "@/services/contentService"; // #contentService.js
 import { submitExercise as submitExerciseApi } from "@/services/progressService"; // #progressService.js
 import LessonCodeExecutor from "@/components/editor/LessonCodeExecutor";
 import { lessonWithCodeRoute, examInterfaceRoute } from "@/router";
@@ -103,7 +103,6 @@ export default function LessonWithCodePage() {
           }
         })
         .catch(err => {
-          console.error("Error fetching module/course for lesson breadcrumbs:", err);
           // Potentially set an error state for breadcrumbs if critical
         })
         .finally(() => setBreadcrumbLoading(false));
@@ -120,18 +119,17 @@ export default function LessonWithCodePage() {
       setExamError(null);
       Promise.all([
         getCourseById(courseIdForExam), // For breadcrumbs
-        getCourseExamExercises(courseIdForExam) // #contentService.js - Fetches the exam exercise
-      ]).then(([courseRes, examExercisesRes]) => {
+        getRandomCourseExam(courseIdForExam) // Fetches the exam exercise
+      ]).then(([courseRes, examExerciseRes]) => { // Renamed for clarity
         setExamCourse(courseRes);
-        if (examExercisesRes && examExercisesRes.length > 0) {
-          setExamExercise(examExercisesRes[0]); // This sets the state
-          console.log("Exam exercise data loaded:", examExercisesRes[0]); // CHECK THIS LOG
+        // FIX: Check if the returned object exists, not for its length.
+        if (examExerciseRes) {
+          // FIX: Set the object directly, don't access index [0].
+          setExamExercise(examExerciseRes);
         } else {
           setExamError("No se encontró el ejercicio de examen para este curso.");
-          console.warn(`No exam exercises returned for course ${courseIdForExam}`);
         }
       }).catch(err => {
-        console.error("Error fetching exam data:", err);
         setExamError(err.message || "Error al cargar datos del examen.");
       }).finally(() => {
         setExamLoading(false);
@@ -173,13 +171,8 @@ export default function LessonWithCodePage() {
         const submissionResult = await submitExerciseApi(currentExercise.id, codeToSubmit, userStdin); // #progressService.js
         toast.success(`Examen "${currentExercise.title}" enviado. Resultado: ${submissionResult.is_correct ? 'Correcto' : 'Incorrecto'}`);
         setIsExamCorrect(submissionResult.is_correct);
-        if (submissionResult.is_correct) {
-            console.log("Exam passed. Backend handles UserModuleProgress for the exam module and course completion.");
-            // Optionally, navigate to course page or show a summary modal
-        }
         return submissionResult;
       } catch (error) {
-        console.error("Failed to submit exam exercise:", error);
         toast.error(error.response?.data?.detail || error.message || "Error al enviar el examen.");
         setIsExamCorrect(false); // Mark as incorrect on error
       } finally {
@@ -190,7 +183,6 @@ export default function LessonWithCodePage() {
         const submissionResult = await submitExerciseFromHook(currentExercise.id, codeToSubmit, userStdin);
         return submissionResult;
       } catch (error) {
-        console.error("Failed to submit lesson exercise from page:", error);
         // Toast for lesson exercise errors is typically handled within the useLessonDetail hook
       }
     }

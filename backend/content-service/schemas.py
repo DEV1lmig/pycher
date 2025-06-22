@@ -93,8 +93,15 @@ class LessonBase(BaseModel):
 class LessonCreate(LessonBase):
     pass
 
+# Add a simple schema for the next lesson information
+class NextLessonInfo(BaseModel):
+    id: int
+    title: str
+
 class Lesson(LessonBase):
     id: int
+    # Add this field to the response model
+    next_lesson: Optional[NextLessonInfo] = None
 
     class Config:
         from_attributes = True

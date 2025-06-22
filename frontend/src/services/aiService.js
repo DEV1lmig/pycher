@@ -23,7 +23,6 @@ export const getCodeHint = async ({ code, error, instruction }) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error getting AI hint:', error);
     throw new Error('Unable to get AI assistance at this time');
   }
 };
@@ -49,7 +48,6 @@ export const evaluateCode = async ({ code, expected_output, actual_output, descr
     });
     return response.data;
   } catch (error) {
-    console.error('Error evaluating code:', error);
     throw new Error('Unable to evaluate your code at this time');
   }
 };
@@ -72,7 +70,6 @@ export const getCodeFeedback = async ({ code, challenge_description, level = 'be
     });
     return response.data;
   } catch (error) {
-    console.error('Error getting code feedback:', error);
     throw new Error('Unable to get feedback on your code at this time');
   }
 };
@@ -93,7 +90,6 @@ export const explainCode = async ({ code, level = 'beginner' }) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error getting code explanation:', error);
     throw new Error('Unable to explain the code at this time');
   }
 };
@@ -114,7 +110,6 @@ export const getNextLearningStep = async ({ user_progress, current_topic }) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error getting learning path recommendation:', error);
     throw new Error('Unable to generate learning recommendations at this time');
   }
 }

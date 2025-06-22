@@ -128,7 +128,7 @@ class UserModuleProgress(Base):
 class UserLessonProgress(Base):
     __tablename__ = "user_lesson_progress"
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # Assuming a User model exists
     lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"))
 
     is_completed = Column(Boolean, default=False)
@@ -143,7 +143,9 @@ class UserLessonProgress(Base):
     # user = relationship("User", back_populates="lesson_progress") # Assuming User model and relationship
     lesson = relationship("Lesson", back_populates="user_progress_entries")
     last_accessed_exercise = relationship("Exercise", foreign_keys=[last_accessed_exercise_id])
-
+    __tablename__args__ = (
+        UniqueConstraint("user_id", "lesson_id", name="uq_user_lesson_progress"),
+    )
     @property
     def module_id(self) -> int:
         if self.lesson:
@@ -176,6 +178,7 @@ class CourseExam(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
     title = Column(String, nullable=False)
+    order_index = Column(Integer, nullable=False, default=0)
     description = Column(Text, nullable=True)
     pass_threshold_percentage = Column(Float, default=70.0, nullable=False)
     time_limit_minutes = Column(Integer, nullable=True)

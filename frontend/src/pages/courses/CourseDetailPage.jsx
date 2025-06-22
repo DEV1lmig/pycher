@@ -62,27 +62,21 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     if (course && modules.length > 0) {
-      console.log("CourseDetailPage: Attempting to fetch exam exercises for course ID:", course.id);
       getCourseExamExercises(course.id)
         .then(data => {
-          console.log("CourseDetailPage: Fetched examExercise data:", data);
           setExamExercise(data);
         })
         .catch(error => {
-          console.error("CourseDetailPage: Error fetching examExercise:", error);
           setExamExercise(null);
         });
     }
   }, [course, modules]);
 
   useEffect(() => {
-    console.log("CourseDetailPage: userCourseProgress changed:", userCourseProgress);
     if (userCourseProgress) {
       setExamUnlocked(!!userCourseProgress.exam_unlocked);
-      console.log("CourseDetailPage: examUnlocked set to:", !!userCourseProgress.exam_unlocked, "(from userCourseProgress.exam_unlocked:", userCourseProgress.exam_unlocked, ")");
     } else {
       setExamUnlocked(false);
-      console.log("CourseDetailPage: examUnlocked set to false (no userCourseProgress)");
     }
   }, [userCourseProgress]); // Re-run when userCourseProgress data (detailed enrollment) changes
 
@@ -130,7 +124,6 @@ export default function CourseDetailPage() {
       }
       await refreshEnrollments(); // Refresh data for both actions
     } catch (error) {
-      console.error(`Error during ${actionType}:`, error);
       toast.error(`Error al ${actionType === "enroll" ? "inscribirse" : "abandonar"} el curso. ${error.message || ""}`);
     } finally {
       // Close modal is handled by ConfirmationModal's onConfirm, but reset loading here
@@ -213,12 +206,12 @@ export default function CourseDetailPage() {
   const overallLockReason = isCourseLockedByPrerequisite ? courseAccessInfo.reason : (!isUserEnrolledInThisCourse ? "Debes inscribirte en este curso para acceder a los módulos." : null);
 
   // ADD CONSOLE LOGS HERE before returning JSX
-  console.log("CourseDetailPage: Rendering checks for ExamCard:");
-  console.log("  - isUserEnrolledInThisCourse:", isUserEnrolledInThisCourse);
-  console.log("  - isCourseCompleted:", isCourseCompleted);
-  console.log("  - examExercise (raw):", examExercise);
-  console.log("  - examUnlocked:", examUnlocked);
-  console.log("  - userCourseProgress (for context):", userCourseProgress);
+  ("CourseDetailPage: Rendering checks for ExamCard:");
+  ("  - isUserEnrolledInThisCourse:", isUserEnrolledInThisCourse);
+  ("  - isCourseCompleted:", isCourseCompleted);
+  ("  - examExercise (raw):", examExercise);
+  ("  - examUnlocked:", examUnlocked);
+  ("  - userCourseProgress (for context):", userCourseProgress);
 
 
   return (

@@ -1,7 +1,5 @@
 import { apiClient } from './api';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 // --- Course Enrollment & Progress ---
 export const enrollInCourse = async (courseId) => {
   const response = await apiClient.post(`/api/v1/users/courses/${courseId}/enroll`);
@@ -28,7 +26,6 @@ export const getLastAccessed = async () => {
 
 export const getCourseProgressSummary = async (courseId) => {
   const response = await apiClient.get(`/api/v1/users/courses/${courseId}/progress-summary`);
-  console.log("Course Progress Summary Response:", response.data);
   return response.data;
 };
 
@@ -45,7 +42,6 @@ export const completeModule = async (moduleId) => {
 
 export const getModuleProgress = async (moduleId) => {
   const response = await apiClient.get(`/api/v1/users/modules/${moduleId}/progress`);
-  console.log("Module Progress Response:", response.data);
   return response.data;
 };
 

@@ -9,7 +9,7 @@ import hashlib # Ensure hashlib is imported at the top
 from models import (
     Base, Course, Module, Lesson, User, Progress, Exercise,
     UserCourseEnrollment, UserModuleProgress, UserLessonProgress,
-    UserExerciseSubmission, ExamQuestion, CourseExam # Added CourseExam
+    UserExerciseSubmission, ExamQuestion, CourseExam, UserExamAttempt # Added CourseExam
 )
 
 # Database connection
@@ -134,21 +134,22 @@ SEQUENCES_FOR_LEVEL = {
 }
 
 def clear_data(session: SQLAlchemySession):
-    """Deletes all data from relevant tables to allow fresh seeding."""
     logger.info("Clearing existing data...")
     try:
-        # Delete in an order that respects foreign key constraints
+        # --- CLEAR IN CORRECT DEPENDENCY ORDER ---
         session.query(UserExerciseSubmission).delete(synchronize_session=False)
         session.query(Progress).delete(synchronize_session=False)
         session.query(UserLessonProgress).delete(synchronize_session=False)
         session.query(UserModuleProgress).delete(synchronize_session=False)
         session.query(UserCourseEnrollment).delete(synchronize_session=False)
-        session.query(ExamQuestion).delete(synchronize_session=False) # Added
+        session.query(ExamQuestion).delete(synchronize_session=False)
+        # --- ADD THIS LINE: Clear UserExamAttempt before CourseExam ---
+        session.query(UserExamAttempt).delete(synchronize_session=False)
         session.query(Exercise).delete(synchronize_session=False)
         session.query(Lesson).delete(synchronize_session=False)
         session.query(Module).delete(synchronize_session=False)
+        session.query(CourseExam).delete(synchronize_session=False)  # <-- Now safe to delete
         session.query(Course).delete(synchronize_session=False)
-        # session.query(User).delete(synchronize_session=False) # Typically users are not cleared on reseed unless intended
         session.commit()
         logger.info("Successfully cleared existing data.")
     except Exception as e:
@@ -159,15 +160,17 @@ def clear_data(session: SQLAlchemySession):
 def clear_data_from_level(session: SQLAlchemySession, highest_level_changed: str):
     logger.info(f"Clearing data from level '{highest_level_changed}' downwards...")
     try:
-        # Always delete in dependency order for a full clear
         session.query(UserExerciseSubmission).delete(synchronize_session=False)
         session.query(UserLessonProgress).delete(synchronize_session=False)
         session.query(UserModuleProgress).delete(synchronize_session=False)
         session.query(UserCourseEnrollment).delete(synchronize_session=False)
         session.query(Progress).delete(synchronize_session=False)
+        session.query(ExamQuestion).delete(synchronize_session=False)
+        session.query(UserExamAttempt).delete(synchronize_session=False)
         session.query(Exercise).delete(synchronize_session=False)
         session.query(Lesson).delete(synchronize_session=False)
         session.query(Module).delete(synchronize_session=False)
+        session.query(CourseExam).delete(synchronize_session=False)  # <-- Now safe to delete
         session.query(Course).delete(synchronize_session=False)
         session.commit()
         logger.info("Successfully cleared all data in dependency order.")
@@ -327,24 +330,42 @@ def seed_course_exams(session: SQLAlchemySession):
 
     with open(exercises_path, encoding="utf-8") as f:
         exercises_data = json.load(f)
-        for exercise in exercises_data:
-            # Identify exam exercises: only course_id, no module_id or lesson_id, and validation_type == "exam"
-            if (
-                exercise.get("course_id") is not None
-                and exercise.get("module_id") is None
-                and exercise.get("lesson_id") is None
-                and exercise.get("validation_type") == "exam"
-            ):
-                # Only create if not already present for this course
-                existing = session.query(CourseExam).filter_by(course_id=exercise["course_id"]).first()
-                if not existing:
-                    course_exam = CourseExam(
-                        course_id=exercise["course_id"],
-                        title=exercise.get("title", "Examen Final"),
-                        description=exercise.get("description", ""),
-                        pass_threshold_percentage=70.0  # Or set as needed
-                    )
-                    session.add(course_exam)
+        # Filter only exam exercises
+        exam_exercises = [
+            ex for ex in exercises_data
+            if ex.get("course_id") is not None
+            and ex.get("module_id") is None
+            and ex.get("lesson_id") is None
+            and ex.get("validation_type") == "exam"
+        ]
+        # Sort by order_index
+        exam_exercises.sort(key=lambda ex: ex.get("order_index", 0))
+
+        for exercise in exam_exercises:
+            course_id = exercise["course_id"]
+            title = exercise.get("title", f"Examen Final {exercise.get('id')}")
+            order_index = exercise.get("order_index", 1)
+
+            course_exists = session.query(Course).filter_by(id=course_id).first()
+            if not course_exists:
+                logger.warning(f"Course with id {course_id} not found for exam '{title}'. Skipping CourseExam creation.")
+                continue
+
+            existing = session.query(CourseExam).filter_by(
+                course_id=course_id,
+                title=title
+            ).first()
+
+            if not existing:
+                course_exam = CourseExam(
+                    course_id=course_id,
+                    title=title,
+                    description=exercise.get("description", ""),
+                    order_index=order_index,  # <-- THIS LINE seeds order_index
+                    pass_threshold_percentage=70.0
+                )
+                session.add(course_exam)
+                logger.info(f"Staged CourseExam '{title}' for course {course_id} with order_index {order_index}.")
     session.commit()
     logger.info("Course exams seeded.")
 
@@ -394,20 +415,23 @@ if __name__ == "__main__":
                 seed_courses(session)
                 seed_modules(session)
                 seed_lessons(session)
-                seed_course_exams(session)   # <-- ADD THIS LINE
+                seed_course_exams(session)   # <-- This must come AFTER seed_courses
                 seed_exercises(session)
             elif reseed_level == "modules":
                 seed_modules(session)
                 seed_lessons(session)
-                seed_course_exams(session)   # <-- ADD THIS LINE
+                seed_course_exams(session)
                 seed_exercises(session)
             elif reseed_level == "lessons":
                 seed_lessons(session)
-                seed_course_exams(session)   # <-- ADD THIS LINE
+                seed_course_exams(session)
                 seed_exercises(session)
             elif reseed_level == "exercises":
-                seed_course_exams(session)   # <-- ADD THIS LINE
-                seed_exercises(session)
+                    seed_courses(session)
+                    seed_modules(session)
+                    seed_lessons(session)
+                    seed_course_exams(session)
+                    seed_exercises(session)
 
             save_seed_file_hashes(current_seed_files_hashes)
             logger.info(f"Reseeding from level '{reseed_level}' complete.")

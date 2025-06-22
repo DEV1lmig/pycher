@@ -1,5 +1,6 @@
 from http.client import HTTPException
 from sqlalchemy.orm import Session, joinedload, selectinload
+import random
 from fastapi import Request, Depends
 from sqlalchemy import func
 from typing import Optional, Dict, List, Any # Ensure Dict and List are imported
@@ -605,9 +606,21 @@ async def get_user_context(request: Request) -> dict:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     return {"user_id": user_id, "token": token}
 def get_course_exam_exercise(db: Session, course_id: int):
-    return db.query(Exercise).filter(
+    """
+    Fetches all exam-type exercises for a given course and returns one at random,
+    using order_index as the random selector for reproducibility if needed.
+    """
+    exam_pool = db.query(Exercise).filter(
         Exercise.course_id == course_id,
         Exercise.module_id == None,
-        Exercise.lesson_id == None,
-        Exercise.validation_type == "exam"
-    ).first()
+        Exercise.lesson_id == None
+    ).order_by(Exercise.order_index).all()
+
+    if not exam_pool:
+        return None
+
+    # Use order_index for randomness: pick a random index in the pool
+    random_idx = random.randint(0, len(exam_pool) - 1)
+    random_exam_exercise = exam_pool[random_idx]
+    logger.info(f"Selected random exam exercise by order_index: {random_exam_exercise.order_index} (id={random_exam_exercise.id}) for course {course_id}")
+    return random_exam_exercise

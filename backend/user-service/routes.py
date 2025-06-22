@@ -360,7 +360,7 @@ def get_lesson_progress_route(
         )
     return progress_detail
 
-@router.post("/exercises/{exercise_id}/submit", response_model=UserExerciseSubmissionResponse)
+@router.post("/exercises/{exercise_id}/submit", response_model=Union[UserExerciseSubmissionResponse, Dict])
 def submit_exercise_route(
     exercise_id: int,
     submission_data: ExerciseCompletionRequest, # Uses the updated schema
@@ -375,7 +375,14 @@ def submit_exercise_route(
         submission_data.submitted_code,
         submission_data.input_data # This is now being passed
     )
-    if result.lesson_id is None:
+
+    # If the result is a dict, it's an exam result. Return it directly.
+    if isinstance(result, dict):
+        return result
+
+    # Otherwise, it's a UserExerciseSubmission object for a regular exercise.
+    # A regular exercise should always have a lesson_id.
+    if not hasattr(result, 'lesson_id') or result.lesson_id is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Exercise not found or not part of a lesson"
