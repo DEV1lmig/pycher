@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 1.5cm;
+            margin: 1cm; /* Reduced margin */
             @bottom-center {
                 content: "Page " counter(page) " of " counter(pages);
                 font-size: 0.8em;
@@ -15,250 +15,249 @@
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 10pt;
+            font-size: 9pt; /* Reduced base font size */
             color: #333;
-            line-height: 1.4;
+            line-height: 1.3; /* Reduced line height */
         }
         .header {
             text-align: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
+            margin-bottom: 15px; /* Reduced margin */
+            border-bottom: 1.5px solid #007bff;
+            padding-bottom: 8px;
         }
         .header h1 {
-            font-size: 24pt;
+            font-size: 20pt; /* Reduced font size */
             color: #0056b3;
             margin: 0;
         }
         .header h2 {
-            font-size: 16pt;
+            font-size: 14pt; /* Reduced font size */
             color: #007bff;
-            margin: 5px 0 0 0;
+            margin: 4px 0 0 0;
             font-weight: normal;
         }
         .report-meta {
-            font-size: 9pt;
+            font-size: 8.5pt;
             color: #555;
-            margin-bottom: 20px;
-            padding: 10px;
+            margin-bottom: 15px;
+            padding: 8px;
             background-color: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 4px;
         }
-        .report-meta p {
-            margin: 3px 0;
+        .report-meta p, p {
+            margin: 2px 0; /* Reduced paragraph margins */
+        }
+        .enrollments-wrapper {
+            page-break-inside: avoid;
         }
         .section-title {
-            font-size: 14pt;
+            font-size: 13pt; /* Reduced font size */
             color: #0056b3;
             border-bottom: 1px solid #007bff;
-            padding-bottom: 5px;
-            margin-top: 25px;
-            margin-bottom: 15px;
+            padding-bottom: 4px;
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
         .course-section {
             border: 1px solid #dee2e6;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 10px; /* Reduced padding */
+            margin-bottom: 15px;
             border-radius: 5px;
             background-color: #fff;
             page-break-inside: avoid;
         }
         .course-title {
-            font-size: 16pt;
-            margin-bottom: 8px;
+            font-size: 14pt; /* Reduced font size */
+            margin-top: 0;
+            margin-bottom: 5px;
             color: #17a2b8;
         }
         .course-summary {
-            margin-bottom: 12px;
-            font-size: 9.5pt;
+            margin-bottom: 8px;
+            font-size: 9pt;
             color: #495057;
         }
-        .module-section {
-            border-left: 3px solid #17a2b8;
-            padding-left: 12px;
-            margin-left: 5px;
-            margin-top: 12px;
-            margin-bottom: 12px;
-            page-break-inside: avoid;
-        }
-        .module-title {
-            font-size: 12pt;
-            color: #138496;
+        h5 { /* Style for Modules/Exams titles */
+            font-size: 11pt;
+            margin-top: 10px;
             margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
         }
-        .lesson-section {
-            border-left: 2px solid #28a745;
+        .module-section {
+            border-left: 2px solid #17a2b8;
             padding-left: 10px;
-            margin-left: 10px;
+            margin-left: 5px;
             margin-top: 8px;
             margin-bottom: 8px;
             page-break-inside: avoid;
         }
+        .module-title {
+            font-size: 11pt;
+            color: #138496;
+            margin: 0 0 4px 0;
+        }
+        .lesson-section {
+            border-left: 1px solid #28a745;
+            padding-left: 8px;
+            margin-left: 10px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            page-break-inside: avoid;
+        }
         .lesson-title {
-            font-size: 10.5pt;
+            font-size: 10pt;
             color: #1e7e34;
-            margin-bottom: 4px;
+            margin: 0 0 4px 0;
         }
         .exercise-list {
             list-style-type: none;
-            padding-left: 15px;
-            font-size: 9pt;
+            padding-left: 10px;
+            margin: 2px 0;
+            font-size: 8.5pt;
         }
         .exercise-item {
-            margin-bottom: 4px;
-            padding-left: 10px;
-            border-left: 1px dashed #ced4da;
+            margin-bottom: 2px;
         }
         .exam-section {
-            border-left: 3px solid #ffc107;
-            padding-left: 12px;
+            border-left: 2px solid #ffc107;
+            padding-left: 10px;
             margin-left: 5px;
-            margin-top: 12px;
-            margin-bottom: 12px;
+            margin-top: 8px;
+            margin-bottom: 8px;
             page-break-inside: avoid;
         }
         .exam-title {
-            font-size: 12pt;
+            font-size: 11pt;
             color: #d39e00;
-            margin-bottom: 5px;
+            margin: 0 0 4px 0;
         }
         .status { font-weight: bold; }
-        .status-completed, .status-passed { color: #28a745; } /* Green */
-        .status-inprogress, .status-incomplete { color: #fd7e14; } /* Orange */
-        .status-failed { color: #dc3545; } /* Red */
-        .no-data { color: #6c757d; font-style: italic; font-size: 9pt; }
-        table {
+        .status-completed, .status-passed { color: #28a745; }
+        .status-inprogress, .status-incomplete { color: #fd7e14; }
+        .status-failed { color: #dc3545; }
+        .no-data { color: #6c757d; font-style: italic; font-size: 8.5pt; }
+        .progress-bar-container {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 8px;
-            font-size: 9pt;
-            page-break-inside: auto;
-        }
-        th, td {
-            border: 1px solid #ced4da;
-            padding: 5px 8px;
-            text-align: left;
-            vertical-align: top;
-        }
-        th {
             background-color: #e9ecef;
+            border-radius: 4px;
+            height: 14px; /* Reduced height */
+            margin-top: 5px;
+            margin-bottom: 8px;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            border-radius: 4px;
+            text-align: center;
+            color: white;
             font-weight: bold;
-            color: #495057;
+            font-size: 8pt;
+            line-height: 14px; /* Match height */
         }
-        tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-        }
-        small { font-size: 8.5pt; color: #495057; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Pycher Learning Platform</h1>
-        <h2>User Progress Report</h2>
+        <h1>Pycher Curso Interactivo</h1>
+        <h2>Reporte de progreso</h2>
     </div>
 
     <div class="report-meta">
         <p><strong>User:</strong> {{ report_data.first_name or '' }} {{ report_data.last_name or '' }} ({{ report_data.username }})</p>
         <p><strong>Email:</strong> {{ report_data.email }}</p>
-        <p><strong>Report Generated:</strong> {{ report_data.report_generated_at.strftime('%B %d, %Y, %H:%M:%S UTC') }}</p>
+        <p><strong>Reporte generado:</strong> {{ report_data.report_generated_at.strftime('%B %d, %Y, %H:%M:%S UTC') }}</p>
     </div>
 
-    <h3 class="section-title">Course Enrollments</h3>
+    <div class="enrollments-wrapper">
+        <h3 class="section-title">Cursos inscritos</h3>
 
-    {% if report_data.courses %}
-        {% for course in report_data.courses %}
-        <div class="course-section">
-            <h4 class="course-title">{{ course.title }}</h4>
-            <p class="course-summary">
-                Enrolled: {{ course.enrollment_date.strftime('%Y-%m-%d') }} |
-                Status: <span class="status {{ 'status-completed' if course.is_completed else 'status-inprogress' }}">
-                    {{ "Completed" if course.is_completed else "In Progress" }}
-                </span> |
-                Progress: <span class="status">{{ "%.1f"|format(course.progress_percentage) }}%</span>
-            </p>
+        {% if report_data.courses %}
+            {% for course in report_data.courses %}
+            <div class="course-section">
+                <h4 class="course-title">{{ course.title }}</h4>
+                <p class="course-summary">
+                    Inscrito: {{ course.enrollment_date.strftime('%Y-%m-%d') }} |
+                    Estatus: <span class="status {{ 'status-completed' if course.is_completed else 'status-inprogress' }}">
+                        {{ "Completado" if course.is_completed else "En progreso" }}
+                    </span>
+                </p>
 
-            {% if course.modules %}
-                <h5>Modules:</h5>
-                {% for module in course.modules %}
-                <div class="module-section">
-                    <h6 class="module-title">{{ module.title }}</h6>
-                    <p><small>
-                        Status: <span class="status {{ 'status-completed' if module.is_completed else 'status-inprogress' }}">
-                            {{ "Completed" if module.is_completed else "In Progress" }}
-                        </span>
-                        {% if module.started_at %} | Started: {{ module.started_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
-                        {% if module.completed_at %} | Completed: {{ module.completed_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
-                    </small></p>
-
-                    {% if module.lessons %}
-                        <p><small><strong>Lessons:</strong></small></p>
-                        {% for lesson in module.lessons %}
-                        <div class="lesson-section">
-                            <p class="lesson-title">{{ lesson.title }} -
-                                <span class="status {{ 'status-completed' if lesson.is_completed else 'status-inprogress' }}">
-                                    {{ "Completed" if lesson.is_completed else "In Progress" }}
-                                </span>
-                            </p>
-                            {% if lesson.exercises %}
-                                <p><small>Exercises:</small></p>
-                                <ul class="exercise-list">
-                                    {% for exercise in lesson.exercises %}
-                                    <li class="exercise-item">
-                                        {{ exercise.title }}:
-                                        {% if exercise.submitted_at is not none %}
-                                            <span class="status {{ 'status-completed' if exercise.is_correct else 'status-failed' if exercise.is_correct is not none else 'status-inprogress' }}">
-                                            {{ "Correct" if exercise.is_correct else "Incorrect" if exercise.is_correct is not none else "Attempted" }}</span>
-                                            (Attempts: {{ exercise.attempts }},
-                                            Score: {{ "%.1f"|format(exercise.score) if exercise.score is not none else 'N/A' }})
-                                            <small>Last attempt: {{ exercise.submitted_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                                        {% else %}
-                                            <span class="no-data">Not Attempted</span>
-                                        {% endif %}
-                                    </li>
-                                    {% endfor %}
-                                </ul>
-                            {% else %}
-                                <p class="no-data"><small>No exercises in this lesson.</small></p>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="no-data"><small>No lessons in this module.</small></p>
-                    {% endif %}
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ course.progress_percentage }}%;">
+                        {{ "%.0f"|format(course.progress_percentage) }}%
+                    </div>
                 </div>
-                {% endfor %}
-            {% else %}
-                <p class="no-data">No modules in this course.</p>
-            {% endif %}
 
-            {% if course.exams %}
-                <h5>Exams:</h5>
-                {% for exam in course.exams %}
-                <div class="exam-section">
-                    <h6 class="exam-title">{{ exam.title }}</h6>
-                    {% if exam.completed_at is not none %}
+                {% if course.modules %}
+                    <h5>Modulos</h5>
+                    {% for module in course.modules %}
+                    <div class="module-section">
+                        <p class="module-title">{{ module.title }}</p>
                         <p><small>
-                           Score: <span class="status">{{ "%.1f"|format(exam.score) if exam.score is not none else 'N/A' }}%</span> |
-                           Status: <span class="status {{ 'status-passed' if exam.passed else 'status-failed' if exam.passed is not none else '' }}">
-                               {{ "Passed" if exam.passed else "Failed" if exam.passed is not none else "Not Graded" }}
-                           </span> |
-                           Completed: {{ exam.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                            Estatus: <span class="status {{ 'status-completed' if module.is_completed else 'status-inprogress' }}">
+                                {{ "Completado" if module.is_completed else "En progreso" }}
+                            </span>
+                            {% if module.started_at %} | Iniciado: {{ module.started_at.strftime('%Y-%m-%d') }}{% endif %}
+                            {% if module.completed_at %} | Completado: {{ module.completed_at.strftime('%Y-%m-%d') }}{% endif %}
                         </small></p>
-                    {% else %}
-                        <p class="no-data"><small>Not Attempted or In Progress</small></p>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="no-data">No exams associated with this course.</p>
-            {% endif %}
-        </div>
-        {% endfor %}
-    {% else %}
-        <p class="no-data">No active course enrollments found for this user.</p>
-    {% endif %}
+
+                        {% if module.lessons %}
+                            {% for lesson in module.lessons %}
+                            <div class="lesson-section">
+                                <p class="lesson-title">{{ lesson.title }} -
+                                    <span class="status {{ 'status-completed' if lesson.is_completed else 'status-inprogress' }}">
+                                        {{ "Completado" if lesson.is_completed else "En progreso" }}
+                                    </span>
+                                </p>
+                                {% if lesson.exercises %}
+                                    <ul class="exercise-list">
+                                        {% for exercise in lesson.exercises %}
+                                        <li class="exercise-item">
+                                            {{ exercise.title }}:
+                                            {% if exercise.submitted_at is not none %}
+                                                <span class="status {{ 'status-completed' if exercise.is_correct else 'status-failed' if exercise.is_correct is not none else 'status-inprogress' }}">
+                                                {{ "Correcto" if exercise.is_correct else "Incorrecto" if exercise.is_correct is not none else "Intentado" }}</span>
+                                                <small> ({{ exercise.submitted_at.strftime('%Y-%m-%d') }})</small>
+                                            {% else %}
+                                                <span class="no-data">No intentado</span>
+                                            {% endif %}
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if course.exams %}
+                    <h5>Examenes</h5>
+                    {% for exam in course.exams %}
+                    <div class="exam-section">
+                        <p class="exam-title">{{ exam.title }}</p>
+                        {% if exam.completed_at is not none %}
+                            <p><small>
+                               Estatus: <span class="status {{ 'status-passed' if exam.passed else 'status-failed' if exam.passed is not none else '' }}">
+                                   {{ "Completado" if exam.passed else "Failed" if exam.passed is not none else "Sin calificar" }}
+                               </span> |
+                               Completado: {{ exam.completed_at.strftime('%Y-%m-%d') }}
+                            </small></p>
+                        {% else %}
+                            <p class="no-data"><small>No intentado</small></p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-data">No active course enrollments found for this user.</p>
+        {% endif %}
+    </div>
 
 </body>
 </html>

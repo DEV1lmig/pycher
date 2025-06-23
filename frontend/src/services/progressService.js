@@ -108,7 +108,6 @@ export const getBatchModuleProgress = async (moduleIds) => {
   const response = await apiClient.post(`/api/v1/users/modules/progress/batch`, {
     module_ids: moduleIds,
   });
-  console.log(response.data)
   return response.data.progress;
 };
 

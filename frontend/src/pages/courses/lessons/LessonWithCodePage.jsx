@@ -27,17 +27,6 @@ export default function LessonWithCodePage() {
   // Safely determine isExamMode, checking if currentRouteMatch is defined.
   const isExamMode = currentRouteMatch?.routeId === examInterfaceRoute.id;
 
-  // It's helpful to add some console logs here for debugging:
-  if (!currentRouteMatch) {
-    console.error("LessonWithCodePage: currentRouteMatch from useMatch({}) is undefined or null!");
-  } else {
-    console.log("LessonWithCodePage Debug Info:");
-    console.log("  currentRouteMatch.routeId:", currentRouteMatch.routeId);
-    console.log("  examInterfaceRoute.id for comparison:", examInterfaceRoute.id);
-    console.log("  lessonWithCodeRoute.id for comparison:", lessonWithCodeRoute.id);
-    console.log("  Determined isExamMode:", isExamMode);
-  }
-
   // Use the 'from' option with useParams based on the determined mode.
   // This relies on isExamMode being correctly determined.
   const params = useParams({
