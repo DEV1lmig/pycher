@@ -19,6 +19,7 @@ import FaqCarousel from "../components/ui/carousel";
 
 export default function LandingPage() {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+  const [isTitleAnimationComplete, setIsTitleAnimationComplete] = useState(false); // 1. Add new state
 
   const Items = [
     { title: "Increíble experiencia", content: "Perfecto para empezar. Cubre Python básico y aplicaciones simples de IA. Ejercicios útiles y claros." },
@@ -27,6 +28,11 @@ export default function LandingPage() {
     { title: "Aprender Python", content: "Para aquellas personas que les interesa aprender Python, échenle un ojo a esto!" },
 
   ];
+
+  // 2. Define the handler to update the state
+  const handleAnimationComplete = () => {
+    setIsTitleAnimationComplete(true);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -198,8 +204,8 @@ export default function LandingPage() {
 
       </div>
 
-
-      {[...Array(3)].map((_, index) => (
+      {/* 3. Conditionally render the cards based on the state */}
+      {isTitleAnimationComplete && [...Array(3)].map((_, index) => (
         <FadeContent
           key={index}
           blur={true}

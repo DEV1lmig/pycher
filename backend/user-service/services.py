@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import func
+from sqlalchemy import func as sql_func
 from sqlalchemy.exc import IntegrityError
 import os
 import random
@@ -586,7 +586,28 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
     submission_record.submitted_at = dt.utcnow()
     submission_record.passed = all_system_tests_passed
 
-    db.add(submission_record) # Stage the submission record for the single transaction
+    db.add(submission_record) # Stage the submission record
+
+    # --- MODIFICATION: Handle exam attempt state ---
+    if exercise.validation_type == "exam":
+        active_attempt = db.query(UserExamAttempt).filter(
+            UserExamAttempt.user_id == user_id,
+            UserExamAttempt.exercise_id == exercise_id,
+            UserExamAttempt.is_active == True
+        ).first()
+
+        if active_attempt:
+            if not all_system_tests_passed:  # Submission is INCORRECT
+                active_attempt.failure_count += 1
+                logger.info(f"User {user_id} failed exam attempt for Exercise {exercise_id}. New failure count: {active_attempt.failure_count}")
+            else:  # Submission is CORRECT
+                active_attempt.passed = True
+                active_attempt.is_active = False
+                active_attempt.completed_at = dt.utcnow()
+                logger.info(f"User {user_id} passed exam for Exercise {exercise_id}. Deactivating attempt.")
+
+            db.add(active_attempt)
+    # --- END MODIFICATION ---
 
     # If the exercise is correct, trigger the entire cascade of progress updates.
     # All changes will be staged within the same session.
@@ -622,10 +643,10 @@ def get_batch_module_progress_details(db: Session, user_id: int, module_ids: lis
         record = next((r for r in progress_records if r.module_id == mid), None)
         if record:
             # Calculate progress percentage based on completed lessons
-            total_lessons = db.query(func.count(Lesson.id)).filter(Lesson.module_id == mid).scalar() or 0
+            total_lessons = db.query(sql_func.count(Lesson.id)).filter(Lesson.module_id == mid).scalar() or 0
             completed_lessons = 0
             if total_lessons > 0:
-                completed_lessons = db.query(func.count(UserLessonProgress.id)).filter(
+                completed_lessons = db.query(sql_func.count(UserLessonProgress.id)).filter(
                     UserLessonProgress.user_id == user_id,
                     UserLessonProgress.lesson.has(Lesson.module_id == mid),
                     UserLessonProgress.is_completed == True
@@ -775,10 +796,10 @@ def start_module(db: Session, user_id: int, module_id: int):
     # This requires fetching course_id and calculating progress_percentage
     course_id_for_response = module_db_instance.course_id if module_db_instance else None
 
-    total_lessons_in_module = db.query(func.count(Lesson.id)).filter(Lesson.module_id == module_id).scalar() or 0
+    total_lessons_in_module = db.query(sql_func.count(Lesson.id)).filter(Lesson.module_id == module_id).scalar() or 0
     completed_lessons_count = 0
     if total_lessons_in_module > 0:
-        completed_lessons_count = db.query(func.count(UserLessonProgress.id)).filter(
+        completed_lessons_count = db.query(sql_func.count(UserLessonProgress.id)).filter(
             UserLessonProgress.user_id == user_id,
             UserLessonProgress.lesson.has(Lesson.module_id == module_id), # Ensure lesson belongs to this module
             UserLessonProgress.is_completed == True
@@ -848,7 +869,7 @@ def get_user_module_progress(db: Session, user_id: int, module_id: int) -> Optio
     ).first()
 
     if not module_progress:
-        total_lessons_in_module = db.query(func.count(Lesson.id)).filter(Lesson.module_id == module_id).scalar() or 0
+        total_lessons_in_module = db.query(sql_func.count(Lesson.id)).filter(Lesson.module_id == module_id).scalar() or 0
         return UserModuleProgressResponse(
             id=-1, # Or some indicator it's a default
             user_id=user_id,
@@ -865,11 +886,11 @@ def get_user_module_progress(db: Session, user_id: int, module_id: int) -> Optio
     db.refresh(module_progress)  # Ensure Module is refreshed to get latest data
 
     # Calculate progress percentage
-    total_lessons_in_module = db.query(func.count(Lesson.id)).filter(Lesson.module_id == module_id).scalar() or 0
+    total_lessons_in_module = db.query(sql_func.count(Lesson.id)).filter(Lesson.module_id == module_id).scalar() or 0
 
     completed_lessons_count = 0
     if total_lessons_in_module > 0:
-        completed_lessons_count = db.query(func.count(UserLessonProgress.id)).filter(
+        completed_lessons_count = db.query(sql_func.count(UserLessonProgress.id)).filter(
             UserLessonProgress.user_id == user_id,
             UserLessonProgress.lesson_id.in_(
                 db.query(Lesson.id).filter(Lesson.module_id == module_id)
@@ -1482,3 +1503,64 @@ def run_exam_code_validation(code_submitted, exercise, input_data=None, timeout=
             "output": "",
             "error": f"Error al validar el examen: {str(e)}"
         }
+
+
+
+# Define a constant for the failure limit
+EXAM_FAILURE_LIMIT = 5
+
+def get_or_create_current_exam_exercise(db: Session, user_id: int, course_id: int):
+    """
+    Gets the user's active exam exercise for a course.
+    If the active attempt has too many failures, or none exists, it assigns a new one.
+    """
+    # 1. Look for an existing active attempt for this course
+    active_attempt = db.query(UserExamAttempt).filter(
+        UserExamAttempt.user_id == user_id,
+        UserExamAttempt.course_id == course_id,
+        UserExamAttempt.is_active == True
+    ).first()
+
+    # 2. If an attempt exists and is within the failure limit, return its exercise
+    if active_attempt and active_attempt.failure_count < EXAM_FAILURE_LIMIT:
+        logger.info(f"Returning existing active exam (Exercise ID: {active_attempt.exercise_id}) for User {user_id}.")
+        return db.query(Exercise).filter(Exercise.id == active_attempt.exercise_id).first()
+
+    # 3. If attempt exists but has too many failures, deactivate it
+    if active_attempt:
+        logger.warning(f"Deactivating exam attempt {active_attempt.id} for User {user_id} due to reaching failure limit ({active_attempt.failure_count} failures).")
+        active_attempt.is_active = False
+        db.add(active_attempt)
+
+    # 4. Fetch a new random exercise for the course
+    logger.info(f"Fetching a new random exam for User {user_id}, Course {course_id}.")
+    new_exam_exercise = db.query(Exercise).filter(
+        Exercise.course_id == course_id,
+        Exercise.module_id == None,
+        Exercise.lesson_id == None,
+        Exercise.validation_type == 'exam'
+    ).order_by(sql_func.random()).first()
+
+    if not new_exam_exercise:
+        raise HTTPException(status_code=404, detail="No exam exercises found for this course.")
+
+    # Find the corresponding CourseExam for this course.
+    course_exam = db.query(CourseExam).filter(CourseExam.course_id == course_id).first()
+    if not course_exam:
+        raise HTTPException(status_code=500, detail="Exam configuration error: exercise found but no parent exam record.")
+
+    # 5. Create a new UserExamAttempt record for the new exercise
+    new_attempt = UserExamAttempt(
+        user_id=user_id,
+        course_id=course_id,
+        exam_id=course_exam.id,
+        exercise_id=new_exam_exercise.id,
+        is_active=True,
+        failure_count=0
+    )
+    db.add(new_attempt)
+    db.commit() # Commit deactivation of old and creation of new
+    db.refresh(new_attempt)
+    logger.info(f"Created new exam attempt {new_attempt.id} (Exercise ID: {new_exam_exercise.id}) for User {user_id}.")
+
+    return new_exam_exercise

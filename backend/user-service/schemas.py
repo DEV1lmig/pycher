@@ -149,6 +149,26 @@ class UserModuleProgressResponse(UserModuleProgressBase):
     class Config:
         from_attributes = True
 
+class ExerciseSchema(BaseModel):
+    id: int
+    course_id: Optional[int] = None
+    module_id: Optional[int] = None
+    lesson_id: Optional[int] = None
+    order_index: int
+    title: str
+    description: str
+    instructions: Optional[str] = None
+    starter_code: Optional[str] = None
+    validation_type: Optional[str] = None
+    validation_rules: Optional[Dict[str, Any]] = None
+    hints: Optional[str] = None
+    difficulty: Optional[str] = None
+    estimated_time_minutes: Optional[int] = None
+    tags: Optional[List[str]] = None
+
+    class Config:
+        from_attributes = True
+
 class UserCourseProgressBase(BaseModel):
     course_id: int
     is_started: bool = False

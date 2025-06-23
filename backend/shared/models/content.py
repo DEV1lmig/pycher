@@ -202,11 +202,15 @@ class UserExamAttempt(Base):
     __tablename__ = "user_exam_attempts"
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
     exam_id = Column(Integer, ForeignKey("course_exams.id"), nullable=False)
+    exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)
     passed = Column(Boolean, nullable=True)  # Only pass/fail, no score
     answers = Column(JSONB, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    failure_count = Column(Integer, default=0, nullable=False) # <-- ADD THIS LINE
     exam = relationship("CourseExam", back_populates="attempts")
 
 # ... Make sure UserExerciseSubmission is defined if not already ...

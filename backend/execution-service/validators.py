@@ -2,6 +2,7 @@ import ast
 import subprocess
 import tempfile
 import os
+import time
 import signal
 import importlib.util
 import random
@@ -205,34 +206,67 @@ def general_security_check(user_code: str) -> DynamicValidationResult:
 def validate_simple_print_exercise(
     user_code: str,
     rules: Dict[str, Any],
-    input_data: Optional[str] = None, # Usually not needed for simple print
-    timeout: int = 5
+    input_data: Optional[str] = None, # Usually None for simple_print
+    timeout: int = 10
 ) -> DynamicValidationResult:
-    security_res = general_security_check(user_code)
-    if not security_res.passed:
-        return security_res
+    details: Dict[str, Any] = {"validator": "simple_print"}
+    start_time = time.time()
+
+    # --- NEW: AST Checks for required structures ---
+    require_for_loop = rules.get("require_for_loop", False)
+    require_list_append = rules.get("require_list_append") # e.g., "compras"
+
+    if require_for_loop or require_list_append:
+        try:
+            tree = ast.parse(user_code)
+
+            if require_for_loop:
+                if not any(isinstance(node, ast.For) for node in ast.walk(tree)):
+                    return DynamicValidationResult(False, "Your solution is missing a 'for' loop, which is required for this exercise.", details=details)
+                details["ast_for_loop_found"] = True
+
+            if require_list_append:
+                # Check for list assignment and subsequent append call
+                list_assigned = False
+                append_called = False
+                for node in ast.walk(tree):
+                    # Check for assignment: var = []
+                    if isinstance(node, ast.Assign):
+                        for target in node.targets:
+                            if isinstance(target, ast.Name) and target.id == require_list_append and isinstance(node.value, ast.List):
+                                list_assigned = True
+                    # Check for call: var.append(...)
+                    if isinstance(node, ast.Call):
+                        if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                            if node.func.value.id == require_list_append and node.func.attr == 'append':
+                                append_called = True
+
+                if not (list_assigned and append_called):
+                     return DynamicValidationResult(False, f"The exercise requires you to create a list named '{require_list_append}' and use the '.append()' method on it.", details=details)
+                details["ast_list_append_found"] = True
+
+        except SyntaxError as e:
+            return DynamicValidationResult(False, f"Syntax error in your code: {e}", details=details)
+    # --- END NEW ---
 
     stdout, stderr, timed_out, exit_code_res, captured_prints_metadata = run_user_code_sandboxed(
         user_code, input_data, timeout, capture_print_types=True
     )
+    details["execution_time"] = time.time() - start_time
+    details["exit_code"] = exit_code_res
+    details["timed_out"] = timed_out
 
-    details: Dict[str, Any] = {
-        "stdout": stdout,
-        "stderr": stderr,
-        "timed_out": timed_out,
-        "exit_code": exit_code_res,
-        "captured_prints_metadata": captured_prints_metadata
-    }
     feedback_messages = []
     core_checks_passed = True
 
     if timed_out:
         return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout, details=details)
+
     if exit_code_res != 0:
         error_message = stderr.strip() if stderr.strip() else "Runtime error occurred."
         return DynamicValidationResult(False, f"Runtime error: {error_message}", actual_output=stdout, details=details)
 
-    if not captured_prints_metadata and not stdout.strip(): # Check if any print occurred
+    if not stdout.strip(): # Check if any print occurred
         return DynamicValidationResult(False, "No output detected. Ensure your code uses print() to display results.", actual_output=stdout, details=details)
 
     # Metadata Check: Number of print calls
@@ -271,9 +305,24 @@ def validate_simple_print_exercise(
              feedback_messages.append(f"Mismatch between expected_print_count ({expected_print_count}) and length of expected_types list ({len(expected_types)}). Review exercise rules.")
              details["type_check_passed"] = False
 
-    # AST Check: Variable definitions (optional)
-    # This would require more complex AST parsing to check if specific variables were defined.
-    # For simple_print, this might be overkill unless rules explicitly demand it.
+    # --- NEW: AST Check for strict variable names ---
+    strict_vars = rules.get("strict_variable_names")
+    if isinstance(strict_vars, list) and strict_vars:
+        try:
+            tree = ast.parse(user_code)
+            defined_vars = {node.id for node in ast.walk(tree) if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store)}
+            details["ast_defined_variables"] = list(defined_vars)
+            if not set(strict_vars).issubset(defined_vars):
+                core_checks_passed = False
+                missing_vars = set(strict_vars) - defined_vars
+                feedback_messages.append(f"Required variable(s) not defined: {', '.join(missing_vars)}.")
+                details["strict_variable_check_passed"] = False
+            else:
+                details["strict_variable_check_passed"] = True
+        except SyntaxError:
+            # This is already handled by the runtime check, but good practice
+            pass
+    # --- END NEW ---
 
     # Content Check (Secondary)
     expected_exact_output = rules.get("expected_exact_output")
@@ -456,6 +505,7 @@ def validate_dynamic_output_exercise(
     format_template = rules.get("output_format_template", "{var}\n")
     transform_expr = rules.get("transform_for_template")
     requires_input_func_rule = rules.get("requires_input_function", False) # Does the exercise fundamentally need input()
+    require_fstring_rule = rules.get("require_fstring", False) # <-- NEW
 
     if not transform_expr:
         return DynamicValidationResult(False, "Validation config error: 'transform_for_template' missing.", details=details)
@@ -476,24 +526,47 @@ def validate_dynamic_output_exercise(
     overall_passed = True
     accumulated_feedback = []
 
-    # AST check for input() usage (once)
+    # --- MODIFIED: AST checks for input() and f-string usage ---
     used_input_function_ast = False
-    if requires_input_func_rule:
-        try:
-            tree = ast.parse(user_code)
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'input':
+    used_fstring_for_print_ast = False
+    used_if_statement_ast = False
+    require_if_statement = rules.get("require_if_statement", False)
+
+    try:
+        tree = ast.parse(user_code)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.If):
+                used_if_statement_ast = True
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                if node.func.id == 'input':
                     used_input_function_ast = True
-                    break
-        except SyntaxError:
-             return DynamicValidationResult(False, "Syntax error in your code.", details=details)
-        if not used_input_function_ast:
-            overall_passed = False # If input() is required by rule but not found by AST, it's a fundamental failure
-            accumulated_feedback.append("AST Check: The `input()` function was expected but not found.")
-            # No need to run behavioral tests if this fundamental AST check fails
-            details["ast_input_check_failed"] = True
-            return DynamicValidationResult(False, " ".join(accumulated_feedback), details=details)
-        details["ast_input_check_passed"] = True
+                elif node.func.id == 'print' and node.args and isinstance(node.args[0], ast.JoinedStr):
+                    used_fstring_for_print_ast = True
+    except SyntaxError:
+        return DynamicValidationResult(False, "Syntax error in your code.", details=details)
+
+    if require_if_statement and not used_if_statement_ast:
+        overall_passed = False
+        accumulated_feedback.append("AST Check: An 'if' statement is required for this exercise but was not found.")
+        details["ast_if_check_failed"] = True
+        return DynamicValidationResult(False, " ".join(accumulated_feedback), details=details)
+    if require_if_statement:
+        details["ast_if_check_passed"] = True
+
+    if requires_input_func_rule and not used_input_function_ast:
+        overall_passed = False
+        accumulated_feedback.append("AST Check: The `input()` function was expected but not found.")
+        details["ast_input_check_failed"] = True
+        return DynamicValidationResult(False, " ".join(accumulated_feedback), details=details)
+    details["ast_input_check_passed"] = True
+
+    if require_fstring_rule and not used_fstring_for_print_ast:
+        # This is a strong hint, but might not be a hard failure depending on the exercise
+        accumulated_feedback.append("Hint: An f-string was expected for the print statement but not found.")
+        details["ast_fstring_check_passed"] = False
+    else:
+        details["ast_fstring_check_passed"] = True
+    # --- END MODIFICATION ---
 
 
     for i, case_value_str in enumerate(test_cases_values):
@@ -544,6 +617,16 @@ def validate_dynamic_output_exercise(
             case_details["passed"] = False
             details["test_case_results"].append(case_details)
             continue
+
+        # --- NEW: Check print count per case ---
+        expected_prints_per_case = rules.get("expected_print_count_per_case")
+        if expected_prints_per_case is not None and len(captured_prints) != expected_prints_per_case:
+            overall_passed = False
+            accumulated_feedback.append(f"Case #{i+1} (Input: {case_value_str}): Expected {expected_prints_per_case} print operations, but found {len(captured_prints)}.")
+            case_details["passed"] = False
+            details["test_case_results"].append(case_details)
+            continue
+        # --- END NEW ---
 
         # Metadata: Check type of printed item (assuming one primary item printed per dynamic case)
         # This might need refinement if multiple prints or complex outputs are expected per case.
@@ -631,6 +714,7 @@ def validate_function_exercise(
     expected_return_value = scenario_config.get("expected_return_value")
     has_expected_return_check = "expected_return_value" in scenario_config
     expected_type_str = scenario_config.get("expected_return_type")
+    require_return = rules.get("require_return_statement", False) # <-- NEW
     details.update({
         "expected_return_value": expected_return_value if has_expected_return_check else "N/A",
         "expected_return_type": expected_type_str or "N/A"
@@ -658,6 +742,15 @@ def validate_function_exercise(
             return DynamicValidationResult(False, f"Function '{func_name}' not defined in your code.", details=details)
         details["function_defined_in_module"] = True
         actual_func = getattr(user_module, func_name)
+
+        # --- NEW: AST Check for return statement ---
+        if require_return:
+            tree = ast.parse(code_string_lf)
+            func_node = next((n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == func_name), None)
+            if func_node and not any(isinstance(child, ast.Return) for child in ast.walk(func_node)):
+                return DynamicValidationResult(False, f"Function '{func_name}' is missing a 'return' statement.", details=details)
+            details["ast_return_statement_found"] = True
+        # --- END NEW ---
 
         actual_return_value = actual_func(*args)
         actual_return_type_str = type(actual_return_value).__name__

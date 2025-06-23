@@ -86,5 +86,93 @@
     "content": "Una **función** es un bloque de código reutilizable que realiza una tarea específica. Ayudan a organizar el código, hacerlo más legible y evitar la repetición.\n\n**Definir una Función:** Se usa la palabra clave `def`.\n```python\ndef saludar():\n    print(\"¡Hola desde la función!\")\n```\n\n**Llamar a una Función:**\n```python\nsaludar() # Ejecuta el código dentro de la función\n```\n\n**Parámetros:** Las funciones pueden aceptar valores de entrada, llamados parámetros.\n```python\ndef saludar_a(nombre): # 'nombre' es un parámetro\n    print(f\"¡Hola, {nombre}!\")\n\nsaludar_a(\"Ana\")       # Salida: ¡Hola, Ana!\nsaludar_a(\"Carlos\")    # Salida: ¡Hola, Carlos!\n```\n\n**Valores de Retorno con `return`:** Las funciones pueden devolver un valor al código que las llamó.\n```python\ndef sumar(a, b):\n    resultado = a + b\n    return resultado\n\nsuma_total = sumar(5, 3)\nprint(f\"La suma es: {suma_total}\") # Salida: La suma es: 8\nprint(f\"Otra suma: {sumar(10, 20)}\") # Salida: Otra suma: 30\n```\n✏️ **Tarea:** Crea una función llamada `multiplicar` que tome dos números como parámetros y devuelva su producto. Luego, llama a la función con dos números de tu elección e imprime el resultado.",
     "order_index": 4,
     "duration_minutes": 20
+  },
+  {
+    "id": 12,
+    "module_id": 5,
+    "title": "Lección 1.1: Índices en Tuplas",
+    "content": "Una **tupla** es una colección ordenada de elementos. Eso significa que cada elemento tiene una posición fija dentro de la tupla. Las posiciones se identifican por números llamados **índices**.\n\n### Índices Positivos\nLos índices positivos empiezan desde 0 y van hacia adelante:\n```python\ncolores = (\"rojo\", \"verde\", \"azul\", \"amarillo\")\n#            0        1         2        3\n\nprint(colores[0])  # \"rojo\", porque está en la posición 0\nprint(colores[2])  # \"azul\", está en la posición 2\n```\n\n### Índices Negativos\nPython también permite contar desde el final hacia el inicio usando índices negativos:\n```python\ncolores = (\"rojo\", \"verde\", \"azul\", \"amarillo\")\n#           -4      -3       -2       -1\n\nprint(colores[-1])  # \"amarillo\", el último elemento\nprint(colores[-2])  # \"azul\", el penúltimo\n```\nEsto es útil si no sabes exactamente cuántos elementos tiene la tupla, pero quieres acceder al final.\n\n### Ejemplo Completo\n```python\nfrutas = (\"manzana\", \"banana\", \"pera\", \"uva\")\n\nprint(\"Primera fruta:\", frutas[0])     # manzana\nprint(\"Última fruta:\", frutas[-1])     # uva\nprint(\"Fruta del medio:\", frutas[2])   # pera\n```\n\n### ¿Qué pasa si usas un índice que no existe?\nSi la tupla tiene 4 elementos y escribes:\n```python\nprint(frutas[4])\n```\nDará un error: `IndexError`, porque el índice 4 no existe (los índices válidos son del 0 al 3).\n\n✏️ **Tarea:**\nCrea una tupla llamada `dias` con los días de la semana. Luego imprime:\n- El primer día\n- El último día\n- El día que está en la posición 3",
+    "order_index": 1,
+    "duration_minutes": 20
+  },
+  {
+    "id": 13,
+    "module_id": 5,
+    "title": "Lección 1.2: Sets, elementos únicos y operaciones",
+    "content": "Un **set** (o conjunto) es una colección **no ordenada**, **sin elementos repetidos**.\nSe puede definir con llaves `{}` o usando la función `set()`.\n\n**Ejemplo: creación y comportamiento**\n```python\nnumeros = {1, 2, 3, 2, 4, 1}\nprint(numeros)  # Resultado: {1, 2, 3, 4} (los duplicados desaparecen)\n```\n\n**Agregar y eliminar elementos:**\n```python\nnumeros.add(5)       # Agrega el 5\nnumeros.remove(2)    # Elimina el 2\nprint(numeros)\n```\n\n**Operaciones comunes:**\n```python\na = {1, 2, 3}\nb = {3, 4, 5}\n\nprint(a | b)  # Unión: {1, 2, 3, 4, 5}\nprint(a & b)  # Intersección: {3}\nprint(a - b)  # Diferencia: {1, 2}\n```\n\n✏️ **Tarea:**\n- Crea dos sets con algunos números repetidos.\n- Muestra la **unión** de ambos.\n- Muestra la **intersección**.\n- Elimina un número del primer set y muestra el resultado.",
+    "order_index": 2,
+    "duration_minutes": 20
+  },
+  {
+    "id": 14,
+    "module_id": 5,
+    "title": "Lección 1.3: Diccionarios , claves, valores, uso simple",
+    "content": "Un **diccionario** en Python almacena datos en pares `clave: valor`. Las **claves** deben ser únicas, y se accede a los valores usando esas claves.\n\n**Crear y acceder a un diccionario:**\n```python\npersona = {\n    \"nombre\": \"Ana\",\n    \"edad\": 25,\n    \"ciudad\": \"Lima\"\n}\n\nprint(persona[\"nombre\"])   # Ana\nprint(persona[\"edad\"])     # 25\n```\n\n**Agregar o modificar elementos:**\n```python\npersona[\"edad\"] = 26                     # Modifica el valor existente\npersona[\"profesion\"] = \"Ingeniera\"      # Agrega una nueva clave\nprint(persona)\n```\n\n**Recorrer un diccionario con un ciclo:**\n```python\nfor clave in persona:\n    print(clave, \":\", persona[clave])\n```\n\n**Usar `.items()` para obtener claves y valores al mismo tiempo:**\n```python\nfor clave, valor in persona.items():\n    print(clave, \"=>\", valor)\n```\n\n✏️ **Ejercicio práctico:**\n1. Crea un diccionario con los datos de una mascota (`nombre`, `tipo`, `edad`).\n2. Agrega una clave nueva llamada `vacunado` con el valor `True`.\n3. Modifica la edad de la mascota.\n4. Muestra todas las claves y sus valores usando un ciclo.",
+    "order_index": 3,
+    "duration_minutes": 20
+  },
+  {
+    "id": 15,
+    "module_id": 6,
+    "title": "Lección 2.1: Lista de Listas",
+    "content": "Una **lista de listas** es una lista donde cada elemento es otra lista. Esto permite organizar datos en forma de **tabla** o **matriz**.\n\n📌 **Ejemplo: Crear y mostrar una lista de listas**\n```python\nmatriz = [\n    [1, 2, 3],\n    [4, 5, 6],\n    [7, 8, 9]\n]\n\nprint(matriz)  # Muestra toda la matriz\n\n# Acceder a un elemento específico:\nprint(matriz[0][1])  # Primer fila, segundo elemento: 2\n```\n\n📌 **Recorrer la lista de listas**\nSe pueden usar dos ciclos `for` anidados para recorrer cada fila y cada número:\n```python\nfor fila in matriz:\n    for numero in fila:\n        print(numero, end=\" \")\n    print()  # Salto de línea después de cada fila\n```\n\n✏️ **Tarea:**\nCrea una lista de listas que contenga tres filas con tres nombres cada una. Muestra cada nombre en pantalla usando ciclos `for` anidados.",
+    "order_index": 4,
+    "duration_minutes": 20
+  },
+  {
+    "id": 16,
+    "module_id": 6,
+    "title": "Lección 2.2: Diccionario de Listas",
+    "content": "Un **diccionario de listas** es un diccionario donde cada clave está asociada a una **lista de valores**.\n\n📌 **Ejemplo:**\n```python\nclases = {\n    \"matematicas\": [\"Ana\", \"Luis\", \"Carlos\"],\n    \"historia\": [\"María\", \"Jorge\", \"Ana\"],\n    \"ciencia\": [\"Luis\", \"Carlos\", \"María\"]\n}\n\nprint(clases)  # Muestra todo el diccionario\n\n# Acceder a la lista de estudiantes de matemáticas\nprint(clases[\"matematicas\"])  # ['Ana', 'Luis', 'Carlos']\n```\n\n📌 **Agregar un estudiante a una materia:**\n```python\nclases[\"historia\"].append(\"Sofía\")\nprint(clases[\"historia\"])  # ['María', 'Jorge', 'Ana', 'Sofía']\n```\n\n✏️ **Ejercicio práctico (reto):**\nCrea un diccionario llamado `equipos` con tres claves: \"futbol\", \"basquet\" y \"voley\". Cada clave debe tener una lista con tres nombres de jugadores. Muestra los nombres del equipo de **basquet**.",
+    "order_index": 5,
+    "duration_minutes": 20
+  },
+  {
+    "id": 17,
+    "module_id": 6,
+    "title": "Lección 2.3: Recorriendo Estructuras Anidadas",
+    "content": "Para acceder y mostrar datos en **estructuras anidadas** (como listas dentro de listas, o listas dentro de diccionarios) usamos **ciclos anidados**.\n\n📌 **Recorrer una lista de listas:**\n```python\nmatriz = [\n    [10, 20, 30],\n    [40, 50, 60]\n]\n\nfor fila in matriz:\n    for elemento in fila:\n        print(elemento, end=\" \")\n    print()\n```\n\n📌 **Recorrer un diccionario de listas:**\n```python\nclases = {\n    \"arte\": [\"Luis\", \"Ana\"],\n    \"musica\": [\"Sofía\", \"Jorge\"]\n}\n\nfor materia, estudiantes in clases.items():\n    print(\"Materia:\", materia)\n    for estudiante in estudiantes:\n        print(\" -\", estudiante)\n```\n\n✏️ **Ejercicio práctico (reto):**\nDado un diccionario llamado `productos`, donde cada clave es una categoría y el valor es una lista de productos, muestra en pantalla cada categoría y sus productos.",
+    "order_index": 6,
+    "duration_minutes": 20
+  },
+  {
+    "id": 18,
+    "module_id": 7,
+    "title": "Lección 3.1: try/except",
+    "content": "Cuando ejecutamos un programa, pueden ocurrir **errores** que detienen la ejecución. Para evitar que el programa se cierre abruptamente, usamos el bloque `try/except`, que nos permite **atrapar** esos errores y **manejarlos** de forma controlada.\n\n🔧 **¿Cómo funciona?**\n- El código que puede generar un error se pone dentro del bloque `try`.\n- Si ocurre un error, se ejecuta el bloque `except`.\n- Si no hay error, el bloque `except` se omite.\n\n📌 **Ejemplo:**\n```python\ntry:\n    numero = int(input(\"Ingrese un número: \"))\n    print(\"El número es:\", numero)\nexcept:\n    print(\"Error: No ingresaste un número válido.\")\n```\n\nSi el usuario ingresa texto en vez de un número, el programa no se rompe; en cambio, muestra un mensaje amigable.",
+    "order_index": 7,
+    "duration_minutes": 20
+  },
+  {
+    "id": 19,
+    "module_id": 7,
+    "title": "Lección 3.2: Captura de Errores Comunes",
+    "content": "Podemos **especificar el tipo de error** que queremos capturar usando diferentes bloques `except`.\n\n📚 **Errores comunes:**\n- `ValueError`: error al convertir tipos (ej. texto a número).\n- `ZeroDivisionError`: división entre cero.\n- `IndexError`: acceso a una posición inválida en listas o tuplas.\n- `KeyError`: cuando una clave no existe en un diccionario.\n\n📌 **Ejemplo: Capturar distintos errores**\n```python\ntry:\n    a = int(input(\"Dividendo: \"))\n    b = int(input(\"Divisor: \"))\n    resultado = a / b\n    print(\"Resultado:\", resultado)\nexcept ValueError:\n    print(\"Error: Debes ingresar un número válido.\")\nexcept ZeroDivisionError:\n    print(\"Error: No se puede dividir entre cero.\")\n```\n\nEste enfoque permite ofrecer mensajes personalizados según el tipo de error que ocurra.",
+    "order_index": 8,
+    "duration_minutes": 20
+  },
+  {
+    "id": 20,
+    "module_id": 7,
+    "title": "Lección 3.3: finally y Validación de Entrada",
+    "content": "El bloque `finally` se ejecuta **siempre**, haya o no error. Es útil para **liberar recursos** o ejecutar código que debe correr en cualquier caso.\n\n📌 **Ejemplo con `finally`:**\n```python\ntry:\n    archivo = open(\"datos.txt\", \"r\")\n    contenido = archivo.read()\n    print(contenido)\nexcept FileNotFoundError:\n    print(\"Error: El archivo no existe.\")\nfinally:\n    print(\"Proceso terminado.\")\n```\n\n✅ **Validación básica de entrada**\nPodemos usar un ciclo `while` junto con `try/except` para asegurar que el usuario ingrese datos válidos:\n```python\nwhile True:\n    try:\n        edad = int(input(\"Ingrese su edad: \"))\n        if edad < 0:\n            print(\"Edad no puede ser negativa.\")\n        else:\n            break\n    except ValueError:\n        print(\"Por favor ingrese un número válido.\")\n\nprint(\"Edad ingresada:\", edad)\n```\nEste patrón es útil para construir programas más robustos y amigables con el usuario.",
+    "order_index": 9,
+    "duration_minutes": 20
+  },
+  {
+    "id": 21,
+    "module_id": 7,
+    "title": "Lección 3.3: Transformación de Listas con for y List Comprehensions",
+    "content": "**¿Qué significa transformar una lista?**\nTransformar una lista consiste en recorrer una lista original, procesar cada uno de sus elementos y crear una nueva lista con los resultados.\n\n### 1. Transformación usando un ciclo `for`\n📌 **Ejemplo paso a paso:** Obtener una lista con los cuadrados de los números:\n```python\nnumeros = [1, 2, 3, 4, 5]   # Lista original\ncuadrados = []              # Lista vacía para almacenar resultados\n\nfor n in numeros:           # Recorrer cada número\n    cuadrado = n ** 2       # Elevar al cuadrado\n    cuadrados.append(cuadrado)  # Agregar resultado\n\nprint(cuadrados)  # Muestra: [1, 4, 9, 16, 25]\n```\n📎 ¿Qué hace cada línea?\n- `cuadrados = []`: crea una lista vacía.\n- `for n in numeros`: recorre cada número.\n- `cuadrado = n ** 2`: calcula el cuadrado.\n- `append`: agrega el resultado a la nueva lista.\n\n---\n\n### 2. Transformación usando `list comprehensions`\nUna `list comprehension` permite crear listas de forma más simple y concisa.\n```python\nnumeros = [1, 2, 3, 4, 5]\ncuadrados = [n ** 2 for n in numeros]\nprint(cuadrados)  # Salida: [1, 4, 9, 16, 25]\n```\n📎 ¿Cómo se lee?\n- `n ** 2`: operación aplicada a cada elemento.\n- `for n in numeros`: ciclo que recorre la lista.\n- Todo junto: \"para cada `n` en `numeros`, calcula `n ** 2` y guarda el resultado\".\n\n---\n\n### 3. `List comprehensions` con condición\nTambién se pueden agregar **condiciones** para filtrar elementos.\n📌 **Ejemplo: Obtener solo los números pares:**\n```python\nnumeros = [1, 2, 3, 4, 5, 6]\npares = [n for n in numeros if n % 2 == 0]\nprint(pares)  # Salida: [2, 4, 6]\n```\nEsto genera una lista solo con los elementos que cumplan la condición `n % 2 == 0`.",
+    "order_index": 10,
+    "duration_minutes": 20
+  },
+  {
+    "id": 22,
+    "module_id": 7,
+    "title": "Lección 3.4: Funciones lambda con sorted y filter",
+    "content": "**¿Qué es una función lambda?**\n- Es una **función anónima**, sin nombre, definida en una sola línea.\n- Se utiliza para operaciones **rápidas y pequeñas**, especialmente cuando se pasan funciones como argumentos.\n\n📌 **Sintaxis básica:**\n```python\nlambda argumentos: expresión\n```\n📌 **Ejemplo:**\n```python\ndoblar = lambda x: x * 2\nprint(doblar(4))  # Salida: 8\n```\n\n---\n\n🔹 **Uso de lambda con `sorted`**\nImagina que tienes una lista de tuplas con nombres y edades, y quieres ordenarla por edad:\n```python\npersonas = [(\"Ana\", 25), (\"Luis\", 30), (\"Carlos\", 20)]\nordenadas = sorted(personas, key=lambda persona: persona[1])\nprint(ordenadas)  # [('Carlos', 20), ('Ana', 25), ('Luis', 30)]\n```\n📎 Explicación:\n- `sorted` ordena la lista.\n- `key` indica la función para obtener el valor de ordenamiento.\n- `lambda persona: persona[1]` devuelve la edad desde la tupla.\n\n---\n\n🔹 **Uso de lambda con `filter`**\nLa función `filter` devuelve solo los elementos que cumplen una **condición**.\n```python\nnumeros = [1, 2, 3, 4, 5, 6]\npares = list(filter(lambda x: x % 2 == 0, numeros))\nprint(pares)  # Salida: [2, 4, 6]\n```\n📎 Explicación:\n- `lambda x: x % 2 == 0` es la condición para números pares.\n- `filter(...)` devuelve un iterador con los elementos que cumplen la condición.\n- Usamos `list()` para convertir el resultado en una lista.",
+    "order_index": 11,
+    "duration_minutes": 20
   }
 ]

@@ -14,10 +14,11 @@ from database import get_db
 from jose import jwt, JWTError
 
 # Import models from your proxy
-from models import User, UserCourseEnrollment, UserModuleProgress, UserLessonProgress, UserExerciseSubmission, CourseExam, UserExamAttempt
+from models import User, UserCourseEnrollment, UserModuleProgress, UserLessonProgress, UserExerciseSubmission, CourseExam, UserExamAttempt, Exercise
 
 from schemas import (
     UserCreate, UserExamAttemptBase, UserResponse, Token, UserLogin,
+    ExerciseSchema,
     UserCourseProgressResponse,
     UserModuleProgressResponse,
     UserLessonProgressResponse, # Ensure this is imported
@@ -41,7 +42,6 @@ from services import (
     get_user_lesson_progress_detail, get_user_progress_report_data,
     get_batch_module_progress_details, change_user_password, change_user_username,
     get_batch_lesson_progress_details,
-    # --- ADDED MISSING SERVICE FUNCTION IMPORTS ---
     update_last_accessed,
     start_module,
     complete_module,
@@ -50,12 +50,14 @@ from services import (
     get_course_exam,
     start_exam_attempt,
     submit_exam_attempt,
+    get_or_create_current_exam_exercise,
     get_user_exam_attempts
     # --- END ADDED IMPORTS ---
 )
 
+from auth import get_current_user # Ensure this is correctly imported from your auth module
+
 from utils import create_access_token, redis_client, SECRET_KEY, ALGORITHM
-from auth import get_current_user
 
 router = APIRouter()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -625,6 +627,32 @@ def change_username(request: ChangeUsernameRequest, current_user: User = Depends
 @router.post("/exam-attempts", response_model=UserExamAttemptResponse)
 def submit_exam_attempt(attempt: UserExamAttemptBase, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     return create_user_exam_attempt(db, current_user.id, attempt.exam_id, attempt.answers)
+
+@router.get(
+    "/me/courses/{course_id}/current-exam",
+    response_model=ExerciseSchema, # Use the Pydantic schema for the response
+    summary="Get the user's current persistent exam for a course",
+    tags=["users", "exams"]
+)
+def get_current_exam_route(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieves the currently assigned exam exercise for the user for a specific course.
+    - If an active attempt exists and has less than 5 failures, it returns the same exercise.
+    - Otherwise, it deactivates the old attempt, assigns a new random exercise, and returns it.
+    """
+    if not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    exam_exercise = get_or_create_current_exam_exercise(
+        db=db, user_id=current_user.id, course_id=course_id
+    )
+    if not exam_exercise:
+        raise HTTPException(status_code=404, detail="Could not retrieve or assign an exam for this course.")
+    return exam_exercise
 
 # Ensure your router is included in your main FastAPI app
 # e.g., app.include_router(router)

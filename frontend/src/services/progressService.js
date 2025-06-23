@@ -82,6 +82,17 @@ export const getCourseExam = async (courseId) => {
   return response.data;
 };
 
+/**
+ * Gets the user's current, persistent exam exercise for a course.
+ * If the user fails 5 times, a new one will be assigned.
+ * @param {number} courseId The ID of the course.
+ * @returns {Promise<Object>} The exam exercise object.
+ */
+export const getCurrentCourseExam = async (courseId) => {
+  const response = await apiClient.get(`/api/v1/users/me/courses/${courseId}/current-exam`);
+  return response.data;
+};
+
 export const startExamAttempt = async (examId) => {
   const response = await apiClient.post(`/api/v1/users/exams/${examId}/start-attempt`);
   return response.data;
@@ -132,6 +143,7 @@ const progressService = {
   getLessonProgress,
   submitExercise,
   getCourseExam,
+  getCurrentCourseExam,
   startExamAttempt,
   submitExamAttempt,
   getUserExamAttempts,

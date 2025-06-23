@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useMatch } from "@tanstack/react-router"; // Ensure useMatch is imported
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { getModuleById, getCourseById, getRandomCourseExam  } from "@/services/contentService"; // #contentService.js
-import { submitExercise as submitExerciseApi } from "@/services/progressService"; // #progressService.js
+import { getModuleById, getCourseById } from "@/services/contentService";
+import { submitExercise as submitExerciseApi, getCurrentCourseExam } from "@/services/progressService";
 import LessonCodeExecutor from "@/components/editor/LessonCodeExecutor";
 import { lessonWithCodeRoute, examInterfaceRoute } from "@/router";
 import Waves from "@/components/ui/waves";
@@ -108,18 +108,18 @@ export default function LessonWithCodePage() {
       setExamError(null);
       Promise.all([
         getCourseById(courseIdForExam), // For breadcrumbs
-        getRandomCourseExam(courseIdForExam) // Fetches the exam exercise
-      ]).then(([courseRes, examExerciseRes]) => { // Renamed for clarity
+        getCurrentCourseExam(courseIdForExam) // CHANGED: Use the new stateful function
+      ]).then(([courseRes, examExerciseRes]) => {
         setExamCourse(courseRes);
-        // FIX: Check if the returned object exists, not for its length.
         if (examExerciseRes) {
-          // FIX: Set the object directly, don't access index [0].
           setExamExercise(examExerciseRes);
         } else {
           setExamError("No se encontró el ejercicio de examen para este curso.");
         }
       }).catch(err => {
-        setExamError(err.message || "Error al cargar datos del examen.");
+        const errorMsg = err.response?.data?.detail || "Error al cargar datos del examen.";
+        console.error("Error fetching exam data:", errorMsg, err);
+        setExamError(errorMsg);
       }).finally(() => {
         setExamLoading(false);
       });
