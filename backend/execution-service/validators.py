@@ -7,6 +7,8 @@ import signal
 import importlib.util
 import random
 import json
+import asyncio
+import inspect
 from typing import Dict, Optional, List, Any, Tuple
 
 # --- Result Class ---
@@ -212,12 +214,13 @@ def validate_simple_print_exercise(
     details: Dict[str, Any] = {"validator": "simple_print"}
     start_time = time.time()
 
-    # --- NEW: AST Checks for required structures ---
-    require_for_loop = rules.get("require_for_loop", False)
-    require_list_append = rules.get("require_list_append") # e.g., "compras"
+    try:
+        # --- AST Checks for required structures ---
+        require_for_loop = rules.get("require_for_loop", False)
+        require_list_append = rules.get("require_list_append") # e.g., "compras"
+        require_variables_in_print = rules.get("require_variables_in_print")
 
-    if require_for_loop or require_list_append:
-        try:
+        if require_for_loop or require_list_append or require_variables_in_print:
             tree = ast.parse(user_code)
 
             if require_for_loop:
@@ -245,10 +248,48 @@ def validate_simple_print_exercise(
                      return DynamicValidationResult(False, f"The exercise requires you to create a list named '{require_list_append}' and use the '.append()' method on it.", details=details)
                 details["ast_list_append_found"] = True
 
-        except SyntaxError as e:
-            return DynamicValidationResult(False, f"Syntax error in your code: {e}", details=details)
-    # --- END NEW ---
+        # Check for required variables in print calls (more robust check)
+        require_vars_in_print = rules.get("require_variables_in_print")
+        if require_vars_in_print:
+            printed_variables = set()
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'print':
+                    for arg in node.args:
+                        # Walk through the arguments of the print call to find all used variables
+                        for sub_node in ast.walk(arg):
+                            if isinstance(sub_node, ast.Name) and isinstance(sub_node.ctx, ast.Load):
+                                printed_variables.add(sub_node.id)
 
+            required_set = set(require_vars_in_print)
+            if not required_set.issubset(printed_variables):
+                missing = sorted(list(required_set - printed_variables))
+                return DynamicValidationResult(False, f"Your print statements are missing the required variables: {', '.join(missing)}. Make sure to print the variables themselves, not their values directly.", details=details)
+            details["ast_variables_in_print_check_passed"] = True
+
+        # Check for other structural requirements like for loops or list appends
+        require_for_loop = rules.get("require_for_loop", False)
+        if require_for_loop and not any(isinstance(node, ast.For) for node in ast.walk(tree)):
+            return DynamicValidationResult(False, "Your solution is missing a 'for' loop, which is required for this exercise.", details=details)
+
+        require_list_append = rules.get("require_list_append")
+        if require_list_append:
+            # Simplified check for append method call on the named list
+            append_called = any(
+                isinstance(node, ast.Call) and
+                isinstance(node.func, ast.Attribute) and
+                isinstance(node.func.value, ast.Name) and
+                node.func.value.id == require_list_append and
+                node.func.attr == 'append'
+                for node in ast.walk(tree)
+            )
+            if not append_called:
+                return DynamicValidationResult(False, f"The exercise requires you to use the '.append()' method on the '{require_list_append}' list.", details=details)
+            details["ast_list_append_found"] = True
+
+    except SyntaxError as e:
+        return DynamicValidationResult(False, f"Syntax error in your code: {e}", details=details)
+
+    # --- 2. If all static checks passed, run the code and check the output ---
     stdout, stderr, timed_out, exit_code_res, captured_prints_metadata = run_user_code_sandboxed(
         user_code, input_data, timeout, capture_print_types=True
     )
@@ -269,6 +310,7 @@ def validate_simple_print_exercise(
     if not stdout.strip(): # Check if any print occurred
         return DynamicValidationResult(False, "No output detected. Ensure your code uses print() to display results.", actual_output=stdout, details=details)
 
+    # --- 3. Perform dynamic checks on the output ---
     # Metadata Check: Number of print calls
     expected_print_count = rules.get("expected_print_count")
     actual_print_count = len(captured_prints_metadata)
@@ -280,18 +322,17 @@ def validate_simple_print_exercise(
     elif expected_print_count is not None:
         details["print_count_check_passed"] = True
 
-
     # Metadata Check: Types of printed items
     expected_types = rules.get("expected_types") # list of type names as strings
     actual_printed_types = [item['type'] for item in captured_prints_metadata]
     details["actual_printed_types"] = actual_printed_types
     if isinstance(expected_types, list):
         details["type_check_rules_exist"] = True
-        if actual_print_count != len(expected_types) and expected_print_count is None: # If count wasn't primary, infer from types list
+        if actual_print_count != len(expected_types) and expected_print_count is None:
             core_checks_passed = False
             feedback_messages.append(f"Expected {len(expected_types)} printed items based on type rules, but found {actual_print_count}.")
             details["type_check_passed"] = False
-        elif actual_print_count == len(expected_types): # Only check types if counts match
+        elif actual_print_count == len(expected_types):
             type_match_current_run = True
             for i, exp_type in enumerate(expected_types):
                 if actual_printed_types[i] != exp_type:
@@ -300,36 +341,16 @@ def validate_simple_print_exercise(
                     feedback_messages.append(f"Type mismatch for printed item #{i+1}: expected '{exp_type}', got '{actual_printed_types[i]}'.")
                     break
             details["type_check_passed"] = type_match_current_run
-        elif expected_print_count is not None and actual_print_count == expected_print_count: # Counts match from rule, but type list length differs
+        elif expected_print_count is not None and actual_print_count == expected_print_count:
              core_checks_passed = False
              feedback_messages.append(f"Mismatch between expected_print_count ({expected_print_count}) and length of expected_types list ({len(expected_types)}). Review exercise rules.")
              details["type_check_passed"] = False
 
-    # --- NEW: AST Check for strict variable names ---
-    strict_vars = rules.get("strict_variable_names")
-    if isinstance(strict_vars, list) and strict_vars:
-        try:
-            tree = ast.parse(user_code)
-            defined_vars = {node.id for node in ast.walk(tree) if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store)}
-            details["ast_defined_variables"] = list(defined_vars)
-            if not set(strict_vars).issubset(defined_vars):
-                core_checks_passed = False
-                missing_vars = set(strict_vars) - defined_vars
-                feedback_messages.append(f"Required variable(s) not defined: {', '.join(missing_vars)}.")
-                details["strict_variable_check_passed"] = False
-            else:
-                details["strict_variable_check_passed"] = True
-        except SyntaxError:
-            # This is already handled by the runtime check, but good practice
-            pass
-    # --- END NEW ---
-
-    # Content Check (Secondary)
+    # Content Check
     expected_exact_output = rules.get("expected_exact_output")
     content_matches = True
     if expected_exact_output is not None:
         details["content_check_rules_exist"] = True
-        # Normalize line endings for comparison
         normalized_stdout = stdout.replace('\r\n', '\n')
         normalized_expected_output = expected_exact_output.replace('\r\n', '\n')
         if normalized_stdout != normalized_expected_output:
@@ -337,17 +358,18 @@ def validate_simple_print_exercise(
             feedback_messages.append(f"Output content differs. Expected: {repr(normalized_expected_output)}, Got: {repr(normalized_stdout)}.")
         details["content_check_passed"] = content_matches
     else:
-        details["content_check_passed"] = True # No rule, so trivially passes content check
+        details["content_check_passed"] = True
 
+    # --- 4. Final result calculation ---
     if core_checks_passed and content_matches:
         final_message = "Exercise passed!"
-        if feedback_messages: # Should be empty if all passed, but for consistency
+        if feedback_messages:
             final_message += " " + " ".join(feedback_messages)
         return DynamicValidationResult(True, final_message, actual_output=stdout, details=details)
     elif core_checks_passed and not content_matches:
         final_message = "Core requirements (like types and print counts) met, but the exact output content is different. " + " ".join(feedback_messages)
-        return DynamicValidationResult(False, final_message, actual_output=stdout, details=details) # Still False if content is a must
-    else: # Core checks failed
+        return DynamicValidationResult(False, final_message, actual_output=stdout, details=details)
+    else:
         final_message = "Validation failed. " + " ".join(feedback_messages)
         return DynamicValidationResult(False, final_message, actual_output=stdout, details=details)
 
@@ -694,11 +716,167 @@ def generate_dynamic_test_cases(constraints: Dict[str, Any], num_cases: int = 10
             cases.append(''.join(random.choices(charset, k=length)))
     return cases
 
+
+def _validate_class_structure_ast(user_code: str, class_name: str, rules: Dict[str, Any]) -> Optional[DynamicValidationResult]:
+    """
+    Performs static analysis on a class's structure using AST.
+    Checks for inheritance, required methods, and private attributes.
+    """
+    details: Dict[str, Any] = {"validator": "class_structure_ast", "class_name_rule": class_name}
+    try:
+        tree = ast.parse(user_code)
+        class_node = next((n for n in ast.walk(tree) if isinstance(n, ast.ClassDef) and n.name == class_name), None)
+
+        if not class_node:
+            return DynamicValidationResult(False, f"Class '{class_name}' not defined in your code.", details=details)
+
+        # Check for inheritance
+        require_inheritance_from = rules.get("require_inheritance_from")
+        if require_inheritance_from:
+            base_names = {b.id for b in class_node.bases if isinstance(b, ast.Name)}
+            if require_inheritance_from not in base_names:
+                return DynamicValidationResult(False, f"Class '{class_name}' is required to inherit from '{require_inheritance_from}'.", details=details)
+            details["ast_inheritance_check_passed"] = True
+
+        # Check for required methods
+        require_methods = rules.get("require_methods")
+        if require_methods:
+            defined_methods = {n.name for n in class_node.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+            if not set(require_methods).issubset(defined_methods):
+                missing = sorted(list(set(require_methods) - defined_methods))
+                return DynamicValidationResult(False, f"Class '{class_name}' is missing required method(s): {', '.join(missing)}.", details=details)
+            details["ast_methods_check_passed"] = True
+
+        # Check for encapsulation (private attributes in __init__)
+        require_private_attributes = rules.get("require_private_attributes")
+        if require_private_attributes:
+            init_node = next((n for n in class_node.body if isinstance(n, ast.FunctionDef) and n.name == "__init__"), None)
+            if not init_node:
+                return DynamicValidationResult(False, f"Class '{class_name}' is missing an '__init__' method, which is required for private attribute check.", details=details)
+
+            private_attrs_found = set()
+            for node in ast.walk(init_node):
+                if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == 'self' and isinstance(node.ctx, ast.Store):
+                    if node.attr.startswith('__') and not node.attr.endswith('__'):
+                        private_attrs_found.add(node.attr)
+                    elif node.attr.startswith('_') and not node.attr.startswith('__'):
+                        private_attrs_found.add(node.attr)
+
+            if not set(require_private_attributes).issubset(private_attrs_found):
+                missing = sorted(list(set(require_private_attributes) - private_attrs_found))
+                return DynamicValidationResult(False, f"Class '{class_name}' __init__ is missing required private attribute(s) (e.g., _attr or __attr): {', '.join(missing)}.", details=details)
+            details["ast_private_attributes_check_passed"] = True
+
+        return None
+    except SyntaxError as e:
+        return DynamicValidationResult(False, f"Syntax error in your code: {e}", details=details)
+
+
+def _validate_function_structure_ast(user_code: str, func_name: str, rules: Dict[str, Any]) -> Optional[DynamicValidationResult]:
+    """
+    Performs static analysis on a function's structure using AST.
+    Returns a failure result if a check fails, otherwise returns None.
+    This is a helper to avoid re-running these checks for every scenario in an exam.
+    """
+    details: Dict[str, Any] = {"validator": "function_structure_ast", "function_name_rule": func_name}
+    try:
+        require_lambda = rules.get("require_lambda", False)
+        require_function_call = rules.get("require_function_call")
+        require_try_except = rules.get("require_try_except", False)
+        disallow_function_call = rules.get("disallow_function_call")
+        require_for_loop = rules.get("require_for_loop", False)
+        require_if_statement = rules.get("require_if_statement", False)
+        require_list_comprehension = rules.get("require_list_comprehension", False)
+        require_return = rules.get("require_return_statement", False)
+        # New advanced requirements
+        require_dict_comprehension = rules.get("require_dict_comprehension", False)
+        require_set_comprehension = rules.get("require_set_comprehension", False)
+        require_yield = rules.get("require_yield", False)
+        require_with_statement = rules.get("require_with_statement", False)
+        require_async = rules.get("require_async", False)
+        require_await = rules.get("require_await", False)
+        require_decorator = rules.get("require_decorator")
+        require_import = rules.get("require_import")
+
+        tree = ast.parse(user_code)
+
+        # Module-level checks
+        if require_import:
+            required_imports = [require_import] if isinstance(require_import, str) else require_import
+            found_imports = set()
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    found_imports.update(alias.name.split('.')[0] for alias in node.names)
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    found_imports.add(node.module.split('.')[0])
+            if not set(required_imports).issubset(found_imports):
+                missing = sorted(list(set(required_imports) - found_imports))
+                return DynamicValidationResult(False, f"Your code is missing required import(s): {', '.join(missing)}.", details=details)
+            details["ast_import_check_passed"] = True
+
+        func_node = next((n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == func_name), None)
+
+        if not func_node:
+            # If the function itself doesn't exist in the AST, the dynamic check will provide a better error.
+            return None
+
+        # Check for empty or trivial function body
+        non_docstring_body = [node for node in func_node.body if not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant))]
+        if not non_docstring_body or (len(non_docstring_body) == 1 and isinstance(non_docstring_body[0], ast.Pass)):
+            return DynamicValidationResult(False, f"Function '{func_name}' has a trivial body. It must contain implementation logic, not just 'pass'.", details=details)
+
+        if require_for_loop and not any(isinstance(node, ast.For) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing a 'for' loop, which is required.", details=details)
+        if require_if_statement and not any(isinstance(node, ast.If) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing an 'if' statement, which is required.", details=details)
+        if require_list_comprehension and not any(isinstance(node, ast.ListComp) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing a list comprehension, which is required.", details=details)
+        if require_dict_comprehension and not any(isinstance(node, ast.DictComp) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing a dictionary comprehension, which is required.", details=details)
+        if require_set_comprehension and not any(isinstance(node, ast.SetComp) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing a set comprehension, which is required.", details=details)
+        if require_yield and not any(isinstance(node, (ast.Yield, ast.YieldFrom)) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is not a generator. It's missing a 'yield' statement.", details=details)
+        if require_with_statement and not any(isinstance(node, ast.With) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing a 'with' statement, which is required.", details=details)
+        if require_async and not isinstance(func_node, ast.AsyncFunctionDef):
+            return DynamicValidationResult(False, f"Function '{func_name}' must be an async function (defined with 'async def').", details=details)
+        if require_await and not any(isinstance(node, ast.Await) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing an 'await' expression, which is required.", details=details)
+        if require_lambda and not any(isinstance(node, ast.Lambda) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing a 'lambda' expression, which is required.", details=details)
+        if require_try_except and not any(isinstance(node, ast.Try) for node in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing a 'try...except' block, which is required.", details=details)
+        if require_return and not any(isinstance(child, ast.Return) for child in ast.walk(func_node)):
+            return DynamicValidationResult(False, f"Function '{func_name}' is missing a 'return' statement.", details=details)
+
+        if require_decorator:
+            required_decorators = [require_decorator] if isinstance(require_decorator, str) else require_decorator
+            # This is a simplified check for simple decorators like @my_decorator
+            found_decorators = {deco.id for deco in func_node.decorator_list if isinstance(deco, ast.Name)}
+            if not set(required_decorators).issubset(found_decorators):
+                missing = sorted(list(set(required_decorators) - found_decorators))
+                return DynamicValidationResult(False, f"Function '{func_name}' is missing required decorator(s): {', '.join(missing)}.", details=details)
+            details["ast_decorator_check_passed"] = True
+
+        if require_function_call:
+            required_calls = [require_function_call] if isinstance(require_function_call, str) else require_function_call
+            found_calls = {node.func.id for node in ast.walk(func_node) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)}
+            if not set(required_calls).issubset(found_calls):
+                missing = sorted(list(set(required_calls) - found_calls))
+                return DynamicValidationResult(False, f"Function '{func_name}' is missing required function call(s): {', '.join(missing)}.", details=details)
+
+        return None # All structural checks passed
+    except SyntaxError as e:
+        return DynamicValidationResult(False, f"Syntax error in your code: {e}", details=details)
+
+
 def validate_function_exercise(
     user_code: str,
     rules: Dict[str, Any],
     scenario_config: Dict[str, Any],
-    timeout: int = 5
+    timeout: int = 5,
+    skip_ast_checks: bool = False
 ) -> DynamicValidationResult:
     security_res = general_security_check(user_code)
     if not security_res.passed:
@@ -714,13 +892,20 @@ def validate_function_exercise(
     expected_return_value = scenario_config.get("expected_return_value")
     has_expected_return_check = "expected_return_value" in scenario_config
     expected_type_str = scenario_config.get("expected_return_type")
-    require_return = rules.get("require_return_statement", False) # <-- NEW
     details.update({
         "expected_return_value": expected_return_value if has_expected_return_check else "N/A",
         "expected_return_type": expected_type_str or "N/A"
     })
 
     code_string_lf = user_code.replace('\r\n', '\n')
+
+    # --- AST Checks are now skippable and consolidated ---
+    if not skip_ast_checks:
+        ast_check_result = _validate_function_structure_ast(code_string_lf, func_name, rules)
+        if ast_check_result:
+            return ast_check_result
+    # --- End AST Checks ---
+
     temp_module_path = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, newline='\n', encoding='utf-8') as tmp_code_file:
@@ -743,16 +928,17 @@ def validate_function_exercise(
         details["function_defined_in_module"] = True
         actual_func = getattr(user_module, func_name)
 
-        # --- NEW: AST Check for return statement ---
-        if require_return:
-            tree = ast.parse(code_string_lf)
-            func_node = next((n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == func_name), None)
-            if func_node and not any(isinstance(child, ast.Return) for child in ast.walk(func_node)):
-                return DynamicValidationResult(False, f"Function '{func_name}' is missing a 'return' statement.", details=details)
-            details["ast_return_statement_found"] = True
-        # --- END NEW ---
+        # --- MODIFICATION FOR ASYNC ---
+        if inspect.iscoroutinefunction(actual_func):
+            try:
+                actual_return_value = asyncio.run(actual_func(*args))
+            except RuntimeError as e:
+                # Handle cases where an event loop is already running if necessary
+                return DynamicValidationResult(False, f"Error running async function '{func_name}': {e}", details=details)
+        else:
+            actual_return_value = actual_func(*args)
+        # --- END MODIFICATION ---
 
-        actual_return_value = actual_func(*args)
         actual_return_type_str = type(actual_return_value).__name__
         details["actual_return_value"] = repr(actual_return_value) # Use repr for clarity
         details["actual_return_type"] = actual_return_type_str
@@ -779,6 +965,7 @@ def validate_function_exercise(
         if temp_module_path and os.path.exists(temp_module_path):
             try: os.unlink(temp_module_path)
             except Exception: pass
+
 
 def validate_function_and_output_exercise(
     user_code: str,
@@ -861,49 +1048,131 @@ def validate_function_and_output_exercise(
         return DynamicValidationResult(False, "Validation failed. " + " | ".join(full_feedback), actual_output=stdout_final, details=details)
 
 
-def run_exam_script_only(
+def validate_class_exercise(
     user_code: str,
+    rules: Dict[str, Any],
+    input_data: Optional[str] = None, # Not typically used, but kept for signature consistency
     timeout: int = 10
 ) -> DynamicValidationResult:
     """
-    Runs the user's code as a script (for direct input run of 'exam' type).
-    Only captures stdout/stderr and syntax/runtime errors.
-    Does NOT validate function scenarios.
+    Validates class-based exercises by instantiating classes, checking attributes, and calling methods.
     """
-    stdout, stderr, timed_out, exit_code, _ = run_user_code_sandboxed(
-        user_code, input_data=None, timeout=timeout, capture_print_types=False
-    )
-    if timed_out:
-        return DynamicValidationResult(
-            passed=False,
-            message=f"Execution timed out after {timeout} seconds.",
-            actual_output=stdout,
-            details={"stderr": stderr, "timed_out": timed_out, "exit_code": exit_code}
-        )
-    if exit_code != 0:
-        return DynamicValidationResult(
-            passed=False,
-            message=f"Error: {stderr.strip()}",
-            actual_output=stdout,
-            details={"stderr": stderr, "timed_out": timed_out, "exit_code": exit_code}
-        )
-    return DynamicValidationResult(
-        passed=True,
-        message="Código ejecutado. Recuerda que la validación completa se realiza al enviar.",
-        actual_output=stdout,
-        details={"stdout": stdout}
-    )
+    security_res = general_security_check(user_code)
+    if not security_res.passed:
+        return security_res
+
+    class_name = rules.get("class_name")
+    scenarios = rules.get("scenarios")
+    details: Dict[str, Any] = {"validator": "class_exercise", "class_name": class_name, "scenario_results": []}
+
+    if not class_name or not isinstance(scenarios, list):
+        return DynamicValidationResult(False, "Validation config error: 'class_name' and 'scenarios' list are required.", details=details)
+
+    # Perform static AST checks first
+    static_check_result = _validate_class_structure_ast(user_code, class_name, rules)
+    if static_check_result:
+        return static_check_result
+
+    # Load module for dynamic testing
+    code_string_lf = user_code.replace('\r\n', '\n')
+    temp_module_path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, newline='\n', encoding='utf-8') as tmp_code_file:
+            tmp_code_file.write(code_string_lf)
+            temp_module_path = tmp_code_file.name
+
+        module_name = f"usermodule_class_{os.path.splitext(os.path.basename(temp_module_path))[0]}"
+        spec = importlib.util.spec_from_file_location(module_name, temp_module_path)
+        if spec is None or spec.loader is None:
+            return DynamicValidationResult(False, "Failed to create module spec for user code.", details=details)
+
+        user_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(user_module)
+        details["module_loaded"] = True
+
+        if not hasattr(user_module, class_name):
+            return DynamicValidationResult(False, f"Class '{class_name}' not found in the loaded module.", details=details)
+
+        UserClass = getattr(user_module, class_name)
+
+        # Run through scenarios
+        instances = {} # To store created instances like {"my_car": <Car object>}
+        for i, scenario in enumerate(scenarios):
+            scenario_details = {"scenario_index": i, "actions": []}
+            action = scenario.get("action")
+
+            try:
+                if action == "instantiate":
+                    instance_name = scenario.get("instance_name", f"instance_{i}")
+                    args = scenario.get("args", [])
+                    instance = UserClass(*args)
+                    instances[instance_name] = instance
+                    scenario_details["actions"].append({"action": "instantiate", "instance_name": instance_name, "args": args, "passed": True})
+
+                elif action == "check_attribute":
+                    instance_name = scenario["instance_name"]
+                    attr_name = scenario["attribute_name"]
+                    expected_val = scenario["expected_value"]
+
+                    instance = instances[instance_name]
+                    actual_val = getattr(instance, attr_name)
+
+                    if actual_val != expected_val:
+                        raise AssertionError(f"Attribute '{attr_name}' on '{instance_name}' has value {repr(actual_val)}, expected {repr(expected_val)}.")
+                    scenario_details["actions"].append({"action": "check_attribute", "instance_name": instance_name, "attribute": attr_name, "expected": expected_val, "actual": actual_val, "passed": True})
+
+                elif action == "call_method":
+                    instance_name = scenario["instance_name"]
+                    method_name = scenario["method_name"]
+                    args = scenario.get("args", [])
+
+                    instance = instances[instance_name]
+                    method_to_call = getattr(instance, method_name)
+
+                    # --- MODIFICATION FOR ASYNC ---
+                    if inspect.iscoroutinefunction(method_to_call):
+                        try:
+                            actual_return = asyncio.run(method_to_call(*args))
+                        except RuntimeError as e:
+                            raise RuntimeError(f"Error running async method '{method_name}': {e}")
+                    else:
+                        actual_return = method_to_call(*args)
+                    # --- END MODIFICATION ---
+
+                    if "expected_return_value" in scenario:
+                        expected_return = scenario["expected_return_value"]
+                        if actual_return != expected_return:
+                            raise AssertionError(f"Method '{method_name}' on '{instance_name}' returned {repr(actual_return)}, expected {repr(expected_return)}.")
+                    scenario_details["actions"].append({"action": "call_method", "instance_name": instance_name, "method": method_name, "args": args, "returned": repr(actual_return), "passed": True})
+
+                else:
+                    raise ValueError(f"Unknown action '{action}' in scenario #{i}.")
+
+            except Exception as e:
+                # Fail the entire validation on the first error
+                return DynamicValidationResult(False, f"Scenario #{i+1} ({action}) failed: {type(e).__name__}: {e}", details=details)
+
+            details["scenario_results"].append(scenario_details)
+
+        return DynamicValidationResult(True, "All class validation scenarios passed.", details=details)
+
+    except Exception as e:
+        return DynamicValidationResult(False, f"An unexpected error occurred during class validation: {type(e).__name__}: {e}", details=details)
+    finally:
+        if temp_module_path and os.path.exists(temp_module_path):
+            try: os.unlink(temp_module_path)
+            except Exception: pass
+
 
 def validate_exam_exercise(
     user_code: str,
     rules: Dict[str, Any],
     input_data: Optional[str] = None,
     timeout: int = 10,
-    direct_input_run: bool = False  # <-- NEW PARAM
+    direct_input_run: bool = False  # This flag is now ignored. Validation always runs.
 ) -> DynamicValidationResult:
-    # If this is a direct input run, just run the script and return output/errors
-    if direct_input_run:
-        return run_exam_script_only(user_code, timeout=timeout)
+    # The "direct input run" logic that bypassed validation has been removed
+    # to ensure consistency between running and submitting code for exams.
 
     security_res = general_security_check(user_code)
     if not security_res.passed:
@@ -931,7 +1200,19 @@ def validate_exam_exercise(
             details["function_results"].append(current_func_details)
             continue
 
-        single_function_rules_for_validator = {"function_name": func_name} # Validator expects this structure
+        # Perform static checks ONCE per function.
+        static_check_result = _validate_function_structure_ast(user_code, func_name, func_def_rules)
+        if static_check_result:
+            # Static check failed (e.g., syntax error, missing 'if', 'pass' body).
+            # Fail this entire function with one message and move to the next.
+            master_feedback_list.append(f"Function '{func_name}': FAILED - {static_check_result.message}")
+            overall_exam_passed = False
+            current_func_details["all_scenarios_passed"] = False
+            current_func_details["static_check_failure"] = static_check_result.details
+            details["function_results"].append(current_func_details)
+            continue
+
+        single_function_rules_for_validator = func_def_rules # Validator expects this structure
         current_function_all_scenarios_passed = True
 
         for scen_idx, scenario_config in enumerate(scenarios):
@@ -939,15 +1220,18 @@ def validate_exam_exercise(
                 user_code=user_code,
                 rules=single_function_rules_for_validator,
                 scenario_config=scenario_config,
-                timeout=timeout # Use overall exam timeout per function scenario for simplicity
+                timeout=timeout, # Use overall exam timeout per function scenario for simplicity
+                skip_ast_checks=True # IMPORTANT: Skip checks we just did
             )
             current_func_details["scenario_results"].append(scenario_result.details) # Store detailed result of each scenario
             if not scenario_result.passed:
-                master_feedback_list.append(
-                    f"Function '{func_name}', Scenario #{scen_idx+1} (Args: {scenario_config.get('args')}): FAILED - {scenario_result.message}"
+                # Prepend the specific scenario failure to the master list for clarity
+                master_feedback_list.insert(0,
+                    f"Function '{func_name}': FAILED on scenario with args {scenario_config.get('args')} - {scenario_result.message}"
                 )
                 overall_exam_passed = False
                 current_function_all_scenarios_passed = False
+                break # Stop checking scenarios for this function after the first failure.
 
         if current_function_all_scenarios_passed:
             master_feedback_list.append(f"Function '{func_name}': PASSED all scenarios.")
@@ -975,5 +1259,6 @@ VALIDATOR_MAP = {
     "function_check": validate_function_exercise, # For single function validation
     "dynamic_output": validate_dynamic_output_exercise,
     "function_and_output": validate_function_and_output_exercise,
+    "class_exercise": validate_class_exercise,
     "exam": validate_exam_exercise,
 }

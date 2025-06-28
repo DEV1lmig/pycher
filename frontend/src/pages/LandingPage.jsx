@@ -133,7 +133,7 @@ export default function LandingPage() {
             to="/register"
             className="relative z-10 flex items-center justify-center bg-primary text-white font-medium h-[250px] w-[250px] md:h-[200px] md:w-[200px] rounded-full transition-colors"
           >
-            <Magnet padding={30} disabled={false} magnetStrength={1}>
+            <Magnet padding={30} disabled={false} magnetStrength={0.8}>
               <h1 className="transition-transform ease-in-out cursor-pointer duration-300 hover:scale-150 font-medium text-sm md:text-lg">
                 Comienza <br /> Gratis
               </h1>
@@ -170,20 +170,6 @@ export default function LandingPage() {
           <p>Obtén guía personalizada</p>
           <p>Y feedback en <span className="text-primary">tiempo real</span></p>
         </div>
-      </FadeContent>
-
-      <FadeContent blur={true} duration={1600} easing="ease-out" initialOpacity={0}>
-      <Link
-        to="/register"
-        className="flex items-center justify-center bg-dark border-tertiary border text-white font-medium h-[50px] w-[250px] md:h-[65px] md:w-[250px] rounded-3xl transition-colors"
-      >
-
-        <Magnet padding={30} disabled={false} magnetStrength={10}>
-          <h1 className="transition-transform ease-in-out cursor-pointer duration-300 hover:scale-130 font-medium text-sm md:text-lg">
-            Comienza YA!
-          </h1>
-        </Magnet>
-      </Link>
       </FadeContent>
     </div>
     </header>
@@ -235,6 +221,7 @@ export default function LandingPage() {
       ))}
     </section>
 
+      {/* --- STATISTICS SECTION SIMPLIFIED --- */}
       <section className="bg-dark py-24 flex justify-center items-center gap-12">
       <FadeContent blur={true} duration={1200} easing="ease-out" initialOpacity={0}>
       <div className="relative w-[465px] h-[250px] bg-primary overflow-hidden border-none rounded-2xl ">
@@ -252,7 +239,7 @@ export default function LandingPage() {
             <div className="flex items-center text-dark text-9xl font-bold">
               <CountUp
                 from={0}
-                to={20}
+                to={3}
                 separator=""
                 direction="up"
                 duration={1}
@@ -261,47 +248,16 @@ export default function LandingPage() {
               <span className="text-dark">+</span>
             </div>
             <div className="text-dark text-2xl font-bold mb-5">
-              Cursos Online
+              Cursos Interactivos
             </div>
           </div>
       </div>
-          </FadeContent>
+      </FadeContent>
 
-          <FadeContent blur={true} duration={1200} easing="ease-out" initialOpacity={0}>
-          <div className="relative w-[465px] h-[250px] overflow-hidden rounded-2xl border-[1px] border-primary">
-
-          <div className="absolute inset-0">
-            <Particles
-              particleColors={['#8363f2', '#9880f2']}
-              particleCount={100}
-              particleSpread={10}
-              speed={0.2}
-              particleBaseSize={160}
-              moveParticlesOnHover={true}
-              alphaParticles={false}
-              disableRotation={false}
-            />
-          </div>
-
-
-          <div className="relative z-10 flex flex-col items-start justify-end h-full ml-7">
-            <div className="flex items-center text-primary text-9xl font-bold">
-              <CountUp
-                from={0}
-                to={4}
-                separator=""
-                direction="up"
-                duration={1}
-                className="count-up-text"
-              />
-            </div>
-            <div className="text-primary text-2xl font-bold mb-5">
-              Certificados
-            </div>
-          </div>
-        </div>
-        </FadeContent>
+      {/* The "Certificados" card has been removed as requested. */}
       </section>
+      {/* --- END OF SIMPLIFICATION --- */}
+
 
       <FadeContent blur={true} duration={1600} easing="ease-out" initialOpacity={0}>
       <section className='bg-dark'>

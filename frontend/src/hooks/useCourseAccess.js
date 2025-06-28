@@ -1,64 +1,66 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getUserEnrollments } from '@/services/userService'; // Assuming this is where it is
+import { useQuery } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { getUserEnrollments } from '@/services/userService';
 
+// Define a consistent query key for user enrollments.
+const userKeys = {
+  all: ['user'],
+  enrollments: () => [...userKeys.all, 'enrollments'],
+};
+
+/**
+ * A modern, TanStack Query-powered hook to manage user course access rights.
+ * This hook is the single source of truth for determining if a user is enrolled
+ * in a course and if they have met the prerequisites to access it.
+ */
 export function useCourseAccess() {
-  const [enrollments, setEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: enrollments = [], isLoading, error } = useQuery({
+    queryKey: userKeys.enrollments(),
+    queryFn: getUserEnrollments,
+    // Provide an empty array as initial data to prevent errors on first render.
+    initialData: [],
+    // Cache enrollment data for 5 minutes to reduce unnecessary network requests.
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const fetchEnrollments = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getUserEnrollments();
-      setEnrollments(data || []);
-    } catch (err) {
-      setError(err);
-      setEnrollments([]); // Clear enrollments on error
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchEnrollments();
-  }, [fetchEnrollments]);
-
+  /**
+   * Checks if a user has access to a specific course and their enrollment status.
+   * @param {number | string} courseId - The ID of the course to check.
+   * @returns {{hasAccess: boolean, isEnrolled: boolean, reason: string | null}}
+   */
   const hasAccessToCourse = useCallback((courseId) => {
-    if (loading) return { hasAccess: false, reason: "Cargando..." }; // Or some loading state
+    if (isLoading) {
+      return { hasAccess: false, isEnrolled: false, reason: "Cargando..." };
+    }
 
     const courseIdNum = parseInt(courseId, 10);
+    const enrollment = enrollments.find(e => e.course_id === courseIdNum);
+    const isEnrolled = !!(enrollment && enrollment.is_active_enrollment);
 
-    // Basic course (ID 1) is always accessible
+    // The first course is always accessible as a starting point.
     if (courseIdNum === 1) {
-      return { hasAccess: true, reason: null };
+      return { hasAccess: true, isEnrolled, reason: null };
     }
 
-    // For other courses, check if previous course is completed
+    // For subsequent courses, check if the prerequisite (previous course) is completed.
     const previousCourseId = courseIdNum - 1;
-    const previousCourseProgress = enrollments.find(e => e.course_id === previousCourseId);
+    const previousCourseEnrollment = enrollments.find(e => e.course_id === previousCourseId);
 
-    if (!previousCourseProgress || !previousCourseProgress.is_completed) {
+    if (!previousCourseEnrollment || !previousCourseEnrollment.is_completed) {
       return {
         hasAccess: false,
+        isEnrolled,
         reason: `Debes completar el curso anterior primero.`
       };
     }
-    return { hasAccess: true, reason: null };
-  }, [enrollments, loading]);
 
-  const getCourseProgress = useCallback((courseId) => {
-    if (loading) return null;
-    const courseIdNum = parseInt(courseId, 10);
-    return enrollments.find(e => e.course_id === courseIdNum) || null;
-  }, [enrollments, loading]);
+    return { hasAccess: true, isEnrolled, reason: null };
+  }, [enrollments, isLoading]);
 
   return {
     enrollments,
-    loading,
+    isLoading,
     error,
     hasAccessToCourse,
-    getCourseProgress,
-    refreshEnrollments: fetchEnrollments, // Expose the refresh function
   };
 }
