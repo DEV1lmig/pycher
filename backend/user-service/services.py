@@ -296,7 +296,7 @@ def enroll_user_in_course(db: Session, user_id: int, course_id: int):
         UserCourseEnrollment.course_id == course_id
     ).first()
 
-    enrollment_is_new = False
+    should_increment_count = False
     if existing_enrollment:
         if not existing_enrollment.is_active_enrollment:
             existing_enrollment.is_active_enrollment = True
@@ -309,6 +309,7 @@ def enroll_user_in_course(db: Session, user_id: int, course_id: int):
             existing_enrollment.last_accessed_module_id = None
             existing_enrollment.last_accessed_lesson_id = None
             db.add(existing_enrollment)
+            should_increment_count = True # Mark for incrementing on reactivation
             logger.info(f"Reactivated enrollment for User ID {user_id} in Course ID {course_id}.")
         else:
             logger.info(f"User ID {user_id} is already actively enrolled in Course ID {course_id}.")
@@ -322,23 +323,22 @@ def enroll_user_in_course(db: Session, user_id: int, course_id: int):
             is_active_enrollment=True
         )
         db.add(enrollment)
-        enrollment_is_new = True
+        should_increment_count = True # Mark for incrementing on new enrollment
         logger.info(f"Created new enrollment for User ID {user_id} in Course ID {course_id}.")
 
-    # Update students_count on the course if it's a new, active enrollment
-    # This part might be better handled by an event or a separate admin function
-    # to avoid direct modification of Course model from user-service if Course is primarily content-service's domain.
-    # For now, assuming direct update is acceptable or Course model is accessible here.
-    if enrollment_is_new: # Only increment if it's a truly new enrollment being activated
+    # Update students_count on the course if the enrollment was new or reactivated
+    course_model = None
+    if should_increment_count:
         course_model = db.query(Course).filter(Course.id == course_id).first()
         if course_model:
             course_model.students_count = (course_model.students_count or 0) + 1
             db.add(course_model)
+            logger.info(f"Incremented student count for Course ID {course_id}. New count: {course_model.students_count}")
 
     try:
         db.commit()
         db.refresh(enrollment)
-        if enrollment_is_new and course_model:
+        if should_increment_count and course_model:
             db.refresh(course_model)
     except Exception as e:
         db.rollback()
@@ -1089,32 +1089,27 @@ def get_course_progress_summary(db: Session, user_id: int, course_id: int):
         "last_accessed": enrollment.last_accessed,
         "last_accessed_module_id": enrollment.last_accessed_module_id,
         "last_accessed_lesson_id": enrollment.last_accessed_lesson_id,
-        # Ensure all fields expected by UserEnrollmentWithProgressResponse are here if this dict
-        # is directly used to create an instance of it.
-        "id": enrollment.id, # from UserCourseEnrollment
-        "enrollment_date": enrollment.enrollment_date, # from UserCourseEnrollment
-        "total_time_spent_minutes": enrollment.total_time_spent_minutes # from UserCourseEnrollment
-    }
+        "id": enrollment.id,        "enrollment_date": enrollment.enrollment_date,        "total_time_spent_minutes": enrollment.total_time_spent_minutes    }
 
 def get_user_enrollments_with_progress(db: Session, user_id: int) -> list[UserCourseEnrollment]:
     """
-    Retrieves all *active* course enrollments for a given user, including their progress
-    and related course information.
+    Retrieves all course enrollments for a given user (both active and inactive),
+    including their progress and related course information.
     """
     enrollments = db.query(UserCourseEnrollment).options(
         selectinload(UserCourseEnrollment.course).selectinload(Course.modules).selectinload(Module.lessons).selectinload(Lesson.exercises),
-        selectinload(UserCourseEnrollment.course).selectinload(Course.exams) # No need for .selectinload(CourseExam.exam_details)
+        selectinload(UserCourseEnrollment.course).selectinload(Course.exams)
     ).filter(
-        UserCourseEnrollment.user_id == user_id,
-        UserCourseEnrollment.is_active_enrollment == True # Filter for active enrollments
+        UserCourseEnrollment.user_id == user_id
     ).all()
-    logger.info(f"Fetched {len(enrollments)} active enrollments for User ID: {user_id}")
+    logger.info(f"Fetched {len(enrollments)} total enrollments for User ID: {user_id}")
+    logger.info(f"Enrollments include active and inactive states. Active enrollments are those with is_active_enrollment=True. {enrollments}")
     return enrollments
 
 def unenroll_user_from_course(db: Session, user_id: int, course_id: int):
     """
-    Unenrolls a user from a course by marking their enrollment as inactive
-    and resetting their progress for that course.
+    Unenrolls a user from a course by marking their enrollment as inactive,
+    resetting their progress, and decrementing the course's student count.
     """
     enrollment = db.query(UserCourseEnrollment).filter(
         UserCourseEnrollment.user_id == user_id,
@@ -1127,28 +1122,27 @@ def unenroll_user_from_course(db: Session, user_id: int, course_id: int):
 
     if not enrollment.is_active_enrollment:
         logger.info(f"User ID {user_id} is already unenrolled (inactive) from Course ID {course_id}.")
-        # Optionally, still return 204 or a specific message
-        # For consistency, we can just let it pass through to the commit and return 204
-        # Or raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already unenrolled from this course.")
-        # For now, let's treat it as a successful "unenroll" operation if already inactive.
-        return # Or raise an error if preferred
+        return
 
     logger.info(f"Starting unenrollment (soft delete) for User ID: {user_id} from Course ID: {course_id}")
 
     try:
+        # Mark enrollment as inactive and reset progress fields
         enrollment.is_active_enrollment = False
-        enrollment.is_completed = False # Reset completion status
-        enrollment.progress_percentage = 0.0 # Reset progress
-        enrollment.last_accessed = None # Reset last accessed time
-        enrollment.last_accessed_module_id = None # Reset last accessed module
-        enrollment.last_accessed_lesson_id = None # Reset last accessed lesson
-        # total_time_spent_minutes could also be reset or left as is for historical data
+        enrollment.is_completed = False
+        enrollment.progress_percentage = 0.0
+        enrollment.last_accessed = None
+        enrollment.last_accessed_module_id = None
+        enrollment.last_accessed_lesson_id = None
+        db.add(enrollment)
 
-        # Note: We are NO LONGER deleting UserModuleProgress, UserLessonProgress, etc.
-        # Their existence is fine; they just won't be relevant if the enrollment is inactive.
-        # If re-enrollment should clear them, that logic would go into the enroll function.
+        # Decrement the student count on the corresponding course
+        course_model = db.query(Course).filter(Course.id == course_id).first()
+        if course_model:
+            course_model.students_count = max(0, (course_model.students_count or 0) - 1)
+            db.add(course_model)
+            logger.info(f"Decremented student count for Course ID {course_id}. New count: {course_model.students_count}")
 
-        db.add(enrollment) # Ensure changes are staged
         db.commit()
         logger.info(f"Successfully soft-unenrolled User ID: {user_id} from Course ID: {course_id}. Enrollment marked inactive.")
 

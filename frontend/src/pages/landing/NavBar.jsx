@@ -9,16 +9,12 @@ export default function NavBar() {
             <div className="flex flex-row items-center justify-between w-full">
                 <img src={logo} alt="logo" className="w-48 h-auto cursor-pointer" />
                 <div className="flex flex-row items-center space-x-4">
-                    <Link to="/about" className="text-base font-semibold hover:text-primary">Cursos</Link>
-                    <Link to="/contact" className="text-base font-semibold hover:text-primary">Libros</Link>
-                </div>
-                <div className="flex flex-row items-center space-x-4">
                     <Link to="/login" className="px-4 py-2 text-base font-semibold text-white  hover:text-primary-light">Inicio de sesión</Link>
                     <Link to="/register" className="px-4 py-2 text-base font-semibold text-white  rounded hover:text-secondary">Registro</Link>
                 </div>
             </div>
             </FadeContent>
         </div>
-        
+
     );
 }

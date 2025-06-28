@@ -311,6 +311,7 @@ class UserEnrollmentWithProgressResponse(BaseModel):
     last_accessed: Optional[datetime] = None
     is_completed: bool = False
     progress_percentage: float = 0.0
+    is_active_enrollment: bool
     total_time_spent_minutes: int = 0
     last_accessed_module_id: Optional[int] = None
     last_accessed_lesson_id: Optional[int] = None
