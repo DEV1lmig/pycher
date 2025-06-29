@@ -552,16 +552,77 @@ def finalize_course_completion(db: Session, user_id: int, course_id: int):
         logger.warning(f"Could not finalize course completion: No enrollment found for User {user_id} in Course {course_id}.")
 
 
+def _check_and_unlock_next_course(db: Session, user_id: int, completed_course_id: int):
+    """
+    Finalizes the completion of a course after all conditions (modules, exam) are met.
+    Marking the course as 'is_completed = True' effectively unlocks the next course
+    for the frontend's access control logic.
+    """
+    logger.info(f"User {user_id}, Course {completed_course_id}: Finalizing course completion and checking for next course unlock.")
+
+    enrollment = db.query(UserCourseEnrollment).filter(
+        UserCourseEnrollment.user_id == user_id,
+        UserCourseEnrollment.course_id == completed_course_id,
+        UserCourseEnrollment.is_active_enrollment == True
+    ).first()
+
+    if not enrollment:
+        logger.warning(f"User {user_id}, Course {completed_course_id}: Cannot finalize completion, no active enrollment found.")
+        return
+
+    # Condition 1: All modules must be complete.
+    # The exam_unlocked flag is a good proxy for this, as it's set by _check_and_update_course_completion.
+    if not enrollment.exam_unlocked:
+        logger.warning(f"User {user_id}, Course {completed_course_id}: Cannot finalize, not all modules are complete (exam not unlocked).")
+        return
+
+    # Condition 2: The course's exam (if it exists) must be passed.
+    exam_exercise = db.query(Exercise).filter(
+        Exercise.course_id == completed_course_id,
+        Exercise.validation_type == "exam"
+    ).first()
+
+    if exam_exercise:
+        exam_submission = db.query(UserExerciseSubmission).filter(
+            UserExerciseSubmission.user_id == user_id,
+            UserExerciseSubmission.exercise_id == exam_exercise.id,
+            UserExerciseSubmission.is_correct == True
+        ).first()
+        if not exam_submission:
+            logger.warning(f"User {user_id}, Course {completed_course_id}: Cannot finalize, exam exercise {exam_exercise.id} has not been passed.")
+            return
+
+    # All conditions met. Finalize the course completion.
+    if not enrollment.is_completed:
+        enrollment.is_completed = True
+        enrollment.progress_percentage = 100.0 # Ensure percentage is maxed out
+        enrollment.completed_at = dt.utcnow()
+        db.add(enrollment)
+        logger.info(f"SUCCESS: User {user_id} has officially completed Course {completed_course_id}. Next course is now accessible.")
+    else:
+        logger.info(f"User {user_id}, Course {completed_course_id}: Course was already marked as complete.")
+
+
 def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitted: str, input_data: Optional[str] = None):
     logger.info(f"Attempting to complete exercise ID {exercise_id} for user ID {user_id}.")
+
+    # Eagerly load relationships that might be needed
     exercise = db.query(Exercise).options(
         selectinload(Exercise.lesson).selectinload(Lesson.module)
     ).filter(Exercise.id == exercise_id).first()
 
     if not exercise:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
-    if not exercise.lesson or not exercise.lesson.module:
-        raise HTTPException(status_code=500, detail="Exercise is not properly linked to a lesson and module.")
+
+    # --- START: REFACTORED VALIDATION ---
+    # Validate based on the type of exercise
+    if exercise.validation_type == "exam":
+        if not exercise.course_id:
+            raise HTTPException(status_code=500, detail="Exam exercise is not properly linked to a course.")
+    else: # Default case for regular lesson exercises
+        if not exercise.lesson or not exercise.lesson.module:
+            raise HTTPException(status_code=500, detail="Lesson exercise is not properly linked to a lesson and module.")
+    # --- END: REFACTORED VALIDATION ---
 
     # In a real scenario, you would call the execution service here.
     # For this fix, we'll assume it passes.
@@ -575,7 +636,9 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
     ).first()
 
     if not submission_record:
-        submission_record = UserExerciseSubmission(user_id=user_id, exercise_id=exercise_id, lesson_id=exercise.lesson_id, attempt_number=1)
+        # For lesson exercises, link the submission to the lesson for easier querying
+        lesson_id_for_submission = exercise.lesson_id if exercise.validation_type != "exam" else None
+        submission_record = UserExerciseSubmission(user_id=user_id, exercise_id=exercise_id, lesson_id=lesson_id_for_submission, attempt_number=1)
     else:
         submission_record.attempt_number = (submission_record.attempt_number or 0) + 1
 
@@ -586,9 +649,9 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
     submission_record.submitted_at = dt.utcnow()
     submission_record.passed = all_system_tests_passed
 
-    db.add(submission_record) # Stage the submission record
+    db.add(submission_record)
 
-    # --- MODIFICATION: Handle exam attempt state ---
+    # Handle exam attempt state specifically
     if exercise.validation_type == "exam":
         active_attempt = db.query(UserExamAttempt).filter(
             UserExamAttempt.user_id == user_id,
@@ -597,35 +660,28 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
         ).first()
 
         if active_attempt:
-            if not all_system_tests_passed:  # Submission is INCORRECT
+            if not all_system_tests_passed:
                 active_attempt.failure_count += 1
-                logger.info(f"User {user_id} failed exam attempt for Exercise {exercise_id}. New failure count: {active_attempt.failure_count}")
-            else:  # Submission is CORRECT
+            else:
                 active_attempt.passed = True
                 active_attempt.is_active = False
                 active_attempt.completed_at = dt.utcnow()
-                logger.info(f"User {user_id} passed exam for Exercise {exercise_id}. Deactivating attempt.")
-
             db.add(active_attempt)
-    # --- END MODIFICATION ---
 
-    # If the exercise is correct, trigger the entire cascade of progress updates.
-    # All changes will be staged within the same session.
+    # If the exercise is correct, trigger the correct cascade of progress updates.
     if all_system_tests_passed:
-        logger.info(f"Exercise {exercise_id} passed. Updating lesson completion status.")
-        _check_and_update_lesson_completion(db, user_id, exercise.lesson_id)
+        if exercise.validation_type == "exam" and exercise.course_id:
+            logger.info(f"Exam exercise {exercise.id} for course {exercise.course_id} passed by user {user_id}. Checking for course completion.")
+            # First, update the progress percentage.
+            recalculate_and_update_course_progress(db, user_id, exercise.course_id)
+            # Then, run the final check to mark the course as complete and unlock the next one.
+            _check_and_unlock_next_course(db, user_id, exercise.course_id)
+        else: # This now safely handles all non-exam (i.e., regular) exercises
+            logger.info(f"Lesson exercise {exercise.id} for lesson {exercise.lesson_id} passed by user {user_id}. Checking for lesson completion.")
+            _check_and_update_lesson_completion(db, user_id, exercise.lesson_id)
 
-    # --- SINGLE COMMIT FOR THE ENTIRE OPERATION ---
-    # This will commit the submission and all staged progress updates at once.
-    try:
-        db.commit()
-        db.refresh(submission_record)
-        logger.info(f"Successfully committed submission and all progress updates for exercise {exercise_id}, user {user_id}.")
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error committing transaction in complete_exercise: {e}", exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Could not record submission and update progress.")
+    db.commit()
+    db.refresh(submission_record)
 
     return submission_record
 
@@ -1013,7 +1069,6 @@ def get_course_progress_summary(db: Session, user_id: int, course_id: int):
         # Returning None or an empty dict might be better if the frontend expects to check for it.
         # For consistency with UserEnrollmentWithProgressResponse, let's prepare for a potential 404 if no enrollment.
         # However, the frontend's useCourseAccess().getCourseProgress() likely handles null.
-        # The original code raised HTTPException, so we'll keep that behavior if no enrollment.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not enrolled in this course")
 
 
@@ -1276,8 +1331,8 @@ def get_user_progress_report_data(db: Session, user_id: int) -> UserProgressRepo
                     report_exercises_data.append(ReportExerciseProgressSchema(
                         title=exercise_entity.title,
                         is_correct=submission.is_correct if submission else None,
-                    exercises=report_exercises_data
-                ))
+                        exercises=report_exercises_data
+                    ))
 
             report_modules_data.append(ReportModuleProgressSchema(
                 title=module_entity.title,

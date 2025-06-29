@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, useMatch } from "@tanstack/react-router"; // Ensure useMatch is imported
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { getModuleById, getCourseById } from "@/services/contentService";

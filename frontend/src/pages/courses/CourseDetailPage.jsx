@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react"; // Import useMemo
 import { useParams, Link } from "@tanstack/react-router"; // Added useNavigate
 import { getCourseById, getModulesByCourseId, getCourseExamExercises } from "@/services/contentService";
 import { getCourseProgressSummary, getBatchModuleProgress } from "@/services/progressService"; // Importing progress service
@@ -50,6 +50,26 @@ export default function CourseDetailPage() {
 
     setModuleProgresses(progressMap || {});
   }, [courseId]);
+
+  // --- START: Memoized Calculations (Moved to top level) ---
+  const courseIdNum = parseInt(courseId, 10);
+
+  const courseAccessInfo = useMemo(() => hasAccessToCourse(courseIdNum), [hasAccessToCourse, courseIdNum]);
+
+  const isCourseLockedByPrerequisite = useMemo(() => !courseAccessInfo.hasAccess, [courseAccessInfo]);
+
+  const isUserEnrolledInThisCourse = useMemo(() => !!userCourseProgress && userCourseProgress.is_active_enrollment, [userCourseProgress]);
+
+  const isCourseCompleted = useMemo(() => userCourseProgress?.is_completed, [userCourseProgress]);
+
+  const allModulesLockedDueToCourse = useMemo(() => isCourseLockedByPrerequisite || !isUserEnrolledInThisCourse, [isCourseLockedByPrerequisite, isUserEnrolledInThisCourse]);
+
+  const overallLockReason = useMemo(() => {
+    if (isCourseLockedByPrerequisite) return courseAccessInfo.reason;
+    if (!isUserEnrolledInThisCourse) return "Debes inscribirte en este curso para acceder a los módulos.";
+    return null;
+  }, [isCourseLockedByPrerequisite, isUserEnrolledInThisCourse, courseAccessInfo.reason]);
+  // --- END: Memoized Calculations ---
 
   useEffect(() => {
     getCourseById(courseId).then(setCourse);
@@ -197,13 +217,7 @@ export default function CourseDetailPage() {
     );
   }
 
-  const courseAccessInfo = hasAccessToCourse(parseInt(courseId));
-  const isCourseLockedByPrerequisite = !courseAccessInfo.hasAccess;
-  const isUserEnrolledInThisCourse = !!userCourseProgress;
-  const isCourseCompleted = userCourseProgress?.is_completed;
-
-  const allModulesLockedDueToCourse = isCourseLockedByPrerequisite || !isUserEnrolledInThisCourse;
-  const overallLockReason = isCourseLockedByPrerequisite ? courseAccessInfo.reason : (!isUserEnrolledInThisCourse ? "Debes inscribirte en este curso para acceder a los módulos." : null);
+  // The useMemo block has been moved from here to the top of the component.
 
   // ADD CONSOLE LOGS HERE before returning JSX
   ("CourseDetailPage: Rendering checks for ExamCard:");
