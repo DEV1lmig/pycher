@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useMatch } from "@tanstack/react-router"; // Ensure useMatch is imported
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { getModuleById, getCourseById } from "@/services/contentService";
-import { submitExercise as submitExerciseApi, getCurrentCourseExam } from "@/services/progressService";
+// --- FIX: Import the entire progressService module ---
+import progressService from "@/services/progressService";
 import LessonCodeExecutor from "@/components/editor/LessonCodeExecutor";
 import { lessonWithCodeRoute, examInterfaceRoute } from "@/router";
 import Waves from "@/components/ui/waves";
@@ -73,10 +74,30 @@ export default function LessonWithCodePage() {
   const [isExamSubmitting, setIsExamSubmitting] = useState(false);
   const [isExamCorrect, setIsExamCorrect] = useState(null); // null, true, or false for exam pass/fail
 
+  // --- START: ADD THIS NEW STATE ---
+  const [lastSubmissionResult, setLastSubmissionResult] = useState(null);
+  // --- END: ADD THIS NEW STATE ---
+
   // Shared state
   const [userStdin, setUserStdin] = useState("");
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [courseProgress, setCourseProgress] = useState(null);
 
+  const fetchCourseProgress = useCallback(async () => {
+    if (courseData?.id) {
+      try {
+        const progress = await progressService.getCourseProgressSummary(courseData.id);
+        console.log("Fetched course progress:", progress); // <--- LOG HERE
+        setCourseProgress(progress);
+      } catch (e) {
+        // Optionally handle error
+      }
+    }
+  }, [courseData?.id]);
+
+  useEffect(() => {
+    fetchCourseProgress();
+  }, [fetchCourseProgress]);
 
   // Fetch lesson-specific breadcrumb data (module and course for the lesson)
   useEffect(() => {
@@ -108,7 +129,8 @@ export default function LessonWithCodePage() {
       setExamError(null);
       Promise.all([
         getCourseById(courseIdForExam), // For breadcrumbs
-        getCurrentCourseExam(courseIdForExam) // CHANGED: Use the new stateful function
+        // --- FIX: Use the imported progressService object ---
+        progressService.getCurrentCourseExam(courseIdForExam)
       ]).then(([courseRes, examExerciseRes]) => {
         setExamCourse(courseRes);
         if (examExerciseRes) {
@@ -152,27 +174,60 @@ export default function LessonWithCodePage() {
       toast.error("No hay ejercicio seleccionado para enviar.");
       return;
     }
+    setLastSubmissionResult(null);
 
     if (isExamMode) { // Exam Submission Logic
       setIsExamSubmitting(true);
       setIsExamCorrect(null);
       try {
-        const submissionResult = await submitExerciseApi(currentExercise.id, codeToSubmit, userStdin); // #progressService.js
-        toast.success(`Examen "${currentExercise.title}" enviado. Resultado: ${submissionResult.is_correct ? 'Correcto' : 'Incorrecto'}`);
+        const submissionResult = await progressService.submitExercise(currentExercise.id, codeToSubmit, userStdin);
+
+        // --- START: IMPROVED TOAST AND RESULT HANDLING ---
+        if (submissionResult.is_correct) {
+          toast.success(`Examen "${currentExercise.title}" enviado. ¡Resultado Correcto!`);
+        } else {
+          // Show a detailed error toast
+          toast.error(submissionResult.validation_result?.error || "Resultado: Incorrecto");
+        }
+        // --- END: IMPROVED TOAST AND RESULT HANDLING ---
+
         setIsExamCorrect(submissionResult.is_correct);
+        // --- FIX: Pass the nested validation_result to the executor ---
+        setLastSubmissionResult(submissionResult.validation_result);
         return submissionResult;
       } catch (error) {
-        toast.error(error.response?.data?.detail || error.message || "Error al enviar el examen.");
-        setIsExamCorrect(false); // Mark as incorrect on error
+        const errorMsg = error.response?.data?.detail || error.message || "Error al enviar el examen.";
+        toast.error(errorMsg);
+        setLastSubmissionResult({ error: errorMsg, passed: false, output: "" });
+        setIsExamCorrect(false);
       } finally {
         setIsExamSubmitting(false);
       }
     } else { // Lesson Exercise Submission Logic (uses hook)
       try {
-        const submissionResult = await submitExerciseFromHook(currentExercise.id, codeToSubmit, userStdin);
+        // --- FIX: Pass disableToast option to the hook ---
+        const submissionResult = await submitExerciseFromHook(
+          currentExercise.id,
+          codeToSubmit,
+          userStdin,
+          { disableToast: true } // This prevents the hook from showing a toast
+        );
+
+        // This component's toast logic will now be the only one running
+        if (submissionResult.is_correct) {
+          toast.success("¡Ejercicio correcto!");
+          await fetchCourseProgress();
+        } else {
+          toast.error(submissionResult.validation_result?.error || "Resultado: Incorrecto. Revisa la salida.");
+        }
+
+        setLastSubmissionResult(submissionResult.validation_result);
         return submissionResult;
       } catch (error) {
-        // Toast for lesson exercise errors is typically handled within the useLessonDetail hook
+        // This catch block will now only handle errors if the API call itself fails
+        // The hook no longer shows a toast, so we can add one here if needed,
+        // but the component's logic above already covers most cases.
+        setLastSubmissionResult({ error: error.message, passed: false, output: "" });
       }
     }
   };
@@ -345,6 +400,9 @@ export default function LessonWithCodePage() {
                   isSubmitting={isExamMode ? isExamSubmitting : (submittingExerciseId === currentExercise.id)}
                   isCorrect={isCurrentExerciseCorrectForDisplay}
                   currentUserStdin={userStdin}
+                  // --- START: PASS THE SUBMISSION RESULT ---
+                  submissionResult={lastSubmissionResult}
+                  // --- END: PASS THE SUBMISSION RESULT ---
                 />
                 {exerciseNeedsInput && (
                   <div className="mt-2">
@@ -400,6 +458,14 @@ export default function LessonWithCodePage() {
           />
         )}
       </FadeContent>
+      {courseProgress?.is_course_completed && (
+  <>
+    {console.log("Rendering 'Curso completado' message. courseProgress:", courseProgress)} {/* <--- LOG HERE */}
+    <div className="p-3 bg-green-50 border border-green-200 rounded-lg shadow-md text-center text-green-700 mt-2">
+      ¡Curso completado!
+    </div>
+  </>
+)}
     </DashboardLayout>
   );
 }

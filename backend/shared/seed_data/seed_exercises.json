@@ -5,23 +5,22 @@
     "module_id": 1,
     "lesson_id": 1,
     "order_index": 1,
-    "title": "Ejercicio 1.1.1: ¿Qué es Python?",
-    "description": "Responde: ¿Cuál es una de las principales razones por las que Python es popular para principiantes?",
-    "instructions": "1. Tu objetivo es imprimir una frase específica en la consola.\n2. Utiliza la función `print()` de Python para esta tarea.\n3. La frase exacta que debes imprimir es: `Su sintaxis es clara y legible`.\n4. Asegúrate de que esta frase esté encerrada entre comillas (simples `'` o dobles `\"`) para que Python la interprete como un string (texto).\n   Por ejemplo: `print(\"Texto de ejemplo\")`.",
-    "starter_code": "# Utiliza la función print() para mostrar la respuesta exacta.\nprint(\"...\")",
+    "title": "Ejercicio 1.1.1: Tu Primer Print",
+    "description": "Usa la función print() para mostrar un mensaje específico en pantalla.",
+    "instructions": "Tu primera misión en Python es comunicarte con el mundo.\n\nPara ello:\n1. Usa la función `print()` para mostrar un mensaje en la pantalla.\n2. La frase que debes imprimir es exactamente: `Su sintaxis es clara y legible`.\n3. Recuerda que los textos (strings) en Python se escriben entre comillas. Por ejemplo: `print(\"Hola\")`.",
+    "starter_code": "# Usa la función print() para mostrar la frase requerida\nprint(\"...\")",
     "validation_type": "simple_print",
     "validation_rules": {
       "expected_exact_output": "Su sintaxis es clara y legible\n",
       "expected_print_count": 1,
-      "expected_types": ["str"],
+      "expected_types": [
+        "str"
+      ],
       "strict_whitespace": true,
       "case_sensitive": true,
       "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
+        "wrong_output": "El texto impreso no es exactamente el que se pidió. Revisa mayúsculas, minúsculas y espacios.",
+        "wrong_print_count": "Solo debes realizar un único print."
       }
     }
   },
@@ -31,16 +30,74 @@
     "module_id": 1,
     "lesson_id": 2,
     "order_index": 1,
-    "title": "Ejercicio 1.2.1: Saludo Personalizado",
-    "description": "Escribe un programa que lea un nombre y luego imprima '¡Hola, [Nombre]!' en pantalla, reemplazando [Nombre] con el nombre leído.",
-    "instructions": "1. Utiliza la función `input()` para leer un nombre que será proporcionado por el sistema. No necesitas mostrar un mensaje dentro de `input()` (ej. `nombre = input()` es suficiente).\n2. Almacena el nombre leído en una variable llamada `nombre`.\n3. Utiliza la función `print()` para mostrar el saludo.\n4. Para incluir el valor de tu variable `nombre` dentro del mensaje, puedes usar un f-string. El formato del mensaje debe ser: `¡Hola, [valor de la variable nombre]!`.\n   Ejemplo de cómo usar un f-string: `print(f\"¡Hola, {nombre}!\")`.\n5. Asegúrate de que la salida final sea exactamente como se espera, incluyendo los signos de exclamación.",
-    "starter_code": "nombre = input()\nprint(f\"¡Hola, {nombre}!\")",
+    "title": "Ejercicio 1.2.1: Creando Variables",
+    "description": "Crea variables para almacenar el nombre de una ciudad y su población, y luego muéstralas.",
+    "instructions": "Imagina que quieres guardar datos sobre una ciudad para usarlos más tarde.\n\nPara hacerlo:\n1. Crea una variable llamada `ciudad` y asígnale el valor de texto \"Madrid\".\n2. Crea otra variable llamada `poblacion` y asígnale el valor numérico 3300000.\n3. Usa `print()` para mostrar el contenido de la variable `ciudad`.\n4. En una nueva línea, usa `print()` para mostrar el contenido de la variable `poblacion`.",
+    "starter_code": "# 1. Define la variable para la ciudad\n\n# 2. Define la variable para la población\n\n# 3. Imprime la ciudad\n\n# 4. Imprime la población",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Madrid\n3300000\n",
+      "expected_print_count": 2,
+      "strict_variable_names": [
+        "ciudad",
+        "poblacion"
+      ],
+      "expected_types": [
+        "str",
+        "int"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_type": "La primera línea debe imprimir un string (desde la variable 'ciudad') y la segunda un entero (desde la variable 'poblacion').",
+        "wrong_variable": "Asegúrate de que tus variables se llamen exactamente 'ciudad' y 'poblacion'.",
+        "wrong_print_count": "Se esperaban dos llamadas a la función print."
+      }
+    }
+  },
+  {
+    "id": 3,
+    "course_id": 1,
+    "module_id": 1,
+    "lesson_id": 3,
+    "order_index": 1,
+    "title": "Ejercicio 1.3.1: Cálculo de Área con f-string",
+    "description": "Calcula el área de un rectángulo y muestra el resultado en una frase bien formateada.",
+    "instructions": "Vamos a aplicar tus nuevas habilidades matemáticas y de formato de texto.\n\nPara ello:\n1. Crea una variable `largo` y asígnale el valor 10.\n2. Crea una variable `ancho` y asígnale el valor 5.\n3. Crea una variable `area` que guarde el resultado de multiplicar `largo` por `ancho`.\n4. Usa un **f-string** con la función `print()` para mostrar el mensaje exacto: `El área de un rectángulo de 10x5 es 50.`",
+    "starter_code": "largo = 10\nancho = 5\n# Calcula el área\narea = 0\n# Usa un f-string para imprimir el resultado\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "El área de un rectángulo de 10x5 es 50.\n",
+      "expected_print_count": 1,
+      "strict_variable_names": [
+        "largo",
+        "ancho",
+        "area"
+      ],
+      "require_fstring": true,
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_output": "El mensaje no es correcto. Asegúrate de usar un f-string y de que el texto coincida exactamente.",
+        "wrong_variable": "Revisa que los nombres de las variables ('largo', 'ancho', 'area') sean correctos.",
+        "not_fstring": "Parece que no estás usando un f-string. Recuerda poner la 'f' antes de las comillas."
+      }
+    }
+  },
+  {
+    "id": 4,
+    "course_id": 1,
+    "module_id": 2,
+    "lesson_id": 4,
+    "order_index": 4,
+    "title": "Ejercicio 2.1.1: Saludo Personalizado",
+    "description": "Crea un programa que pida tu nombre y te salude con un mensaje personalizado.",
+    "instructions": "Piensa que quieres que el programa te dé la bienvenida usando tu nombre, como cuando un amigo te saluda por tu nombre.\n\nPara lograrlo:\n1. Pide que la persona escriba su nombre usando `input()`.\n2. Guarda ese nombre en una variable.\n3. Usa `print()` junto con un f-string para imprimir un saludo que diga: `¡Hola, [nombre]!`, donde [nombre] será el texto que ingresó la persona.\n\nEjemplo: Si alguien escribe \"Ana\", debe aparecer: `¡Hola, Ana!`.",
+    "starter_code": "nombre = input()\n# Usa un f-string para imprimir el saludo",
     "validation_type": "saludo_personalizado",
     "validation_rules": {
       "requires_input_function": true,
       "output_format_template": "¡Hola, {var}!",
-      "expected_print_count": 1,
-      "expected_types": ["str"],
       "submission_test_strategy": {
         "type": "generated_inputs",
         "count": 3,
@@ -51,96 +108,57 @@
           "charset": "alpha"
         }
       },
-      "target_variable_names": ["nombre"],
+      "target_variable_names": [
+        "nombre"
+      ],
       "require_fstring": true,
       "custom_feedback": {
-        "missing_input": "Debes usar la función input() para leer el nombre.",
-        "wrong_variable": "La variable debe llamarse 'nombre' y usarse en el print.",
-        "not_fstring": "Usa un f-string para imprimir el saludo.",
-        "wrong_print_count": "Se esperaba una sola operación de print."
+        "missing_input": "Debes usar input() para leer el nombre.",
+        "wrong_variable": "La variable debe llamarse 'nombre'.",
+        "not_fstring": "Usa un f-string.",
+        "wrong_print_count": "Solo se esperaba un print."
       }
     },
     "difficulty": "Fácil",
     "estimated_time_minutes": 5,
-    "tags": ["input", "print", "f-strings", "variables"]
-  },
-  {
-    "id": 3,
-    "course_id": 1,
-    "module_id": 1,
-    "lesson_id": 3,
-    "order_index": 1,
-    "title": "Ejercicio 1.3.1: Variables y Tipos",
-    "description": "Crea una variable 'ciudad' con el valor \"Madrid\" y una variable `poblacion` con el valor 3300000. Imprime ambas variables, cada una en una nueva línea.",
-    "instructions": "1. Define una variable llamada `ciudad` y asígnale el valor de string \"Madrid\".\n2. Define otra variable llamada `poblacion` y asígnale el valor numérico (entero) 3300000.\n3. Utiliza la función `print()` para mostrar el valor de la variable `ciudad` en la consola.\n4. En una línea separada, utiliza nuevamente la función `print()` para mostrar el valor de la variable `poblacion`.",
-    "starter_code": "# 1. Define la variable ciudad\n\n# 2. Define la variable poblacion\n\n# 3. Imprime la variable ciudad\n\n# 4. Imprime la variable poblacion",
-    "validation_type": "simple_print",
-    "validation_rules": {
-      "expected_exact_output": "Madrid\n3300000\n",
-      "expected_print_count": 2,
-      "strict_variable_names": ["ciudad", "poblacion"],
-      "require_variables_in_print": ["ciudad", "poblacion"],
-      "expected_types": ["str", "int"],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "wrong_type": "Verifica que el primer print sea de un string ('ciudad') y el segundo de un entero ('poblacion').",
-        "wrong_variable": "Debes usar los nombres de variable exactos: 'ciudad' y 'poblacion', y asegurarte de que se definan y usen correctamente.",
-        "wrong_print_count": "Se esperaban dos operaciones de print."
-      }
-    }
-  },
-  {
-    "id": 4,
-    "course_id": 1,
-    "module_id": 2,
-    "lesson_id": 4,
-    "order_index": 1,
-    "title": "Ejercicio 2.1.1: Operaciones Básicas",
-    "description": "Calcula el resultado de la expresión matemática (15 + 5) * 2 / 4 - 1 e imprímelo en la consola.",
-    "instructions": "Escribe la expresión matemática directamente en tu código y usa print para mostrar el resultado. Puedes asignar el resultado a una variable `resultado_calculo` antes de imprimirla.",
-    "starter_code": "# resultado_calculo = (15 + 5) * 2 / 4 - 1\n# print(resultado_calculo)",
-    "validation_type": "simple_print",
-    "validation_rules": {
-      "expected_exact_output": "15\n",
-      "expected_print_count": 1,
-      "expected_types": ["int"],
-      "strict_variable_names": ["suma_total"],
-      "require_variables_in_print": ["suma_total"],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "require_for_loop": true,
-      "custom_feedback": {
-        "wrong_type": "El resultado impreso debe ser un número decimal (float).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    }
+    "tags": [
+      "input",
+      "print",
+      "f-strings",
+      "variables"
+    ]
   },
   {
     "id": 5,
     "course_id": 1,
     "module_id": 2,
     "lesson_id": 5,
-    "order_index": 1,
-    "title": "Ejercicio 2.2.1: ¿Puede Conducir?",
-    "description": "Crea una función que determine si un usuario puede conducir. Se puede conducir si la edad es >= 18, o si la edad es >= 16 Y tiene permiso de sus padres.",
-    "instructions": "Completa la función `puede_conducir` para que devuelva True si el usuario puede conducir, o False en caso contrario. No imprimas nada, solo devuelve el valor booleano.",
-    "starter_code": "def puede_conducir(edad_usuario, tiene_permiso_padres):\n    # Escribe tu lógica aquí y devuelve True o False\n    pass",
-    "validation_type": "exam",
+    "order_index": 5,
+    "title": "Ejercicio 2.2.1: Convierte tu edad a días",
+    "description": "Convierte la edad de un usuario (en años) a días.",
+    "instructions": "Imagina que quieres saber cuántos días has vivido hasta ahora.\n\nPara hacerlo:\n1. Pide al usuario que escriba su edad en años usando `input()`.\n2. Convierte esa edad de texto a número entero usando `int()`.\n3. Multiplica la edad por 365 para obtener la edad en días.\n4. Usa un f-string para mostrar un mensaje que diga: `Tienes aproximadamente [X] días de vida.`, donde [X] es el resultado.",
+    "starter_code": "edad_en_texto = input()\n# Convierte la edad a número\nedad_en_numero = 0\n# Calcula la edad en días\nedad_en_dias = 0\n# Imprime el resultado con un f-string\n",
+    "validation_type": "simple_print",
     "validation_rules": {
-      "functions": [
-        {
-          "function_name": "puede_conducir",
-          "scenarios": [
-            {"args": [20, false], "expected_return_value": true},
-            {"args": [18, false], "expected_return_value": true},
-            {"args": [17, true], "expected_return_value": true},
-            {"args": [16, true], "expected_return_value": true},
-            {"args": [16, false], "expected_return_value": false},
-            {"args": [15, true], "expected_return_value": false}
-          ]
-        }
-      ]
+      "requires_input_function": true,
+      "input_constraints": {
+        "type": "int",
+        "min": 1,
+        "max": 100
+      },
+      "transform_for_template": "f'Tienes aproximadamente {int(value)*365} días de vida.'",
+      "output_format_template": "{var}\n",
+      "expected_print_count_per_case": 1,
+      "expected_types_per_case": [
+        "str"
+      ],
+      "num_cases": 4,
+      "require_fstring": true,
+      "custom_feedback": {
+        "not_fstring": "Debes usar un f-string para mostrar el mensaje.",
+        "wrong_type_conversion": "Asegúrate de convertir el input a un número entero con int().",
+        "wrong_print_count": "Solo se debe realizar un print."
+      }
     }
   },
   {
@@ -148,27 +166,29 @@
     "course_id": 1,
     "module_id": 2,
     "lesson_id": 6,
-    "order_index": 1,
-    "title": "Ejercicio 2.3.1: Calculadora de Edad en Días",
-    "description": "Convierte la edad en años a días y muestra el resultado en el formato 'Tienes aproximadamente [X] días de vida.'.",
-    "instructions": "1. Lee la edad en años usando `input()`. Asume que siempre será un número.\n2. Convierte la edad leída (que es un string) a un número entero.\n3. Calcula la edad en días (multiplica por 365).\n4. Usa un f-string para imprimir el mensaje en el formato exacto: `Tienes aproximadamente [valor_calculado_dias] días de vida.`.",
-    "starter_code": "# Lee la edad como string\nedad_str = input()\n# Convierte a entero\nedad_anios = int(edad_str)\n# Calcula días\nedad_dias = edad_anios * 365\n# Imprime usando f-string\nprint(f\"Tienes aproximadamente {edad_dias} días de vida.\")",
-    "validation_type": "dynamic_output",
+    "order_index": 6,
+    "title": "Ejercicio 2.3.1: ¿Puede alquilar un coche?",
+    "description": "Usando operadores lógicos, determina si un usuario puede alquilar un coche.",
+    "instructions": "Una empresa de alquiler de coches tiene estas reglas:\n- Si la persona tiene 25 años o más, puede alquilar.\n- Si tiene entre 21 y 24 años (inclusive), sólo podrá si `tiene_permiso_padres` es `True`.\n\nTu tarea es:\n1. Usar las variables `edad_usuario` y `tiene_permiso_padres` que ya están definidas.\n2. Crear una variable `puede_alquilar` que almacene el resultado (`True` o `False`) de evaluar las condiciones con operadores lógicos (`>=`, `and`, `or`).\n3. Imprimir el valor de `puede_alquilar`.",
+    "starter_code": "edad_usuario = 22\ntiene_permiso_padres = False\n\n# Escribe la expresión lógica aquí. Debes usar 'and' y 'or'.\npuede_alquilar = False\n\nprint(puede_alquilar)",
+    "validation_type": "simple_print",
     "validation_rules": {
-      "requires_input_function": true,
-      "input_constraints": { "type": "int", "min": 0, "max": 120 },
-      "transform_for_template": "f'Tienes aproximadamente {int(value)*365} días de vida.'",
-      "output_format_template": "{var}\n",
-      "expected_print_count_per_case": 1,
-      "expected_types_per_case": ["str"],
-      "num_cases": 5,
+      "expected_exact_output": "False\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "bool"
+      ],
+      "strict_variable_names": [
+        "puede_alquilar",
+        "edad_usuario",
+        "tiene_permiso_padres"
+      ],
       "strict_whitespace": true,
       "case_sensitive": true,
-      "require_fstring": true,
       "custom_feedback": {
-        "not_fstring": "Usa un f-string para imprimir el mensaje.",
-        "wrong_type": "El mensaje impreso debe ser un string.",
-        "wrong_print_count": "Se esperaba una sola operación de print por cada caso de prueba."
+        "wrong_type": "El resultado final que imprimes debe ser un valor booleano (True or False).",
+        "wrong_variable": "Revisa los nombres de las variables, deben ser los indicados.",
+        "wrong_print_count": "Solo se esperaba un print."
       }
     }
   },
@@ -177,50 +197,59 @@
     "course_id": 1,
     "module_id": 2,
     "lesson_id": 7,
-    "order_index": 1,
-    "title": "Ejercicio 2.4.1: Iniciales y Longitud",
-    "description": "Crea una función que, dado un nombre completo, devuelva sus iniciales y su longitud total.",
-    "instructions": "Completa la función `procesar_nombre`. Debe devolver una tupla que contenga: la primera letra del nombre, la primera letra del apellido y la longitud total del string. Asume que el nombre siempre tendrá un solo espacio.",
-    "starter_code": "def procesar_nombre(nombre_completo):\n    # Encuentra el espacio para separar nombre y apellido\n    # Extrae las iniciales y la longitud\n    # Devuelve una tupla, por ejemplo: ('J', 'P', 10)\n    pass",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "procesar_nombre",
-          "scenarios": [
-            {"args": ["Juan Perez"], "expected_return_value": ["J", "P", 10]},
-            {"args": ["Ana Garcia"], "expected_return_value": ["A", "G", 10]},
-            {"args": ["El Risitas"], "expected_return_value": ["E", "R", 10]}
-          ]
+    "order_index": 7,
+    "title": "Ejercicio 2.4.1: Verificar si un número es par o impar",
+    "description": "Dado un número entero ingresado por el usuario, indica si es par o impar.",
+    "instructions": "Para saber si un número es par, podemos ver si el residuo de su división entre 2 es cero.\n\nPara hacerlo:\n1. Pide al usuario que ingrese un número entero con `input()`.\n2. Convierte la entrada a `int`.\n3. Usa una sentencia `if/else` y el operador módulo (`%`) para decidir.\n4. Si el número es par (residuo es 0), imprime la palabra `Par`.\n5. Si no lo es, imprime la palabra `Impar`.",
+    "starter_code": "numero = int(input())\n\n# Escribe tu sentencia if/else aquí\n",
+      "validation_type": "conditional_print",
+      "validation_rules": {
+        "test_cases": [
+          {"input": "10", "expected_output": "Par\n"},
+          {"input": "7", "expected_output": "Impar\n"},
+          {"input": "0", "expected_output": "Par\n"},
+          {"input": "1234", "expected_output": "Par\n"},
+          {"input": "1235", "expected_output": "Impar\n"}
+        ],
+        "requires_input_function": true,
+        "input_constraints": {
+          "type": "int",
+          "min": 0,
+          "max": 10000
+        },
+        "expected_print_options": [
+          "Par",
+          "Impar"
+        ],
+        "expected_print_count": 1,
+        "strict_whitespace": true,
+        "case_sensitive": true,
+        "custom_feedback": {
+          "missing_modulo": "No olvides usar el operador % para calcular el residuo.",
+          "wrong_output": "Imprime exactamente 'Par' o 'Impar', con la mayúscula inicial.",
+          "wrong_print_count": "Solo debes imprimir una línea de respuesta."
         }
-      ]
-    }
+      }
   },
-  {
+{
     "id": 8,
     "course_id": 1,
     "module_id": 3,
     "lesson_id": 8,
-    "order_index": 1,
-    "title": "Ejercicio 3.1.1: Par o Impar",
-    "description": "Dado un número, imprime 'Par' si el número es par, o 'Impar' si es impar.",
-    "instructions": "1. Lee un número usando `input()`. Asume que siempre será un número.\n2. Conviértelo a entero.\n3. Usa una estructura `if-else` para determinar si es par o impar.\n4. Imprime la palabra \"Par\" o la palabra \"Impar\" según corresponda.",
-    "starter_code": "# Lee el número como string\nnumero_str = input()\n# Conviértelo a entero\nnumero = int(numero_str)\n# Usa if-else para imprimir 'Par' o 'Impar'\n# if ...\n# else ...",
-    "validation_type": "dynamic_output",
+    "order_index": 8,
+    "title": "Ejercicio 3.1.1: Cuenta Regresiva",
+    "description": "Usa un bucle 'while' para crear una cuenta regresiva.",
+    "instructions": "Imagina que estás por lanzar un cohete y necesitas una cuenta regresiva.\n\nPara hacerlo:\n1. Crea una variable `contador` que empiece en 5.\n2. Usa un bucle `while` que se ejecute mientras `contador` sea mayor que 0.\n3. Dentro del bucle, imprime el valor actual de `contador`.\n4. En cada repetición, resta 1 a `contador`.\n5. Cuando el bucle termine, imprime el mensaje: `¡Despegue!`",
+    "starter_code": "contador = 5\n# Escribe tu bucle while aquí\n\n# Imprime el mensaje final",
+    "validation_type": "simple_print",
     "validation_rules": {
-      "requires_input_function": true,
-      "input_constraints": { "type": "int", "min": 0, "max": 100 },
-      "transform_for_template": "'Par' if int(value) % 2 == 0 else 'Impar'",
-      "output_format_template": "{var}\n",
-      "expected_print_count_per_case": 1,
-      "expected_types_per_case": ["str"],
-      "num_cases": 5,
+      "expected_exact_output": "5\n4\n3\n2\n1\n¡Despegue!\n",
+      "expected_print_count": 6,
       "strict_whitespace": true,
       "case_sensitive": true,
-      "require_if_statement": true,
       "custom_feedback": {
-        "wrong_type": "El resultado impreso debe ser un string ('Par' o 'Impar').",
-        "wrong_print_count": "Se esperaba una sola operación de print por cada caso de prueba."
+        "wrong_output": "La cuenta regresiva o el mensaje final no son correctos.",
+        "wrong_print_count": "Asegúrate de imprimir cada número y el mensaje final, cada uno en una nueva línea."
       }
     }
   },
@@ -229,24 +258,32 @@
     "course_id": 1,
     "module_id": 3,
     "lesson_id": 9,
-    "order_index": 1,
-    "title": "Ejercicio 3.2.1: Suma con For",
-    "description": "Calcula la suma de todos los números enteros desde 1 hasta 5 (inclusive) utilizando un bucle for. Imprime el resultado.",
-    "instructions": "1. Inicializa una variable `suma_total` a 0.\n2. Usa un bucle `for` con `range()` para iterar desde 1 hasta 5.\n3. En cada iteración, añade el número actual a `suma_total`.\n4. Después del bucle, imprime el valor final de `suma_total`.",
-    "starter_code": "suma_total = 0\n# Escribe tu bucle for aquí\nfor i in range(1, 6):\n    suma_total += i\nprint(suma_total)",
-    "validation_type": "simple_print",
+    "order_index": 9,
+    "title": "Ejercicio 3.2.1: Contar vocales en una palabra",
+    "description": "Cuenta cuántas vocales hay en una palabra que el usuario ingresa.",
+    "instructions": "Piensa que quieres contar las vocales (a, e, i, o, u) en una palabra que alguien te dice.\n\nPara hacerlo:\n1. Pide una palabra usando `input()` y guárdala en la variable `palabra`.\n2. Crea una variable `contador` inicializada en 0.\n3. Usa un bucle `for` para recorrer cada `letra` de la `palabra`.\n4. Dentro del bucle, comprueba si la `letra` está en el string 'aeiouAEIOU'.\n5. Si es una vocal, incrementa el `contador`.\n6. Al final, imprime el valor del `contador`.",
+    "starter_code": "palabra = input()\nvocales = 'aeiouAEIOU'\ncontador = 0\n# Escribe tu bucle for aquí\n\nprint(contador)",
+    "validation_type": "dynamic_output",
     "validation_rules": {
-      "expected_exact_output": "15\n",
-      "expected_print_count": 1,
-      "expected_types": ["int"],
-      "strict_variable_names": ["suma_total"],
-      "require_variables_in_print": ["suma_total"],
+      "requires_input_function": true,
+      "input_constraints": {
+        "type": "string",
+        "min_length": 1,
+        "max_length": 50,
+        "charset": "alpha"
+      },
+      "transform_for_template": "sum(1 for char in value if char.lower() in 'aeiou')",
+      "output_format_template": "{var}\n",
+      "expected_print_count_per_case": 1,
+      "expected_types_per_case": [
+        "int"
+      ],
+      "num_cases": 5,
       "strict_whitespace": true,
-      "case_sensitive": true,
-      "require_for_loop": true,
+      "case_sensitive": false,
       "custom_feedback": {
-        "wrong_type": "El resultado impreso debe ser un entero.",
-        "wrong_print_count": "Se esperaba una sola operación de print."
+        "wrong_output": "El conteo de vocales no es correcto. Recuerda contar tanto mayúsculas como minúsculas.",
+        "wrong_print_count": "Solo debes imprimir una línea con el número total de vocales."
       }
     }
   },
@@ -255,52 +292,72 @@
     "course_id": 1,
     "module_id": 3,
     "lesson_id": 10,
-    "order_index": 1,
-    "title": "Ejercicio 3.3.1: Lista de Compras",
-    "description": "Crea una lista llamada `compras`. Añade 'huevos' y luego 'pan' a la lista. Finalmente, imprime el segundo elemento de la lista (que debería ser 'pan').",
-    "instructions": "1. Define una lista vacía llamada `compras`.\n2. Usa el método `append()` para añadir el string 'huevos' a la lista.\n3. Usa `append()` nuevamente para añadir 'pan'.\n4. Imprime el elemento en el índice 1 de la lista `compras`.",
-    "starter_code": "compras = []\n# Añade 'huevos'\n# compras.append('huevos')\n# Añade 'pan'\n# compras.append('pan')\n# Imprime el segundo elemento\n# print(compras[1])",
-    "validation_type": "simple_print",
-    "validation_rules": {
-      "expected_exact_output": "pan\n",
-      "expected_print_count": 1,
-      "expected_types": ["str"],
-      "strict_variable_names": ["compras"],
-      "require_variables_in_print": ["compras"],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "require_list_append": "compras",
-      "custom_feedback": {
-        "wrong_type": "El elemento impreso debe ser un string.",
-        "wrong_print_count": "Se esperaba una sola operación de print."
+    "order_index": 10,
+    "title": "Ejercicio 3.3.1: Buscando en la Lista de la Compra",
+    "description": "Comprueba si un producto que quiere el usuario ya está en la lista de la compra.",
+    "instructions": "Imagina que tienes una lista de cosas por comprar y quieres revisar rápidamente si un artículo ya está apuntado.\n\nPara hacerlo:\n1. Tienes una lista ya creada: `lista_compra = [\"leche\", \"pan\", \"huevos\"]`.\n2. Pide al usuario que escriba un producto usando `input()`.\n3. Comprueba si el producto que escribió el usuario está en `lista_compra`.\n4. Si está, imprime el mensaje: `Sí, está en la lista`.\n5. Si no está, imprime: `No, hay que añadirlo`.",
+    "starter_code": "lista_compra = [\"leche\", \"pan\", \"huevos\"]\nproducto_buscado = input()\n# Escribe tu lógica if/else aquí\n",
+      "validation_type": "conditional_print",
+      "validation_rules": {
+        "allow_free_form_input": true,
+        "test_cases": [
+          {"input": "leche", "expected_output": "Sí, está en la lista\n"},
+          {"input": "tomate", "expected_output": "No, hay que añadirlo\n"},
+          {"input": "huevos", "expected_output": "Sí, está en la lista\n"},
+          {"input": "pan", "expected_output": "Sí, está en la lista\n"},
+          {"input": "cebolla", "expected_output": "No, hay que añadirlo\n"}
+        ],
+        "requires_input_function": true,
+        "input_constraints": {
+          "type": "string",
+          "min_length": 3,
+          "max_length": 10,
+          "charset": "alpha"
+        },
+        "expected_print_options": [
+          "Sí, está en la lista",
+          "No, hay que añadirlo"
+        ],
+        "expected_print_count": 1,
+        "strict_whitespace": true,
+        "case_sensitive": true,
+        "custom_feedback": {
+          "wrong_output": "El mensaje impreso no es el esperado. Revisa si escribiste 'Sí, está en la lista' o 'No, hay que añadirlo' exactamente.",
+          "wrong_print_count": "Solo debes imprimir una línea de respuesta."
+        }
       }
-    }
   },
   {
     "id": 11,
     "course_id": 1,
     "module_id": 3,
     "lesson_id": 11,
-    "order_index": 1,
-    "title": "Ejercicio 3.4.1: Función Área Rectángulo",
-    "description": "Define una función `area_rectangulo` que acepte dos argumentos (base y altura) y devuelva el área. Luego, llama a la función con base=4 y altura=6, e imprime el resultado devuelto por la función.",
-    "instructions": "1. Define una función llamada `area_rectangulo` que tome dos parámetros: `base` y `altura`.\n2. Dentro de la función, calcula el área (base * altura) y devuélvela usando `return`.\n3. Fuera de la función, llama a `area_rectangulo` con los valores 4 para la base y 6 para la altura.\n4. Imprime el valor que te devuelve la función.",
-    "starter_code": "def area_rectangulo(base, altura):\n    # Calcula y devuelve el área\n    return base * altura\n\n# Llama a la función e imprime el resultado\n# resultado = area_rectangulo(4, 6)\n# print(resultado)",
-    "validation_type": "function_and_output",
+    "order_index": 11,
+    "title": "Ejercicio 3.4.1: Función de Conversión de Temperatura",
+    "description": "Crea y usa una función para convertir grados Celsius a Fahrenheit.",
+    "instructions": "Para organizar mejor tu código, vamos a crear una herramienta específica para convertir temperaturas.\n\nPara ello:\n1. Define una función llamada `convertir_a_fahrenheit` que acepte un parámetro (los grados celsius).\n2. Dentro de la función, aplica la fórmula: `F = (Celsius * 9/5) + 32` y usa `return` para devolver el resultado.\n3. Fuera de la función, pide al usuario que ingrese una temperatura en Celsius con `input()` y conviértela a `float`.\n4. Llama a tu función, pasándole la temperatura del usuario como argumento.\n5. Guarda el resultado que la función te devuelve en una variable e imprímela.",
+    "starter_code": "# 1. Define tu función aquí\ndef convertir_a_fahrenheit(celsius):\n    # Escribe la fórmula y el return\n    return 0.0\n\n# 3. Pide la temperatura al usuario\ntemp_celsius = float(input())\n\n# 4. Llama a la función y guarda el resultado\ntemp_fahrenheit = convertir_a_fahrenheit(temp_celsius)\n\n# 5. Imprime el resultado final\nprint(temp_fahrenheit)",
+    "validation_type": "dynamic_output",
     "validation_rules": {
-      "function_rules": {
-        "function_name": "area_rectangulo",
-        "scenarios": [
-          {"args": [4, 6], "expected_return_value": 24, "expected_return_type": "int"},
-          {"args": [10, 5], "expected_return_value": 50, "expected_return_type": "int"},
-          {"args": [1, 1], "expected_return_value": 1, "expected_return_type": "int"}
-        ],
-        "require_return_statement": true,
-        "require_params_used": true
+      "requires_input_function": true,
+      "input_constraints": {
+        "type": "float",
+        "min": -100,
+        "max": 100
       },
-      "expected_exact_output": "24\n",
-      "expected_print_count": 1,
-      "expected_types": ["int"]
+      "transform_for_template": "(float(value) * 9/5) + 32",
+      "output_format_template": "{var}\n",
+      "expected_print_count_per_case": 1,
+      "expected_types_per_case": [
+        "float"
+      ],
+      "num_cases": 3,
+      "strict_whitespace": true,
+      "custom_feedback": {
+        "wrong_output": "El valor de la temperatura en Fahrenheit no es correcto. Revisa la fórmula.",
+        "wrong_type": "El resultado debe ser un número decimal (float).",
+        "wrong_print_count": "Solo debes imprimir el resultado numérico."
+      }
     }
   },
   {
@@ -312,45 +369,135 @@
     "title": "Examen Final: Fundamentos de Python",
     "description": "Resuelve los siguientes ejercicios para demostrar tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones en Python.",
     "instructions": "1. Implementa todas las funciones y tareas solicitadas.\n2. Cada función debe tener el nombre exacto indicado y cumplir con los tipos de entrada y salida especificados.\n3. Lee cuidadosamente cada consigna y asegúrate de que tu código pase todos los casos de prueba.\n\n**Nota sobre 'Ejecutar Código':** Para los exámenes, el botón 'Ejecutar Código' te permitirá probar tus `print()` statements y ver errores de sintaxis. La validación completa de todas las funciones del examen se realizará únicamente cuando presiones 'Enviar Solución'. Es posible que veas un mensaje indicando que el tipo de validación no es soportado para ejecución directa; esto es normal para el modo examen si intentas usar la entrada estándar, concéntrate en la salida de tus `print()` y la correcta definición de las funciones.",
-    "starter_code": "def es_par(n):\n    # Tu código aquí\n    return n % 2 == 0\n\n\ndef dias_en_anios(anios):\n    # Tu código aquí\n    return anios * 365\n\n\ndef obtener_segundo(lista):\n    # Tu código aquí\n    if len(lista) >= 2:\n        return lista[1]\n    return None\n\n\ndef suma_rango(inicio, fin):\n    # Tu código aquí\n    suma = 0\n    for i in range(inicio, fin + 1):\n        suma += i\n    return suma\n\n# Si el examen requiere una salida específica de print() en el cuerpo del script,\n# agrégala aquí y define las reglas de validación correspondientes abajo.\n# Ejemplo:\n# print(es_par(4))\n# print(dias_en_anios(1))\n# print(obtener_segundo(['a', 'b']))\n# print(suma_rango(1,3))",
+    "starter_code": "def es_par(n):\n    # Tu código aquí\n    return n % 2 == 0\n\n\ndef dias_en_anios(anios):\n    # Tu código aquí\n    return anios * 365\n\n\ndef obtener_segundo(lista):\n    # Tu código aquí\n    if len(lista) >= 2:\n        return lista[1]\n    return None\n\n\ndef suma_rango(inicio, fin):\n    # Tu código aquí\n    suma = 0\n    for i in range(inicio, fin + 1):\n        suma += i\n    return suma\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
         {
           "function_name": "es_par",
           "scenarios": [
-            {"args": [2], "expected_return_value": true, "expected_return_type": "bool"},
-            {"args": [3], "expected_return_value": false, "expected_return_type": "bool"},
-            {"args": [0], "expected_return_value": true, "expected_return_type": "bool"}
+            {
+              "args": [
+                2
+              ],
+              "expected_return_value": true,
+              "expected_return_type": "bool"
+            },
+            {
+              "args": [
+                3
+              ],
+              "expected_return_value": false,
+              "expected_return_type": "bool"
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": true,
+              "expected_return_type": "bool"
+            }
           ]
         },
         {
           "function_name": "dias_en_anios",
           "scenarios": [
-            {"args": [1], "expected_return_value": 365, "expected_return_type": "int"},
-            {"args": [0], "expected_return_value": 0, "expected_return_type": "int"},
-            {"args": [10], "expected_return_value": 3650, "expected_return_type": "int"}
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 365,
+              "expected_return_type": "int"
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 0,
+              "expected_return_type": "int"
+            },
+            {
+              "args": [
+                10
+              ],
+              "expected_return_value": 3650,
+              "expected_return_type": "int"
+            }
           ]
         },
         {
           "function_name": "obtener_segundo",
           "scenarios": [
-            {"args": [[1,2,3]], "expected_return_value": 2, "expected_return_type": "int"},
-            {"args": [["a","b","c"]], "expected_return_value": "b", "expected_return_type": "str"},
-            {"args": [["uno"]], "expected_return_value": null, "expected_return_type": "NoneType"}
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3
+                ]
+              ],
+              "expected_return_value": 2,
+              "expected_return_type": "int"
+            },
+            {
+              "args": [
+                [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              ],
+              "expected_return_value": "b",
+              "expected_return_type": "str"
+            },
+            {
+              "args": [
+                [
+                  "uno"
+                ]
+              ],
+              "expected_return_value": null,
+              "expected_return_type": "NoneType"
+            }
           ]
         },
         {
           "function_name": "suma_rango",
           "scenarios": [
-            {"args": [1, 5], "expected_return_value": 15, "expected_return_type": "int"},
-            {"args": [3, 3], "expected_return_value": 3, "expected_return_type": "int"},
-            {"args": [0, 2], "expected_return_value": 3, "expected_return_type": "int"}
+            {
+              "args": [
+                1,
+                5
+              ],
+              "expected_return_value": 15,
+              "expected_return_type": "int"
+            },
+            {
+              "args": [
+                3,
+                3
+              ],
+              "expected_return_value": 3,
+              "expected_return_type": "int"
+            },
+            {
+              "args": [
+                0,
+                2
+              ],
+              "expected_return_value": 3,
+              "expected_return_type": "int"
+            }
           ]
         }
       ],
       "require_return_statement": true,
-      "strict_function_names": ["es_par", "dias_en_anios", "obtener_segundo", "suma_rango"]
+      "strict_function_names": [
+        "es_par",
+        "dias_en_anios",
+        "obtener_segundo",
+        "suma_rango"
+      ]
     }
   },
   {
@@ -362,14 +509,102 @@
     "title": "Examen Final: Lógica y Cadenas",
     "description": "Demuestra tu habilidad con la manipulación de strings y la lógica de programación.",
     "instructions": "Implementa las funciones solicitadas para pasar este examen. Cada función debe devolver el valor esperado, no imprimirlo.",
-    "starter_code": "def invertir_cadena(s):\n    # Devuelve la cadena 's' invertida.\n    pass\n\ndef es_palindromo(s):\n    # Devuelve True si 's' es un palíndromo, False si no.\n    # Ignora mayúsculas/minúsculas y espacios.\n    pass\n\ndef contar_vocales(s):\n    # Devuelve el número de vocales (a, e, i, o, u) en 's'.\n    pass\n\ndef es_mayor_de_edad(edad):\n    # Devuelve True si la edad es 18 o más, False en caso contrario.\n    pass",
+    "starter_code": "def invertir_cadena(s):\n    # Devuelve la cadena 's' invertida.\n    pass\n\ndef es_palindromo(s):\n    # Devuelve True si 's' es un palíndromo, False si no.\n    # Ignora mayúsculas/minúsculas y espacios.\n    pass\n\ndef contar_vocales(s):\n    # Devuelve el número de vocales (a, e, i, o, u) en 's'.\n    pass\n\ndef es_mayor_de_edad(edad):\n    # Devuelve True si la edad es 18 o más, False en caso contrario.\n    pass\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
-        {"function_name": "invertir_cadena", "scenarios": [{"args": ["hola"], "expected_return_value": "aloh"}, {"args": ["Python"], "expected_return_value": "nohtyP"}, {"args": [""], "expected_return_value": ""}]},
-        {"function_name": "es_palindromo", "scenarios": [{"args": ["Anita lava la tina"], "expected_return_value": true}, {"args": ["python"], "expected_return_value": false}, {"args": ["Ojo"], "expected_return_value": true}]},
-        {"function_name": "contar_vocales", "scenarios": [{"args": ["murcielago"], "expected_return_value": 5}, {"args": ["xyz"], "expected_return_value": 0}, {"args": ["AEIOU"], "expected_return_value": 5}]},
-        {"function_name": "es_mayor_de_edad", "scenarios": [{"args": [20], "expected_return_value": true}, {"args": [18], "expected_return_value": true}, {"args": [17], "expected_return_value": false}]}
+        {
+          "function_name": "invertir_cadena",
+          "scenarios": [
+            {
+              "args": [
+                "hola"
+              ],
+              "expected_return_value": "aloh"
+            },
+            {
+              "args": [
+                "Python"
+              ],
+              "expected_return_value": "nohtyP"
+            },
+            {
+              "args": [
+                ""
+              ],
+              "expected_return_value": ""
+            }
+          ]
+        },
+        {
+          "function_name": "es_palindromo",
+          "scenarios": [
+            {
+              "args": [
+                "Anita lava la tina"
+              ],
+              "expected_return_value": true
+            },
+            {
+              "args": [
+                "python"
+              ],
+              "expected_return_value": false
+            },
+            {
+              "args": [
+                "Ojo"
+              ],
+              "expected_return_value": true
+            }
+          ]
+        },
+        {
+          "function_name": "contar_vocales",
+          "scenarios": [
+            {
+              "args": [
+                "murcielago"
+              ],
+              "expected_return_value": 5
+            },
+            {
+              "args": [
+                "xyz"
+              ],
+              "expected_return_value": 0
+            },
+            {
+              "args": [
+                "AEIOU"
+              ],
+              "expected_return_value": 5
+            }
+          ]
+        },
+        {
+          "function_name": "es_mayor_de_edad",
+          "scenarios": [
+            {
+              "args": [
+                20
+              ],
+              "expected_return_value": true
+            },
+            {
+              "args": [
+                18
+              ],
+              "expected_return_value": true
+            },
+            {
+              "args": [
+                17
+              ],
+              "expected_return_value": false
+            }
+          ]
+        }
       ]
     }
   },
@@ -382,14 +617,133 @@
     "title": "Examen Final: Algoritmos y Listas",
     "description": "Implementa algoritmos fundamentales de matemáticas y listas.",
     "instructions": "Completa el código de las funciones para que pasen las pruebas. No uses funciones integradas como max() o sum() a menos que se permita.",
-    "starter_code": "def factorial(n):\n    # Devuelve el factorial de n.\n    pass\n\ndef encontrar_maximo(lista):\n    # Devuelve el número más grande en la lista sin usar max().\n    pass\n\ndef filtrar_pares(lista):\n    # Devuelve una nueva lista solo con los números pares de la lista original.\n    pass\n\ndef generar_saludo(nombre, edad):\n    # Devuelve un string con el formato 'Hola [nombre], tienes [edad] años.'\n    pass",
+    "starter_code": "def factorial(n):\n    # Devuelve el factorial de n.\n    pass\n\ndef encontrar_maximo(lista):\n    # Devuelve el número más grande en la lista sin usar max().\n    pass\n\ndef filtrar_pares(lista):\n    # Devuelve una nueva lista solo con los números pares de la lista original.\n    pass\n\ndef generar_saludo(nombre, edad):\n    # Devuelve un string con el formato 'Hola [nombre], tienes [edad] años.'\n    pass\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
-        {"function_name": "factorial", "scenarios": [{"args": [5], "expected_return_value": 120}, {"args": [0], "expected_return_value": 1}, {"args": [1], "expected_return_value": 1}]},
-        {"function_name": "encontrar_maximo", "scenarios": [{"args": [[1, 5, 2, 9, 3]], "expected_return_value": 9}, {"args": [[-1, -5, -2]], "expected_return_value": -1}, {"args": [[10]], "expected_return_value": 10}]},
-        {"function_name": "filtrar_pares", "scenarios": [{"args": [[1, 2, 3, 4, 5, 6]], "expected_return_value": [2, 4, 6]}, {"args": [[1, 3, 5]], "expected_return_value": []}, {"args": [[-2, 0, 2]], "expected_return_value": [-2, 0, 2]}]},
-        {"function_name": "generar_saludo", "scenarios": [{"args": ["Carlos", 30], "expected_return_value": "Hola Carlos, tienes 30 años."}, {"args": ["Maria", 22], "expected_return_value": "Hola Maria, tienes 22 años."}]}
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
       ]
     }
   },
@@ -402,14 +756,148 @@
     "title": "Examen Final: Procesamiento de Datos",
     "description": "Escribe funciones para procesar colecciones de datos como listas.",
     "instructions": "Asegúrate de que cada función devuelva el tipo de dato correcto y maneje casos especiales como listas vacías.",
-    "starter_code": "def promedio_de_lista(lista):\n    # Devuelve el promedio de los números en la lista. Si la lista está vacía, devuelve 0.\n    pass\n\ndef eliminar_duplicados(lista):\n    # Devuelve una nueva lista sin elementos duplicados, manteniendo el orden original.\n    pass\n\ndef unir_listas(lista1, lista2):\n    # Devuelve una nueva lista que es la unión de lista1 y lista2.\n    pass\n\ndef convertir_a_fahrenheit(celsius):\n    # Convierte grados Celsius a Fahrenheit usando la fórmula (C * 9/5) + 32.\n    pass",
+    "starter_code": "def promedio_de_lista(lista):\n    # Devuelve el promedio de los números en la lista. Si la lista está vacía, devuelve 0.\n    pass\n\ndef eliminar_duplicados(lista):\n    # Devuelve una nueva lista sin elementos duplicados, manteniendo el orden original.\n    pass\n\ndef unir_listas(lista1, lista2):\n    # Devuelve una nueva lista que es la unión de lista1 y lista2.\n    pass\n\ndef convertir_a_fahrenheit(celsius):\n    # Convierte grados Celsius a Fahrenheit usando la fórmula (C * 9/5) + 32.\n    pass\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
-        {"function_name": "promedio_de_lista", "scenarios": [{"args": [[10, 20, 30]], "expected_return_value": 20.0}, {"args": [[5, 5, 5]], "expected_return_value": 5.0}, {"args": [[]], "expected_return_value": 0}]},
-        {"function_name": "eliminar_duplicados", "scenarios": [{"args": [[1, 2, 2, 3, 1]], "expected_return_value": [1, 2, 3]}, {"args": [["a", "b", "a"]], "expected_return_value": ["a", "b"]}, {"args": [[4, 5, 6]], "expected_return_value": [4, 5, 6]}]},
-        {"function_name": "unir_listas", "scenarios": [{"args": [[1, 2], [3, 4]], "expected_return_value": [1, 2, 3, 4]}, {"args": [[], [1, 2]], "expected_return_value": [1, 2]}]},
-        {"function_name": "convertir_a_fahrenheit", "scenarios": [{"args": [0], "expected_return_value": 32.0}, {"args": [100], "expected_return_value": 212.0}, {"args": [-10], "expected_return_value": 14.0}]}
+        {
+          "function_name": "promedio_de_lista",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  10,
+                  20,
+                  30
+                ]
+              ],
+              "expected_return_value": 20
+            },
+            {
+              "args": [
+                [
+                  5,
+                  5,
+                  5
+                ]
+              ],
+              "expected_return_value": 5
+            },
+            {
+              "args": [
+                []
+              ],
+              "expected_return_value": 0
+            }
+          ]
+        },
+        {
+          "function_name": "eliminar_duplicados",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  2,
+                  3,
+                  1
+                ]
+              ],
+              "expected_return_value": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "args": [
+                [
+                  "a",
+                  "b",
+                  "a"
+                ]
+              ],
+              "expected_return_value": [
+                "a",
+                "b"
+              ]
+            },
+            {
+              "args": [
+                [
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                4,
+                5,
+                6
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "unir_listas",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2
+                ],
+                [
+                  3,
+                  4
+                ]
+              ],
+              "expected_return_value": [
+                1,
+                2,
+                3,
+                4
+              ]
+            },
+            {
+              "args": [
+                [],
+                [
+                  1,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "convertir_a_fahrenheit",
+          "scenarios": [
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 32
+            },
+            {
+              "args": [
+                100
+              ],
+              "expected_return_value": 212
+            },
+            {
+              "args": [
+                -10
+              ],
+              "expected_return_value": 14
+            }
+          ]
+        }
       ]
     }
   },
@@ -422,14 +910,135 @@
     "title": "Examen Final: Lógica Condicional y Bucles",
     "description": "Resuelve problemas que requieren una lógica condicional más compleja y el uso de bucles.",
     "instructions": "Presta atención a los casos borde en cada función y asegúrate de que los bucles terminen correctamente.",
-    "starter_code": "def clasificar_calificacion(nota):\n    # Devuelve 'Aprobado' (50-69), 'Notable' (70-89), o 'Sobresaliente' (90-100). 'Suspenso' para el resto.\n    pass\n\ndef es_bisiesto(anio):\n    # Devuelve True si el año es bisiesto, False si no.\n    # Un año es bisiesto si es divisible por 4, excepto los años que son divisibles por 100 pero no por 400.\n    pass\n\ndef suma_acumulada(lista):\n    # Devuelve una lista donde cada elemento es la suma de los elementos hasta esa posición.\n    # Ejemplo: [1, 2, 3] -> [1, 3, 6]\n    pass\n\ndef adivina_numero(secreto, intento):\n    # Devuelve 'Correcto', 'Muy alto' o 'Muy bajo'.\n    pass",
+    "starter_code": "def clasificar_calificacion(nota):\n    # Devuelve 'Aprobado' (50-69), 'Notable' (70-89), o 'Sobresaliente' (90-100). 'Suspenso' para el resto.\n    pass\n\ndef es_bisiesto(anio):\n    # Devuelve True si el año es bisiesto, False si no.\n    # Un año es bisiesto si es divisible por 4, excepto los años que son divisibles por 100 pero no por 400.\n    pass\n\ndef suma_acumulada(lista):\n    # Devuelve una lista donde cada elemento es la suma de los elementos hasta esa posición.\n    # Ejemplo: [1, 2, 3] -> [1, 3, 6]\n    pass\n\ndef adivina_numero(secreto, intento):\n    # Devuelve 'Correcto', 'Muy alto' o 'Muy bajo'.\n    pass\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
-        {"function_name": "clasificar_calificacion", "scenarios": [{"args": [95], "expected_return_value": "Sobresaliente"}, {"args": [80], "expected_return_value": "Notable"}, {"args": [60], "expected_return_value": "Aprobado"}, {"args": [40], "expected_return_value": "Suspenso"}]},
-        {"function_name": "es_bisiesto", "scenarios": [{"args": [2024], "expected_return_value": true}, {"args": [1900], "expected_return_value": false}, {"args": [2000], "expected_return_value": true}, {"args": [2023], "expected_return_value": false}]},
-        {"function_name": "suma_acumulada", "scenarios": [{"args": [[1, 2, 3, 4]], "expected_return_value": [1, 3, 6, 10]}, {"args": [[10, -5, 3]], "expected_return_value": [10, 5, 8]}, {"args": [[]], "expected_return_value": []}]},
-        {"function_name": "adivina_numero", "scenarios": [{"args": [50, 50], "expected_return_value": "Correcto"}, {"args": [50, 70], "expected_return_value": "Muy alto"}, {"args": [50, 30], "expected_return_value": "Muy bajo"}]}
+        {
+          "function_name": "clasificar_calificacion",
+          "scenarios": [
+            {
+              "args": [
+                95
+              ],
+              "expected_return_value": "Sobresaliente"
+            },
+            {
+              "args": [
+                80
+              ],
+              "expected_return_value": "Notable"
+            },
+            {
+              "args": [
+                60
+              ],
+              "expected_return_value": "Aprobado"
+            },
+            {
+              "args": [
+                40
+              ],
+              "expected_return_value": "Suspenso"
+            }
+          ]
+        },
+        {
+          "function_name": "es_bisiesto",
+          "scenarios": [
+            {
+              "args": [
+                2024
+              ],
+              "expected_return_value": true
+            },
+            {
+              "args": [
+                1900
+              ],
+              "expected_return_value": false
+            },
+            {
+              "args": [
+                2000
+              ],
+              "expected_return_value": true
+            },
+            {
+              "args": [
+                2023
+              ],
+              "expected_return_value": false
+            }
+          ]
+        },
+        {
+          "function_name": "suma_acumulada",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              ],
+              "expected_return_value": [
+                1,
+                3,
+                6,
+                10
+              ]
+            },
+            {
+              "args": [
+                [
+                  10,
+                  -5,
+                  3
+                ]
+              ],
+              "expected_return_value": [
+                10,
+                5,
+                8
+              ]
+            },
+            {
+              "args": [
+                []
+              ],
+              "expected_return_value": []
+            }
+          ]
+        },
+        {
+          "function_name": "adivina_numero",
+          "scenarios": [
+            {
+              "args": [
+                50,
+                50
+              ],
+              "expected_return_value": "Correcto"
+            },
+            {
+              "args": [
+                50,
+                70
+              ],
+              "expected_return_value": "Muy alto"
+            },
+            {
+              "args": [
+                50,
+                30
+              ],
+              "expected_return_value": "Muy bajo"
+            }
+          ]
+        }
       ]
     }
   },
@@ -438,18 +1047,27 @@
     "course_id": 2,
     "module_id": 5,
     "lesson_id": 12,
-    "order_index": 1,
-    "title": "Ejercicio 1.1.1:  Acceso a elementos en tuplas",
-    "description": "Aprende a acceder a elementos de una tupla usando índices positivos y negativos.",
-    "instructions": "1. Dada la tupla `dias` que contiene los días de la semana.\n2. Imprime el primer día (índice positivo).\n3. Imprime el último día (índice negativo).\n4. Imprime el día que está en la posición 3 (Jueves).",
-    "starter_code": "# Dada la tupla con los días de la semana\ndias = (\"lunes\", \"martes\", \"miércoles\", \"jueves\", \"viernes\", \"sábado\", \"domingo\")\n\n# Imprime el primer día\nprint(dias[0])\n\n# Imprime el último día\nprint(dias[-1])\n\n# Imprime el día en la posición 3\nprint(dias[3])",
+    "order_index": 12,
+    "title": "Ejercicio 1.1.1: Acceso a elementos en tuplas",
+    "description": "Las tuplas son como listas que no cambian. Imagina que tienes una agenda con los días de la semana y quieres acceder fácilmente a alguno, ya sea el primero, el último o uno en medio.",
+    "instructions": "1. Crea una tupla llamada `dias` con los días de la semana desde 'lunes' hasta 'domingo'.\n2. Imprime usando `print()`:\n   - El primer día con índice positivo.\n   - El último día con índice negativo.\n   - El día en la posición 3 (ten en cuenta que las posiciones empiezan en 0).\n3. Escribe los nombres tal cual, sin errores, y usa los índices correctos para acceder a los días.",
+    "starter_code": "# Crea la tupla con los días de la semana\ndias = (\"lunes\", \"martes\", \"miércoles\", \"jueves\", \"viernes\", \"sábado\", \"domingo\")\n\n# Imprime el primer día\nprint(dias[0])\n\n# Imprime el último día\nprint(dias[-1])\n\n# Imprime el día en la posición 3\nprint(dias[3])",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "lunes\ndomingo\njueves\n",
-      "expected_print_count": 3,
-      "expected_types": ["str", "str", "str"],
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
       "strict_whitespace": true,
-      "case_sensitive": true
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -457,17 +1075,27 @@
     "course_id": 2,
     "module_id": 5,
     "lesson_id": 13,
-    "order_index": 1,
-    "title": "Ejercicio 1.2:  Sets, elementos únicos y operaciones",
-    "description": "Practica con sets en Python creando dos conjuntos de números, aplicando operaciones de unión, intersección y eliminando un elemento.",
-    "instructions": "1. Dados los sets `conjunto1` y `conjunto2`.\n2. Imprime la unión de ambos conjuntos. Para que la salida sea predecible, conviértela a una lista y ordénala antes de imprimir.\n3. Imprime la intersección, también como una lista ordenada.\n4. Elimina el número 2 de `conjunto1` usando `.remove()`.\n5. Imprime `conjunto1` como una lista ordenada para verificar el resultado.",
-    "starter_code": "# Dados los sets\nconjunto1 = {1, 2, 3, 2, 4}\nconjunto2 = {3, 4, 5, 5}\n\n# Imprime la unión ordenada\nprint(sorted(list(conjunto1 | conjunto2)))\n\n# Imprime la intersección ordenada\nprint(sorted(list(conjunto1 & conjunto2)))\n\n# Elimina un número y muestra el resultado ordenado\nconjunto1.remove(2)\nprint(sorted(list(conjunto1)))",
+    "order_index": 13,
+    "title": "Ejercicio 1.2: Sets, elementos únicos y operaciones",
+    "description": "Los sets son colecciones que sólo guardan elementos únicos. Imagina que tienes dos listas de invitados para una fiesta, y quieres saber quiénes están en cualquiera de las dos listas o en ambas, y además quitar a alguien que canceló.",
+    "instructions": "1. Crea dos sets llamados `conjunto1` y `conjunto2` con números, incluyendo algunos repetidos.\n2. Imprime la unión (todos los invitados sin repetir) usando `|`.\n3. Imprime la intersección (invitados que están en ambas listas) usando `&`.\n4. Elimina un número de `conjunto1` usando `.remove()`.\n5. Imprime `conjunto1` para ver el resultado.",
+    "starter_code": "# Crea los sets\nconjunto1 = {1, 2, 3, 2, 4}\nconjunto2 = {3, 4, 5, 5}\n\n# Imprime la unión\nprint(conjunto1 | conjunto2)\n\n# Imprime la intersección\nprint(conjunto1 & conjunto2)\n\n# Elimina un número y muestra el resultado\nconjunto1.remove(2)\nprint(conjunto1)",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "[1, 2, 3, 4, 5]\n[3, 4]\n[1, 3, 4]\n",
-      "expected_print_count": 3,
-      "expected_types": ["list", "list", "list"],
-      "strict_whitespace": true
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -475,17 +1103,27 @@
     "course_id": 2,
     "module_id": 5,
     "lesson_id": 14,
-    "order_index": 1,
-    "title": "Ejercicio 1.3:  Diccionarios, claves, valores y recorrido",
-    "description": "Descubre cómo manejar información estructurada mediante diccionarios en Python.",
-    "instructions": "1. Dado el diccionario `mascota`.\n2. Agrega una nueva clave `vacunado` con el valor `True`.\n3. Modifica la `edad` de la mascota a 6.\n4. Recorre el diccionario e imprime cada clave y valor en el formato 'clave: valor'.",
-    "starter_code": "# Crea el diccionario de la mascota\nmascota = {\n    \"nombre\": \"Rocky\",\n    \"tipo\": \"perro\",\n    \"edad\": 5\n}\n\n# Agrega la clave 'vacunado'\nmascota['vacunado'] = True\n\n# Modifica la edad\nmascota['edad'] = 6\n\n# Recorre y muestra el diccionario\nfor clave, valor in mascota.items():\n    print(f\"{clave}: {valor}\")",
+    "order_index": 14,
+    "title": "Ejercicio 1.3: Diccionarios, claves, valores y recorrido",
+    "description": "Los diccionarios son como pequeñas bases de datos donde guardamos información relacionada, como los datos de tu mascota. Así puedes tener todo organizado y consultarlo fácilmente.",
+    "instructions": "1. Crea un diccionario llamado `mascota` con las claves `nombre`, `tipo` y `edad`.\n2. Agrega la clave `vacunado` con valor `True`.\n3. Cambia la edad de la mascota a un nuevo valor.\n4. Recorre el diccionario con un ciclo `for` e imprime cada clave y su valor.\n\nEjemplo de salida esperada:\n```\nnombre: Rocky\ntipo: perro\nedad: 6\nvacunado: True\n```",
+    "starter_code": "# Crea el diccionario de la mascota\nmascota = {\n    \"nombre\": \"Rocky\",\n    \"tipo\": \"perro\",\n    \"edad\": 5\n}\n\n# Agrega la clave 'vacunado'\n\n# Modifica la edad\n\n# Recorre y muestra el diccionario\n",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "nombre: Rocky\ntipo: perro\nedad: 6\nvacunado: True\n",
-      "expected_print_count": 4,
-      "expected_types": ["str", "str", "str", "str"],
-      "strict_whitespace": true
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -493,16 +1131,27 @@
     "course_id": 2,
     "module_id": 6,
     "lesson_id": 15,
-    "order_index": 1,
-    "title": "Ejercicio 2.1:  Lista de listas - recorrido",
-    "description": "Crea y recorre una lista de listas (matriz) que contenga nombres organizados por filas.",
-    "instructions": "1. Dada la lista `datos` que contiene 3 listas internas.\n2. Usa dos bucles `for` anidados para recorrer cada fila y cada nombre.\n3. Imprime cada nombre en pantalla, uno por uno, en el orden en que aparecen.\n4. Usa `end=\" \"` para imprimir los nombres en la misma línea por fila, y `print()` para hacer salto de línea entre filas.",
-    "starter_code": "# Dada la matriz de datos\ndatos = [\n    [\"Ana\", \"Luis\", \"Carlos\"],\n    [\"María\", \"Jorge\", \"Sofía\"],\n    [\"Pedro\", \"Lucía\", \"Elena\"]\n]\n\n# Recorre la matriz e imprime los nombres\nfor fila in datos:\n    for nombre in fila:\n        print(nombre, end=\" \")\n    print()",
+    "order_index": 15,
+    "title": "Ejercicio 2.1: Lista de listas - recorrido",
+    "description": "Piensa en una lista de listas como una tabla o una cuadrícula. Aquí tienes grupos de nombres organizados en filas, y aprenderás a recorrer cada nombre y mostrarlos ordenadamente.",
+    "instructions": "1. Crea una lista llamada `nombres` con 3 listas internas, cada una con 3 nombres.\n2. Usa dos bucles `for` anidados para recorrer cada fila y cada nombre.\n3. Imprime cada nombre uno por uno, manteniendo los nombres de cada fila juntos en una línea.\n4. Usa `end=\" \"` para que los nombres de una fila salgan en la misma línea y `print()` para saltar a la siguiente línea después de cada fila.",
+    "starter_code": "# Completa el código para crear la matriz de nombres y recorrerla\ndatos = [\n    [\"Ana\", \"Luis\", \"Carlos\"],\n    [\"María\", \"Jorge\", \"Sofía\"],\n    [\"Pedro\", \"Lucía\", \"Elena\"]\n]\n\n# Recorre la matriz e imprime los nombres\nfor fila in datos:\n    for nombre in fila:\n        print(nombre, end=\" \")\n    print()",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Ana Luis Carlos \nMaría Jorge Sofía \nPedro Lucía Elena \n",
-      "expected_print_count": 4,
-      "strict_whitespace": false
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -510,17 +1159,27 @@
     "course_id": 2,
     "module_id": 6,
     "lesson_id": 16,
-    "order_index": 1,
-    "title": "Ejercicio 2.2:  Diccionario de listas - Equipos deportivos",
-    "description": "Crea un diccionario donde cada clave representa un equipo deportivo y su valor es una lista con nombres de jugadores. Luego muestra los jugadores del equipo de basquet.",
-    "instructions": "1. Dado el diccionario `equipos`.\n2. Imprime únicamente la lista de nombres del equipo de \"basquet\" usando `print()`.",
-    "starter_code": "# Crea el diccionario con los equipos y jugadores\nequipos = {\n    \"futbol\": [\"Messi\", \"Ronaldo\"],\n    \"basquet\": [\"LeBron\", \"Jordan\"],\n    \"voley\": [\"Giba\", \"Bruno\"]\n}\n\n# Muestra el equipo de basquet usando print()\nprint(equipos[\"basquet\"])",
+    "order_index": 16,
+    "title": "Ejercicio 2.2: Diccionario de listas - Equipos deportivos",
+    "description": "Un diccionario puede contener listas como valores. Imagina que tienes varios equipos deportivos y quieres organizar a sus jugadores. Luego solo consultas el equipo que te interesa.",
+    "instructions": "1. Crea un diccionario llamado `equipos` con las claves \"futbol\", \"basquet\" y \"voley\".\n2. Cada clave tendrá una lista con tres jugadores.\n3. Imprime solo los jugadores del equipo de basquet con `print()`.",
+    "starter_code": "# Crea el diccionario con los equipos y jugadores\n\n# Muestra el equipo de basquet usando print()\nprint(...)",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "['LeBron', 'Jordan']\n",
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
       "expected_print_count": 1,
-      "expected_types": ["list"],
-      "strict_whitespace": true
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -528,16 +1187,27 @@
     "course_id": 2,
     "module_id": 6,
     "lesson_id": 17,
-    "order_index": 1,
-    "title": "Ejercicio 2.3:  Recorriendo estructuras anidadas",
-    "description": "Dado un diccionario de productos, muestra en pantalla cada categoría y los productos correspondientes.",
-    "instructions": "1. Dado el diccionario `productos`.\n2. Recorre el diccionario usando un ciclo `for` y muestra:\n   - El nombre de la categoría en el formato 'Categoría: [nombre]'.\n   - Cada producto dentro de esa categoría, uno por línea y con guion delante (ej: ' - producto').",
-    "starter_code": "productos = {\n    'frutas': ['manzana', 'pera'],\n    'verduras': ['zanahoria', 'lechuga']\n}\n\n# Recorre el diccionario con un ciclo for\nfor categoria, items in productos.items():\n    print(f\"Categoría: {categoria}\")\n    for item in items:\n        print(f\" - {item}\")",
+    "order_index": 17,
+    "title": "Ejercicio 2.3: Recorriendo estructuras anidadas",
+    "description": "Cuando tienes un diccionario con listas como valores, es como tener categorías y sus productos. Por ejemplo, en una tienda puedes tener frutas y verduras, y quieres mostrarlas bien organizadas.",
+    "instructions": "1. Define un diccionario llamado `productos` donde cada clave es una categoría (como 'frutas', 'verduras') y su valor es una lista de productos.\n2. Recorre el diccionario e imprime:\n   - La categoría.\n   - Cada producto debajo, con un guion antes.\n3. Usa `print()` para mostrar todo en la consola.\n\nEjemplo de salida:\n```\nCategoría: frutas\n - manzana\n - pera\nCategoría: verduras\n - zanahoria\n - lechuga\n```",
+    "starter_code": "productos = {\n    # Agrega aquí tus categorías y listas de productos\n}\n\n# Recorre el diccionario con un ciclo for\n",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Categoría: frutas\n - manzana\n - pera\nCategoría: verduras\n - zanahoria\n - lechuga\n",
-      "expected_print_count": 6,
-      "strict_whitespace": true
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -545,18 +1215,27 @@
     "course_id": 2,
     "module_id": 7,
     "lesson_id": 18,
-    "order_index": 1,
-    "title": "Ejercicio 3.1:  Manejo de errores con try/except",
-    "description": "Escribe un programa que pida al usuario un número entero. Si el usuario ingresa un valor no válido, muestra el mensaje: \"Error: No ingresaste un número válido.\".",
-    "instructions": "1. Lee la entrada del usuario con `input()`.\n2. Usa un bloque try/except para capturar el `ValueError` que ocurre al intentar convertir un texto a entero.\n3. Si la conversión es exitosa, imprime: \"El número es: [número]\".\n4. Si ocurre el error, imprime el mensaje indicado.",
-    "starter_code": "entrada = input()\ntry:\n    numero = int(entrada)\n    print(f\"El número es: {numero}\")\nexcept ValueError:\n    print(\"Error: No ingresaste un número válido.\")",
-    "validation_type": "dynamic_output",
+    "order_index": 18,
+    "title": "Ejercicio 3.1: Crear nombre de archivo con strings",
+    "description": "A menudo necesitas crear nombres de archivos automáticamente, por ejemplo, para guardar reportes o versiones de documentos. Aquí practicarás cómo combinar texto para crear nombres útiles y ordenados.",
+    "instructions": "1. Define dos variables: `titulo` y `version` con cualquier texto.\n2. Crea una variable `nombre_archivo` que combine `titulo` y `version` separados por un guion bajo `_` y añade la extensión `.txt`.\n3. Imprime `nombre_archivo` con `print()`.\n\nEjemplo: `informe_v1.txt` según los valores que uses.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
     "validation_rules": {
-      "requires_input_function": true,
-      "input_constraints": { "type": "mixed", "values": ["10", "abc", "0", "-5"] },
-      "transform_for_template": "f'El número es: {int(value)}' if value.lstrip('-').isdigit() else 'Error: No ingresaste un número válido.'",
-      "output_format_template": "{var}\n",
-      "num_cases": 4
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -564,18 +1243,27 @@
     "course_id": 2,
     "module_id": 7,
     "lesson_id": 19,
-    "order_index": 1,
-    "title": "Ejercicio 3.2:  Captura de errores comunes",
-    "description": "Escribe un programa que pida dos números enteros (dividendo y divisor) y muestre el resultado de la división. Debes usar bloques try/except para capturar y manejar los errores ValueError y ZeroDivisionError.",
-    "instructions": "1. Solicita al usuario que ingrese el dividendo y el divisor (en dos `input()` separados).\n2. Realiza la división dentro de un bloque try.\n3. Captura `ValueError` si el usuario no ingresa un número válido y muestra: \"Error: Debes ingresar un número válido.\"\n4. Captura `ZeroDivisionError` si se intenta dividir por cero y muestra: \"Error: No se puede dividir entre cero.\"\n5. Si la división es exitosa, muestra el resultado con el formato: \"Resultado: [valor]\".",
-    "starter_code": "dividendo_str = input()\ndivisor_str = input()\ntry:\n    dividendo = int(dividendo_str)\n    divisor = int(divisor_str)\n    resultado = dividendo / divisor\n    print(f\"Resultado: {resultado}\")\nexcept ValueError:\n    print(\"Error: Debes ingresar un número válido.\")\nexcept ZeroDivisionError:\n    print(\"Error: No se puede dividir entre cero.\")",
-    "validation_type": "dynamic_output",
+    "order_index": 19,
+    "title": "Ejercicio 3.1: Manejo de errores con try/except",
+    "description": "Cuando pides datos al usuario, a veces ingresan cosas que no esperas, como letras en lugar de números. Aprende a manejar esos errores para que tu programa no se caiga y muestre mensajes claros.",
+    "instructions": "1. Usa `try/except` para capturar errores al convertir el texto ingresado a entero.\n2. Si la conversión funciona, imprime: \"El número es: <número>\".\n3. Si falla, imprime: \"Error: No ingresaste un número válido.\".\n\nEjemplo con entrada \"10\":\nEl número es: 10\n\nEjemplo con entrada \"abc\":\nError: No ingresaste un número válido.",
+    "starter_code": "numero = input(\"Ingrese un número: \")\n# Completa el código para manejar la conversión segura usando try/except",
+    "validation_type": "simple_print",
     "validation_rules": {
-      "requires_input_function": true,
-      "input_constraints": { "type": "multi_input", "values": [["10", "2"], ["10", "0"], ["10", "abc"]] },
-      "transform_for_template": "f'Resultado: {int(value[0])/int(value[1])}' if value[1] != '0' and value[1].isdigit() else ('Error: No se puede dividir entre cero.' if value[1] == '0' else 'Error: Debes ingresar un número válido.')",
-      "output_format_template": "{var}\n",
-      "num_cases": 3
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -583,18 +1271,28 @@
     "course_id": 2,
     "module_id": 7,
     "lesson_id": 20,
-    "order_index": 1,
-    "title": "Ejercicio 3.3:  Manejo de errores con try/except/finally",
-    "description": "Escribe un programa que controle errores comunes y valide entradas para evitar fallos. Maneja la entrada de números negativos lanzando un error.",
-    "instructions": "1. Pide al usuario un número entero.\n2. Dentro de un bloque `try`, si el número es negativo, lanza un error con `raise ValueError(\"No se permiten números negativos.\")`.\n3. Captura el `ValueError` y muestra su mensaje.\n4. Usa `finally` para imprimir siempre el mensaje \"Proceso finalizado.\" al terminar.\n5. Si el número es positivo o cero, muestra un mensaje de confirmación.",
-    "starter_code": "try:\n    num_str = input()\n    numero = int(num_str)\n    if numero < 0:\n        raise ValueError(\"No se permiten números negativos.\")\n    print(f\"Número aceptado: {numero}\")\nexcept ValueError as e:\n    print(f\"Error: {e}\")\nfinally:\n    print(\"Proceso finalizado.\")",
-    "validation_type": "dynamic_output",
+    "order_index": 20,
+    "title": "Ejercicio 3.2: Captura de errores comunes",
+    "description": "Escribe un programa que pida dos números enteros (dividendo y divisor) y muestre el resultado de la división. Usa bloques try/except para capturar y manejar los errores ValueError y ZeroDivisionError, mostrando mensajes claros en cada caso.",
+    "explanation": "Cuando hacemos divisiones, es común que ocurran errores como ingresar letras en vez de números, o intentar dividir por cero, lo cual no está permitido. Este ejercicio te ayuda a manejar esas situaciones para que tu programa no se detenga abruptamente, sino que muestre un mensaje amigable.\n\nImagina que estás creando una calculadora para dividir gastos en un viaje. Debes asegurarte que los datos sean correctos para que la división funcione bien y no haya problemas si alguien pone un dato incorrecto.",
+    "instructions": "1. Solicita al usuario que ingrese el dividendo y el divisor.\n2. Realiza la división dentro de un bloque try.\n3. Captura ValueError si el usuario no ingresa un número válido y muestra: \"Error: Debes ingresar un número válido.\"\n4. Captura ZeroDivisionError si se intenta dividir por cero y muestra: \"Error: No se puede dividir entre cero.\"\n5. Si la división es exitosa, muestra el resultado con el formato: \"Resultado: <valor>\".",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
     "validation_rules": {
-      "requires_input_function": true,
-      "input_constraints": { "type": "mixed", "values": ["-5", "10", "abc"] },
-      "transform_for_template": "f'Error: No se permiten números negativos.\\nProceso finalizado.' if value == '-5' else (f'Número aceptado: 10\\nProceso finalizado.' if value == '10' else 'Error: invalid literal for int() with base 10: \\'abc\\'\\nProceso finalizado.')",
-      "output_format_template": "{var}\n",
-      "num_cases": 3
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -602,16 +1300,28 @@
     "course_id": 2,
     "module_id": 7,
     "lesson_id": 21,
-    "order_index": 1,
-    "title": "Ejercicio 3.4:  Transformación de listas con for y list comprehensions",
-    "description": "Dado el listado de frutas, realiza varias transformaciones y muestra los resultados.",
-    "instructions": "1. Dada la lista `frutas`.\n2. Usando un ciclo `for`, crea una lista `longitudes` con la cantidad de letras de cada fruta e imprímela.\n3. Usando list comprehension, crea una lista `frutas_largas` con las frutas que tienen más de 5 letras e imprímela.\n4. En una sola línea con list comprehension, crea una lista `longitudes_largas` con la longitud de las frutas que tienen más de 5 letras e imprímela.",
-    "starter_code": "frutas = ['manzana', 'pera', 'banana', 'kiwi', 'sandía']\n\nlongitudes = []\nfor fruta in frutas:\n    longitudes.append(len(fruta))\nprint(longitudes)\n\nfrutas_largas = [fruta for fruta in frutas if len(fruta) > 5]\nprint(frutas_largas)\n\nlongitudes_largas = [len(fruta) for fruta in frutas if len(fruta) > 5]\nprint(longitudes_largas)",
+    "order_index": 21,
+    "title": "Ejercicio 3.3: Manejo de errores con try/except/finally y validación de entrada",
+    "description": "Escribe un programa que controle errores comunes y valide entradas para evitar fallos. Maneja divisiones, archivos inexistentes y solicita números positivos de forma segura.",
+    "explanation": "A veces necesitamos que el usuario ingrese solo números positivos, como cuando pedimos la cantidad de personas o la edad. Aquí aprenderás a usar errores personalizados para asegurarte que se ingresen datos válidos, y a usar finally para mostrar un mensaje final, sin importar si hubo error o no.\n\nSi pides la cantidad de boletos para un evento, no tendría sentido aceptar un número negativo. Este programa evita ese tipo de errores y siempre confirma que el proceso terminó.",
+    "instructions": "1. Crea un programa que pida al usuario un número entero.\n2. Si el número es negativo, lanza un error personalizado con `raise ValueError` y un mensaje adecuado.\n3. Captura el error con un bloque except y muestra el mensaje de error.\n4. Usa finally para imprimir siempre el mensaje \"Proceso finalizado.\" al terminar.\n5. Si el número es positivo o cero, muestra un mensaje de confirmación.",
+    "starter_code": "# Escribe tu código aquí\n",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "[7, 4, 6, 4, 6]\n['manzana', 'banana', 'sandía']\n[7, 6, 6]\n",
-      "expected_print_count": 3,
-      "expected_types": ["list", "list", "list"]
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -619,69 +1329,57 @@
     "course_id": 2,
     "module_id": 7,
     "lesson_id": 22,
-    "order_index": 1,
-    "title": "Ejercicio 3.5:  Ordenar y filtrar con funciones lambda",
-    "description": "Crea dos funciones que usen lambdas para ordenar y filtrar listas.",
-    "instructions": "1. Completa la función `ordenar_nombres_sin_case` para que ordene la lista de nombres ignorando mayúsculas/minúsculas.\n2. Completa la función `filtrar_pares` para que devuelva solo los números pares de una lista.",
-    "starter_code": "def ordenar_nombres_sin_case(nombres):\n    # Usa sorted() con una lambda como key para ordenar\n    pass\n\ndef filtrar_pares(numeros):\n    # Usa filter() con una lambda y convierte el resultado a lista\n    pass",
-    "validation_type": "exam",
+    "order_index": 22,
+    "title": "Ejercicio 3.4: Transformación de listas con for y list comprehensions",
+    "description": "Dado el listado de frutas ['manzana', 'pera', 'banana', 'kiwi', 'sandía'], realiza lo siguiente:\n\n1. Usando un ciclo for, crea una lista con la cantidad de letras de cada fruta e imprímela.\n2. Usando list comprehension, crea una lista con las frutas que tienen más de 5 letras e imprímela.\n3. En una sola línea con list comprehension, crea una lista con la longitud de las frutas que tienen más de 5 letras e imprímela.",
+    "explanation": "Trabajar con listas y transformarlas es común en programación. Aquí practicas dos formas de hacerlo: con ciclos for tradicionales y con list comprehensions, que son más compactas y eficientes.\n\nSupongamos que quieres hacer una lista de frutas para la compra y además saber cuáles son las más largas para elegir frutas que duren más tiempo. Así usas listas para organizar esa información.",
+    "instructions": "1. Define la lista frutas con los nombres dados.\n2. Crea una lista vacía llamada longitudes y llena con la longitud de cada fruta usando un ciclo for.\n3. Crea una lista llamada frutas_largas con list comprehension para filtrar frutas con más de 5 letras.\n4. En una sola línea crea una lista llamada longitudes_largas con la longitud de las frutas que tienen más de 5 letras.\n5. Imprime las tres listas en orden: longitudes, frutas_largas y longitudes_largas.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
     "validation_rules": {
-      "functions": [
-        {
-          "function_name": "ordenar_nombres_sin_case",
-          "scenarios": [
-            {"args": [["Ana", "luis", "Carlos", "maria"]], "expected_return_value": ["Ana", "Carlos", "luis", "maria"]},
-            {"args": [["Zebra", "apple", "Banana"]], "expected_return_value": ["apple", "Banana", "Zebra"]}
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {"args": [[1, 2, 3, 4, 5, 6]], "expected_return_value": [2, 4, 6]},
-            {"args": [[11, 23, 45]], "expected_return_value": []},
-            {"args": [[-2, 0, 8, 9]], "expected_return_value": [-2, 0, 8]}
-          ]
-        }
-      ]
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
     "id": 28,
     "course_id": 2,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 1,
-    "title": "Examen Final: Estructuras de Datos",
-    "description": "Demuestra tu conocimiento de tuplas, sets y diccionarios en Python implementando las siguientes funciones.",
-    "instructions": "Completa el cuerpo de cada función para que devuelva el resultado esperado. No modifiques los nombres de las funciones ni sus parámetros.",
-    "starter_code": "def obtener_extremos_tupla(tupla):\n    # Devuelve una nueva tupla con el primer y último elemento de la tupla de entrada.\n    # Si la tupla tiene menos de 2 elementos, devuelve una tupla vacía.\n    pass\n\ndef elementos_comunes(set_a, set_b):\n    # Devuelve un nuevo set con los elementos comunes entre set_a y set_b.\n    pass\n\ndef actualizar_mascota(mascota, nueva_edad, esta_vacunado):\n    # Actualiza el diccionario 'mascota' con la nueva_edad y agrega la clave 'vacunado'.\n    # Devuelve el diccionario modificado.\n    pass",
-    "validation_type": "exam",
+    "module_id": 7,
+    "lesson_id": 23,
+    "order_index": 23,
+    "title": "Ejercicio 3.5: Ordenar y filtrar con funciones lambda",
+    "description": "Practica el uso de funciones lambda para ordenar una lista de nombres sin importar mayúsculas o minúsculas y para filtrar números pares de una lista.",
+    "explanation": "Las funciones lambda son pequeñas funciones anónimas que te permiten hacer operaciones simples, como ordenar o filtrar listas, sin tener que escribir funciones completas. Son muy útiles para simplificar el código.\n\nImagina que tienes una lista de invitados y quieres ordenarlos alfabéticamente sin importar si su nombre está en mayúsculas o minúsculas. O quieres filtrar solo los números pares de una lista para un juego o conteo.",
+    "instructions": "1. Tienes la lista: nombres = [\"Ana\", \"luis\", \"Carlos\", \"maria\"].\n2. Usa sorted con lambda para ordenar la lista ignorando mayúsculas o minúsculas.\n3. Imprime la lista ordenada.\n\n4. Tienes la lista: numeros = [1, 2, 3, 4, 5, 6].\n5. Usa filter con lambda para obtener solo los números pares.\n6. Convierte el resultado a lista e imprímela.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
     "validation_rules": {
-      "functions": [
-        {
-          "function_name": "obtener_extremos_tupla",
-          "scenarios": [
-            {"args": [["a", "b", "c", "d"]], "expected_return_value": ["a", "d"]},
-            {"args": [[1, 2]], "expected_return_value": [1, 2]},
-            {"args": [["x"]], "expected_return_value": []}
-          ]
-        },
-        {
-          "function_name": "elementos_comunes",
-          "scenarios": [
-            {"args": [[1, 2, 3], [3, 4, 5]], "expected_return_value": [3]},
-            {"args": [["a", "b"], ["c", "d"]], "expected_return_value": []},
-            {"args": [[10, 20], [10, 20]], "expected_return_value": [10, 20]}
-          ]
-        },
-        {
-          "function_name": "actualizar_mascota",
-          "scenarios": [
-            {"args": [{"nombre": "Rex", "edad": 5}, 6, true], "expected_return_value": {"nombre": "Rex", "edad": 6, "vacunado": true}},
-            {"args": [{"nombre": "Miau", "tipo": "gato"}, 2, false], "expected_return_value": {"nombre": "Miau", "tipo": "gato", "edad": 2, "vacunado": false}}
-          ]
-        }
-      ]
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
     }
   },
   {
@@ -689,17 +1387,137 @@
     "course_id": 2,
     "module_id": null,
     "lesson_id": null,
-    "order_index": 2,
-    "title": "Examen Final: Lógica con Colecciones",
-    "description": "Demuestra tu conocimiento de tuplas, sets y diccionarios en Python.",
-    "instructions": "Completa cada función según lo solicitado.",
-    "starter_code": "def obtener_ultima_vocal(vocales):\n    # Dada una tupla de vocales, devuelve la última.\n    pass\n\ndef crear_set_sin_duplicados(lista):\n    # Dada una lista, devuelve un set con elementos únicos.\n    pass\n\ndef agregar_jugador(equipos, equipo, jugador):\n    # Agrega un jugador a la lista de un equipo en el diccionario.\n    # Devuelve el diccionario actualizado.\n    pass",
+    "order_index": 1,
+    "title": "Examen Final: Python Intermedio",
+    "description": "Pon a prueba tu conocimiento sobre tuplas, sets y diccionarios en Python con situaciones prácticas.",
+    "instructions": "Completa cada sección con el código que resuelva los problemas propuestos. Usa estructuras de datos para organizar información como en la vida real.",
+    "starter_code": "# Sección 1: Tuplas\n# Imagina que tienes los días de la semana y necesitas acceder a ciertos días para planificar tu agenda.\n\n\n# Sección 2: Sets\n# Usa conjuntos para manejar listas de invitados a eventos, evitando duplicados y haciendo operaciones entre listas.\nset_a = {1, 3, 5, 7, 9}\nset_b = {2, 3, 5, 7, 11}\n\n\n# Sección 3: Diccionarios\n# Representa la información de una mascota usando un diccionario y accede a sus datos para cuidados diarios.\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
-        {"function_name": "obtener_ultima_vocal", "scenarios": [{"args": [["a", "e", "i", "o", "u"]], "expected_return_value": "u"}]},
-        {"function_name": "crear_set_sin_duplicados", "scenarios": [{"args": [[10, 20, 10, 30, 20]], "expected_return_value": [10, 20, 30]}]},
-        {"function_name": "agregar_jugador", "scenarios": [{"args": [{"futbol": ["Ana"], "voley": ["Juan"]}, "voley", "Laura"], "expected_return_value": {"futbol": ["Ana"], "voley": ["Juan", "Laura"]}}]}
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
       ]
     }
   },
@@ -708,17 +1526,137 @@
     "course_id": 2,
     "module_id": null,
     "lesson_id": null,
-    "order_index": 3,
-    "title": "Examen Final: Estructuras Anidadas y Errores",
-    "description": "Demuestra tu conocimiento de listas anidadas, list comprehensions y manejo de errores.",
-    "instructions": "Completa cada función según lo solicitado.",
-    "starter_code": "def obtener_elemento_matriz(matriz, fila, columna):\n    # Devuelve el elemento en la fila y columna especificadas.\n    pass\n\ndef filtrar_frutas_largas(frutas):\n    # Devuelve una lista de las frutas que tienen más de 5 letras.\n    pass\n\ndef dividir_numeros(a, b):\n    # Devuelve el resultado de a/b. Si hay un error, devuelve un string con el nombre del error.\n    # Ejemplo: si b es 0, devuelve 'ZeroDivisionError'.\n    pass",
+    "order_index": 2,
+    "title": "Examen Final: Python Intermedio",
+    "description": "Usa tu conocimiento de tuplas, sets y diccionarios para resolver problemas cotidianos con datos repetidos y manejo de errores.",
+    "instructions": "Sigue las indicaciones para cada estructura y maneja los errores que puedan surgir, tal como ocurre cuando trabajamos con información real.",
+    "starter_code": "# Sección 1: Tuplas\n# Piensa en las vocales como elementos fijos que necesitas manipular para entender cómo funcionan los índices.\n\n\n# Sección 2: Sets\n# Elimina duplicados en listas de compras y modifica la lista según necesites.\n\n\n# Sección 3: Diccionarios de listas\n# Gestiona equipos deportivos y agrega jugadores para organizar un torneo local.\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
-        {"function_name": "obtener_elemento_matriz", "scenarios": [{"args": [[["a", "b"], ["c", "d"]], 1, 0], "expected_return_value": "c"}]},
-        {"function_name": "filtrar_frutas_largas", "scenarios": [{"args": [["manzana", "pera", "banana", "kiwi"]], "expected_return_value": ["manzana", "banana"]}]},
-        {"function_name": "dividir_numeros", "scenarios": [{"args": [10, 2], "expected_return_value": 5.0}, {"args": [10, 0], "expected_return_value": "ZeroDivisionError"}, {"args": [10, "a"], "expected_return_value": "TypeError"}]}
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
       ]
     }
   },
@@ -727,17 +1665,137 @@
     "course_id": 2,
     "module_id": null,
     "lesson_id": null,
-    "order_index": 4,
-    "title": "Examen Final: Lambdas y Archivos",
-    "description": "Demuestra tu conocimiento de diccionarios, funciones lambda y manejo de errores de archivos.",
-    "instructions": "Completa cada función según lo solicitado.",
-    "starter_code": "def actualizar_libro(libro):\n    # Agrega 'genero': 'Realismo mágico' y modifica el año a 1970. Devuelve el libro.\n    pass\n\ndef filtrar_nombres_con_a(nombres):\n    # Usa una función lambda y filter para devolver nombres que empiezan con 'a' o 'A'.\n    pass\n\ndef leer_archivo(nombre_archivo):\n    # Intenta leer un archivo. Si no existe, devuelve 'FileNotFoundError'.\n    # Esta función no se puede probar automáticamente, pero impleméntala como si pudieras.\n    return 'Not tested'",
+    "order_index": 3,
+    "title": "Examen Final: Python Intermedio",
+    "description": "Practica la manipulación de listas anidadas, transformaciones y el manejo de errores para simular situaciones reales.",
+    "instructions": "Completa cada sección pensando en cómo organizar matrices, filtrar listas y manejar posibles errores al solicitar información al usuario.",
+    "starter_code": "# Sección 1: Listas de listas\nmatriz = [\n  [\"a\", \"b\", \"c\"],\n  [\"d\", \"e\", \"f\"],\n  [\"g\", \"h\", \"i\"]\n]\n\n# Sección 2: Transformación de listas\nfrutas = [\"manzana\", \"pera\", \"banana\", \"kiwi\", \"sandía\"]\n\n# Sección 3: try/except\n# Simula la interacción con un usuario que ingresa números para una operación segura\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
-        {"function_name": "actualizar_libro", "scenarios": [{"args": [{"título": "Cien años de soledad", "autor": "García Márquez", "año": 1967}], "expected_return_value": {"título": "Cien años de soledad", "autor": "García Márquez", "año": 1970, "genero": "Realismo mágico"}}]},
-        {"function_name": "filtrar_nombres_con_a", "scenarios": [{"args": [["Ana", "luis", "Carlos", "alicia"]], "expected_return_value": ["Ana", "alicia"]}]},
-        {"function_name": "leer_archivo", "scenarios": [{"args": ["dummy.txt"], "expected_return_value": "Not tested"}]}
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
       ]
     }
   },
@@ -746,17 +1804,1122 @@
     "course_id": 2,
     "module_id": null,
     "lesson_id": null,
-    "order_index": 5,
-    "title": "Examen Final: Procesamiento de Datos Avanzado",
-    "description": "Demuestra tu conocimiento de estructuras anidadas, list comprehensions y sets.",
-    "instructions": "Completa cada función según lo solicitado.",
-    "starter_code": "def formatear_productos(productos):\n    # Devuelve una lista de strings, donde cada string es 'categoría: producto1, producto2'.\n    pass\n\ndef convertir_a_fahrenheit(temperaturas_c):\n    # Usa list comprehension para convertir una lista de Celsius a Fahrenheit.\n    pass\n\ndef son_disjuntos(set_a, set_b):\n    # Devuelve True si los sets no tienen elementos en común, False en caso contrario.\n    pass",
+    "order_index": 4,
+    "title": "Examen Final: Python Intermedio",
+    "description": "Aplica diccionarios, funciones lambda y manejo de archivos en Python con ejemplos cotidianos.",
+    "instructions": "Organiza información sobre libros, filtra listas y maneja archivos, pensando en tareas comunes como leer datos y ordenar listas sin importar mayúsculas.",
+    "starter_code": "# Sección 1: Diccionarios\nlibro = {\n  \"título\": \"Cien años de soledad\",\n  \"autor\": \"García Márquez\",\n  \"año\": 1967\n}\n\n# Sección 2: Funciones lambda\nnombres = [\"Ana\", \"luis\", \"Carlos\", \"maria\"]\n\n# Sección 3: finally y validación\n# Maneja la apertura de archivos con cuidado y asegura la finalización de la operación\n",
     "validation_type": "exam",
     "validation_rules": {
       "functions": [
-        {"function_name": "formatear_productos", "scenarios": [{"args": [{"frutas": ["manzana", "pera"], "lacteos": ["leche"]}], "expected_return_value": ["frutas: manzana, pera", "lacteos: leche"]}]},
-        {"function_name": "convertir_a_fahrenheit", "scenarios": [{"args": [[0, 10, 100]], "expected_return_value": [32.0, 50.0, 212.0]}]},
-        {"function_name": "son_disjuntos", "scenarios": [{"args": [[1, 2], [3, 4]], "expected_return_value": true}, {"args": [[1, 2], [2, 3]], "expected_return_value": false}]}
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": 33,
+    "course_id": 2,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 5,
+    "title": "Examen Final: Python Intermedio",
+    "description": "Ejercita el uso de estructuras anidadas, list comprehensions y sets con ejemplos prácticos del día a día.",
+    "instructions": "Recorre diccionarios con listas, convierte temperaturas y trabaja con conjuntos para organizar información diversa.",
+    "starter_code": "# Sección 1: Estructuras anidadas\nproductos = {\n  \"frutas\": [\"manzana\", \"pera\"],\n  \"lácteos\": [\"leche\", \"queso\"],\n  \"verduras\": [\"zanahoria\", \"espinaca\"]\n}\n\n# Sección 2: List comprehensions\ntemperaturas = [25, 30, 15, 10, 35]\n\n# Sección 3: Sets y operaciones\nconjunto_x = {1, 2, 3, 4, 5}\nconjunto_y = {4, 5, 6, 7}\n",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": 34,
+    "course_id": 3,
+    "module_id": 9,
+    "lesson_id": 24,
+    "order_index": 24,
+    "title": "Ejercicio 1.1: Tu primera clase en Python",
+    "description": "Vamos a crear una clase llamada `Animal` que inicialmente estará vacía. Luego haremos una instancia (un ejemplar) de esa clase y la mostraremos en pantalla.",
+    "instructions": "1. Define una clase vacía llamada `Animal` usando `class`.\n2. Usa `pass` dentro de la clase para que quede vacía.\n3. Crea una variable `animal1` y asígnale una instancia de `Animal`.\n4. Imprime `animal1` para ver que el objeto fue creado.\n\nPiensa que una clase es como el molde para hacer juguetes. Aquí hacemos el molde pero sin detalles, y luego mostramos el juguete que salió del molde.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Imagina que tienes una caja para hacer galletas (la clase) pero aún no pones ningún ingrediente ni formas. Crear una instancia es como hacer la primera galleta con ese molde."
+  },
+  {
+    "id": 35,
+    "course_id": 3,
+    "module_id": 9,
+    "lesson_id": 25,
+    "order_index": 25,
+    "title": "Ejercicio 1.2: Clase Animal con atributos y método",
+    "description": "Vamos a hacer una clase `Animal` que tenga características como el nombre y la especie, y un método para que el animal se presente diciendo quién es.",
+    "instructions": "1. Crea la clase `Animal`.\n2. En `__init__`, recibe `nombre` y `especie` y guárdalos.\n3. Crea un método `descripcion()` que imprima: `Soy un(a) [especie] y me llamo [nombre].`\n4. Instancia un animal con `\"Luna\"` y `\"gata\"`.\n5. Llama a `descripcion()` para que se presente.\n\nEsto es como cuando conoces a una persona y le preguntas su nombre y de dónde viene, para presentarla a otros.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Como cuando haces una ficha personal con tu nombre y profesión, y luego dices: “Hola, soy Juan y soy diseñador gráfico.”"
+  },
+  {
+    "id": 36,
+    "course_id": 3,
+    "module_id": 9,
+    "lesson_id": 26,
+    "order_index": 26,
+    "title": "Ejercicio 1.3: Clase Coche con métodos especiales",
+    "description": "Vamos a crear una clase `Coche` que tenga marca y kilometraje, y que pueda actualizar cuántos kilómetros ha recorrido. Además, cuando imprimas el coche, mostrará una descripción clara.",
+    "instructions": "1. Crea la clase `Coche` con atributos `marca` y `kilometraje`.\n2. Inicialízalos en `__init__`.\n3. Define `__str__` para mostrar: `Coche: [marca], Kilometraje: [km]`.\n4. Agrega un método `recorrer(km)` para sumar kilómetros al kilometraje.\n5. Crea un coche, imprímelo, llama a `recorrer(100)`, e imprime otra vez.\n\nEsto es como llevar un registro de cuántos kilómetros llevas en tu coche y actualizarlo cada vez que sales a un viaje.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Como cuando miras el odómetro de tu auto antes y después de un viaje para saber cuántos kilómetros recorriste."
+  },
+  {
+    "id": 37,
+    "course_id": 3,
+    "module_id": 10,
+    "lesson_id": 27,
+    "order_index": 27,
+    "title": "Ejercicio 2.1: Crea tu primer decorador",
+    "description": "Vamos a crear un decorador, que es como un 'envoltorio' para funciones, que añade mensajes antes y después de que la función se ejecute.",
+    "instructions": "1. Define una función `mi_decorador` que reciba otra función.\n2. Dentro, define `wrapper` que imprime `Iniciando ejecución...`, luego llama a la función original y finalmente imprime `Ejecución finalizada.`\n3. Decora la función `decir_hola()` que imprime `Hola desde la función.`\n4. Llama a `decir_hola()` y observa el resultado.\n\nEsto es como cuando alguien te presenta antes de que hables en público y te despide después, para dar contexto a tu mensaje.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Como cuando alguien te ayuda a preparar una sorpresa para que todo salga perfecto justo antes y después de que hagas algo."
+  },
+  {
+    "id": 38,
+    "course_id": 3,
+    "module_id": 10,
+    "lesson_id": 28,
+    "order_index": 28,
+    "title": "Ejercicio 2.2: Generador de números pares",
+    "description": "Vamos a crear una función que genere números pares de a uno a la vez usando `yield`, para practicar cómo se producen datos sin almacenarlos todos juntos.",
+    "instructions": "1. Define la función `pares(n)` que reciba un número `n`.\n2. Usa `yield` para devolver los primeros `n` números pares empezando desde 0.\n3. Imprime los números que genera `pares(5)`.\n\nEsto es como una máquina que va dando números pares uno por uno cuando se los pides, sin tener que dar toda la lista de golpe.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Piensa en un dispensador de tickets donde vas tomando uno a la vez, y no todos a la vez."
+  },
+  {
+    "id": 39,
+    "course_id": 3,
+    "module_id": 10,
+    "lesson_id": 29,
+    "order_index": 29,
+    "title": "Ejercicio 2.3: Recorriendo una cadena con iter y next",
+    "description": "Vamos a recorrer una cadena letra por letra usando `iter()` y `next()`, manejando el final del recorrido con excepción.",
+    "instructions": "1. Crea una variable con un texto, por ejemplo: `mensaje = \"Hola\"`.\n2. Obtén un iterador con `iter(mensaje)`.\n3. Usa un ciclo `while` con `try/except` para imprimir cada letra usando `next()`.\n4. Cuando termine, imprime `Fin del texto.`\n\nEsto es como leer un libro página a página hasta que ya no quedan páginas.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Como cuando vas leyendo letra por letra un cartel o mensaje y dices 'Ya terminé' cuando llegas al final."
+  },
+  {
+    "id": 40,
+    "course_id": 3,
+    "module_id": 11,
+    "lesson_id": 30,
+    "order_index": 30,
+    "title": "Ejercicio 3.1: Simulación de CSV en Python",
+    "description": "Vamos a crear una tabla de datos usando una lista de diccionarios, simulando un archivo CSV con personas y sus datos.",
+    "instructions": "1. Crea una lista `personas` con al menos 4 diccionarios.\n2. Cada diccionario debe tener: \"Nombre\", \"Edad\", \"Ciudad\".\n3. Usa un ciclo `for` para imprimir solo el nombre y la ciudad de cada persona.\n\nEsto es como una libreta donde tienes datos de tus amigos y quieres ver dónde viven sin ver toda la información.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Imagina una lista de contactos en tu celular donde ves solo nombres y ciudades para planear una reunión."
+  },
+  {
+    "id": 41,
+    "course_id": 3,
+    "module_id": 11,
+    "lesson_id": 31,
+    "order_index": 31,
+    "title": "Ejercicio 3.2: Filtrar personas por ciudad",
+    "description": "Vamos a pedir una ciudad al usuario y mostrar solo las personas que viven ahí filtrando una lista de personas.",
+    "instructions": "1. Pide al usuario que ingrese una ciudad con `input()`.\n2. Crea una lista `personas_en_ciudad` con los que vivan en esa ciudad.\n3. Imprime cada persona encontrada.\n\nEs como cuando buscas en tu lista de amigos quiénes viven cerca para invitarlos a una fiesta.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Como cuando decides hacer una lista para un evento y solo quieres llamar a quienes viven en la misma ciudad."
+  },
+  {
+    "id": 42,
+    "course_id": 3,
+    "module_id": 11,
+    "lesson_id": 32,
+    "order_index": 32,
+    "title": "Ejercicio 3.3: Mostrar información con tres métodos de formateo",
+    "description": "Aprende a mostrar mensajes personalizados combinando texto y variables usando diferentes técnicas para que puedas elegir la que te sea más cómoda.",
+    "instructions": "1. Crea estas variables:\n   - `nombre`: tu nombre.\n   - `producto`: un producto (ejemplo: 'laptop').\n   - `precio`: un número (ejemplo: 499.99).\n2. Muestra el mensaje:\n   `El producto [producto] de [nombre] cuesta $[precio].`\n3. Hazlo con:\n   - Concatenación con `+`\n   - El método `.format()`\n   - f-strings\n\nEsto es útil para cuando quieres enviar mensajes personalizados, como confirmar compras o dar información clara y bonita.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Como cuando envías un mensaje diciendo: “El celular que compraste cuesta $300.” y quieres mostrarlo de distintas maneras para que quede claro y bonito."
+  },
+  {
+    "id": 43,
+    "course_id": 3,
+    "module_id": 11,
+    "lesson_id": 33,
+    "order_index": 33,
+    "title": "Ejercicio 3.4: Validación y manipulación de texto con expresiones regulares",
+    "description": "Practica con el módulo `re` para revisar que un correo esté bien escrito, sacar números de un texto, y cambiar comas por punto y coma en frases.",
+    "instructions": "1. Pide al usuario que escriba un correo y usa `re.match()` para validar si es correcto.\n2. Extrae todos los números de un texto como: “Compré 4 manzanas y 12 peras” con `re.findall()`.\n3. Cambia todas las comas por punto y coma en una frase como: “uno,dos,tres” con `re.sub()`.\n4. Imprime los resultados.\n\nAsí aprenderás a limpiar y validar datos, algo que se usa mucho cuando manejas información de clientes o datos en general.",
+    "starter_code": "# Escribe tu código aquí\n",
+    "validation_type": "simple_print",
+    "validation_rules": {
+      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_print_count": 1,
+      "expected_types": [
+        "str"
+      ],
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
+        "wrong_case": "Revisa las mayúsculas y minúsculas.",
+        "extra_spaces": "No agregues espacios extra al final o inicio.",
+        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
+        "wrong_print_count": "Se esperaba una sola operación de print."
+      }
+    },
+    "explanation": "Es como cuando revisas que un correo esté bien antes de enviarlo, cuentas cuántas frutas compraste al leer el ticket, o cambias la forma de escribir una lista para que sea más fácil de leer."
+  },
+  {
+    "id": 44,
+    "course_id": 3,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 1,
+    "title": "Examen Final: Python Avanzado",
+    "description": "Pon a prueba tu conocimiento creando clases, decoradores, generadores y manejando datos con listas y expresiones regulares.",
+    "instructions": "Vamos a trabajar paso a paso con varios ejercicios prácticos para aplicar conceptos clave de Python avanzado:\n\n1. Crea una clase llamada Persona con los atributos nombre y edad. Implementa el método especial __str__ para que, al imprimir una instancia, muestre: 'Persona: [nombre], Edad: [edad]'. Crea un objeto y muéstralo.\n\n2. Añade un método cumplir_años() que incremente la edad en 1 año. Llámalo y vuelve a imprimir el objeto para ver el cambio.\n\n3. Crea un decorador llamado log que muestre el mensaje \"Ejecutando...\" antes y \"Hecho.\" después de ejecutar cualquier función. Aplica este decorador a una función saludo() que imprima \"¡Hola!\".\n\n4. Define una función generadora pares(n) que produzca los primeros n números pares. Usa un ciclo para mostrar los números generados.\n\n5. Dada esta lista de personas:\n   personas = [\n       {\"Nombre\": \"Ana\", \"Edad\": 25, \"Ciudad\": \"Lima\"},\n       {\"Nombre\": \"Luis\", \"Edad\": 30, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"María\", \"Edad\": 22, \"Ciudad\": \"Quito\"}\n   ]\n   Imprime los nombres de quienes tengan 25 años o más.\n   Cuenta cuántas personas viven en \"Bogotá\".\n\n6. Usa la librería re para validar si el correo \"usuario@example.com\" es válido con re.match().",
+    "starter_code": "# Ejercicio 1.1\n# Clase Persona con __str__\n\n\n# Ejercicio 1.2\n# Método cumplir_años\n\n\n# Ejercicio 2.1\n# Decorador log y función saludo\n\n\n# Ejercicio 2.2\n# Función generadora pares\n\n\n# Ejercicio 3.1\n# Lista de personas y operaciones\n\n\n# Ejercicio 3.2\n# Validación de correo\n",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": 45,
+    "course_id": 3,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 2,
+    "title": "Examen Final: Python Avanzado",
+    "description": "Evalúa tu habilidad para crear clases con métodos útiles, usar decoradores, generadores y manipular listas con expresiones regulares aplicadas a situaciones reales.",
+    "instructions": "Sigue las instrucciones para crear funciones y clases que reflejen ejemplos cotidianos:\n\n1. Define una clase Producto con atributos nombre y precio. Implementa el método __str__ para mostrar: 'Producto: [nombre], Precio: $[precio]'.\n\n2. Añade un método aplicar_descuento(porcentaje) para modificar el precio según un descuento dado. Prueba este método.\n\n3. Crea un decorador anuncio que imprima \"Inicio de función\" antes y \"Fin de función\" después de ejecutar cualquier función. Aplícalo a una función procesar() que imprima \"Procesando datos...\".\n\n4. Define una función generadora cuadrados(n) que genere los cuadrados de los primeros n números naturales.\n\n5. Dada la lista:\n   usuarios = [\n       {\"Nombre\": \"Carlos\", \"Edad\": 28, \"Ciudad\": \"Lima\"},\n       {\"Nombre\": \"Laura\", \"Edad\": 19, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"Pedro\", \"Edad\": 35, \"Ciudad\": \"Lima\"}\n   ]\n   Muestra los nombres de los usuarios que viven en \"Lima\".\n   Cuenta cuántos usuarios tienen más de 25 años.\n\n6. Utiliza re.sub para reemplazar todos los espacios en el texto \"Hola mundo Python\" por guiones bajos.",
+    "starter_code": "# Ejercicio 1.1\n# Clase Producto con __str__\n\n\n# Ejercicio 1.2\n# Método aplicar_descuento\n\n\n# Ejercicio 2.1\n# Decorador anuncio y función procesar\n\n\n# Ejercicio 2.2\n# Función generadora cuadrados\n\n\n# Ejercicio 3.1\n# Lista usuarios y operaciones\n\n\n# Ejercicio 3.2\n# Reemplazo con re.sub\n",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": 46,
+    "course_id": 3,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 3,
+    "title": "Examen Final: Python Avanzado",
+    "description": "Pon en práctica tus conocimientos en clases, métodos, decoradores, generadores, y operaciones con listas y expresiones regulares aplicados a ejemplos reales.",
+    "instructions": "Completa cada ejercicio basándote en ejemplos del día a día:\n\n1. Crea la clase Cuenta con atributos titular y saldo. Define el método __str__ para mostrar: 'Cuenta de [titular], Saldo: $[saldo]'.\n\n2. Agrega un método depositar(cantidad) que sume la cantidad al saldo actual.\n\n3. Define un decorador rastro que imprima \"Llamando función...\" antes de ejecutar cualquier función. Úsalo en una función inicio().\n\n4. Crea una función generadora multiplos_de_tres(n) que genere los primeros n múltiplos de 3.\n\n5. Dada la lista:\n   personas = [\n       {\"Nombre\": \"Elena\", \"Edad\": 32, \"Ciudad\": \"Quito\"},\n       {\"Nombre\": \"Jorge\", \"Edad\": 21, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"Sara\", \"Edad\": 30, \"Ciudad\": \"Quito\"}\n   ]\n   Imprime los nombres de las personas que viven en \"Quito\".\n   Cuenta cuántas personas tienen edad impar.\n\n6. Extrae todos los números del texto \"Hay 10 perros, 5 gatos y 2 aves\" usando re.findall.",
+    "starter_code": "# Ejercicio 1.1\n# Clase Cuenta con __str__\n\n\n# Ejercicio 1.2\n# Método depositar\n\n\n# Ejercicio 2.1\n# Decorador rastro y función inicio\n\n\n# Ejercicio 2.2\n# Función generadora multiplos_de_tres\n\n\n# Ejercicio 3.1\n# Lista personas y operaciones\n\n\n# Ejercicio 3.2\n# Extraer números con re.findall\n",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": 47,
+    "course_id": 3,
+    "module_id": null,
+    "lesson_id": null,
+    "order_index": 4,
+    "title": "Examen Final: Python Avanzado",
+    "description": "Aplicación práctica de Python avanzado: clases, métodos, decoradores, generadores, y manejo de listas y expresiones regulares en situaciones reales.",
+    "instructions": "Resuelve los siguientes ejercicios paso a paso:\n\n1. Define la clase Vehículo con atributos marca y modelo. Implementa __str__ para mostrar: 'Vehículo: [marca] [modelo]'.\n\n2. Agrega un método cambiar_modelo(nuevo_modelo) para actualizar el modelo.\n\n3. Crea un decorador temporizador que imprima \"Inicio\" antes y \"Fin\" después de la ejecución de cualquier función. Aplica este decorador a una función arrancar() que imprima \"Arrancando motor...\".\n\n4. Define una función generadora fibonacci(n) que genere los primeros n números de Fibonacci.\n\n5. Dada la lista:\n   conductores = [\n       {\"Nombre\": \"Ana\", \"Edad\": 40, \"Ciudad\": \"Lima\"},\n       {\"Nombre\": \"Luis\", \"Edad\": 22, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"Marta\", \"Edad\": 28, \"Ciudad\": \"Lima\"}\n   ]\n   Muestra los nombres de conductores que tienen 30 años o más.\n   Cuenta cuántos viven en \"Lima\".\n\n6. Utiliza re.search para verificar si el texto \"La matrícula es ABC123\" contiene un patrón alfanumérico seguido de números.",
+    "starter_code": "# Ejercicio 1.1\n# Clase Vehículo con __str__\n\n\n# Ejercicio 1.2\n# Método cambiar_modelo\n\n\n# Ejercicio 2.1\n# Decorador temporizador y función arrancar\n\n\n# Ejercicio 2.2\n# Función generadora fibonacci\n\n\n# Ejercicio 3.1\n# Lista conductores y operaciones\n\n\n# Ejercicio 3.2\n# Verificación con re.search\n",
+    "validation_type": "exam",
+    "validation_rules": {
+      "functions": [
+        {
+          "function_name": "factorial",
+          "scenarios": [
+            {
+              "args": [
+                5
+              ],
+              "expected_return_value": 120
+            },
+            {
+              "args": [
+                0
+              ],
+              "expected_return_value": 1
+            },
+            {
+              "args": [
+                1
+              ],
+              "expected_return_value": 1
+            }
+          ]
+        },
+        {
+          "function_name": "encontrar_maximo",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  5,
+                  2,
+                  9,
+                  3
+                ]
+              ],
+              "expected_return_value": 9
+            },
+            {
+              "args": [
+                [
+                  -1,
+                  -5,
+                  -2
+                ]
+              ],
+              "expected_return_value": -1
+            },
+            {
+              "args": [
+                [
+                  10
+                ]
+              ],
+              "expected_return_value": 10
+            }
+          ]
+        },
+        {
+          "function_name": "filtrar_pares",
+          "scenarios": [
+            {
+              "args": [
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              ],
+              "expected_return_value": [
+                2,
+                4,
+                6
+              ]
+            },
+            {
+              "args": [
+                [
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "expected_return_value": []
+            },
+            {
+              "args": [
+                [
+                  -2,
+                  0,
+                  2
+                ]
+              ],
+              "expected_return_value": [
+                -2,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "function_name": "generar_saludo",
+          "scenarios": [
+            {
+              "args": [
+                "Carlos",
+                30
+              ],
+              "expected_return_value": "Hola Carlos, tienes 30 años."
+            },
+            {
+              "args": [
+                "Maria",
+                22
+              ],
+              "expected_return_value": "Hola Maria, tienes 22 años."
+            }
+          ]
+        }
       ]
     }
   }

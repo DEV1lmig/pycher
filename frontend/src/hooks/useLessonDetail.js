@@ -1,112 +1,114 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getLessonById, getExercisesByLessonId } from '@/services/contentService';
-import { startLesson, getLessonProgress, submitExercise as submitExerciseApi } from '@/services/progressService';
+// --- FIX: Import all progress functions from the consolidated progressService ---
+import progressService from '@/services/progressService';
 import { toast } from 'react-hot-toast';
 
 export function useLessonDetail(lessonId) {
   const [lesson, setLesson] = useState(null);
   const [exercises, setExercises] = useState([]);
   const [lessonProgress, setLessonProgress] = useState(null);
+  const [exercisesProgress, setExercisesProgress] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submittingExerciseId, setSubmittingExerciseId] = useState(null);
+  const [nextLessonInfo, setNextLessonInfo] = useState(null);
 
-  const startLessonCalled = useRef(false);
-
-  // NEW: A targeted function to only refetch progress data.
-  // This avoids triggering the main page loading state.
-  const refetchProgress = useCallback(async () => {
-    if (!lessonId) return;
-    try {
-      const progressData = await getLessonProgress(lessonId);
-      setLessonProgress(progressData);
-    } catch (err) {
-      toast.error('No se pudo actualizar el progreso de la lección.');
-    }
-  }, [lessonId]);
-
+  // --- START: NEW FUNCTION FOR SOFT UPDATE ---
+  const updateExerciseProgress = useCallback((exerciseId, isCorrect) => {
+    setExercisesProgress(prevProgress => ({
+      ...prevProgress,
+      [exerciseId]: {
+        ...(prevProgress[exerciseId] || {}),
+        is_correct: isCorrect,
+        attempts: (prevProgress[exerciseId]?.attempts || 0) + 1,
+      }
+    }));
+  }, []);
+  // --- END: NEW FUNCTION FOR SOFT UPDATE ---
 
   const fetchLessonData = useCallback(async () => {
     if (!lessonId) {
       setLoading(false);
       return;
     }
-
     setLoading(true);
     setError(null);
-
-    // --- FIX: Prevent startLesson from being called twice ---
-    // Only call startLesson if it hasn't been called for this lessonId yet.
-    if (!startLessonCalled.current) {
-      try {
-        // Mark as called *before* the API call to prevent race conditions
-        startLessonCalled.current = true;
-        await startLesson(lessonId);
-
-      } catch (err) {
-        // If it fails, allow a retry on the next render cycle.
-        startLessonCalled.current = false;
-        // We can continue, as getLessonProgress might still work if it was started previously.
-      }
-    }
-
     try {
-      // Fetch all data concurrently after attempting to start the lesson
       const [lessonData, exercisesData, progressData] = await Promise.all([
         getLessonById(lessonId),
         getExercisesByLessonId(lessonId),
-        getLessonProgress(lessonId),
+        progressService.getLessonProgress(lessonId),
       ]);
-
+      console.log("Fetched lesson progressData:", progressData); // <--- LOG HERE
       setLesson(lessonData);
-      setExercises(exercisesData);
+      setExercises(Array.isArray(exercisesData) ? exercisesData : []);
       setLessonProgress(progressData);
+
+      // --- CONSOLE LOG FOR NEXT LESSON ---
+      console.log("Next lesson info from API:", progressData?.next_lesson_info);
+      // --- END CONSOLE LOG ---
+
+      setNextLessonInfo(progressData?.next_lesson_info || null);
+
+      const exerciseProgressMap = {};
+      if (progressData?.exercises_progress) {
+        progressData.exercises_progress.forEach(p => {
+          exerciseProgressMap[p.exercise_id] = p;
+        });
+      }
+      setExercisesProgress(exerciseProgressMap);
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || 'Failed to load lesson data.';
-      setError(errorMsg);
-      toast.error(errorMsg);
+      setError(err.response?.data?.detail || `Error al cargar la lección ${lessonId}.`);
     } finally {
       setLoading(false);
     }
   }, [lessonId]);
 
   useEffect(() => {
-    // When the lessonId changes (e.g., navigating to a new lesson),
-    // reset the guard so the new lesson can be started.
-    startLessonCalled.current = false;
     fetchLessonData();
-  }, [fetchLessonData]); // fetchLessonData has lessonId as a dependency
+  }, [fetchLessonData]);
 
-  const submitExercise = useCallback(async (exerciseId, code, stdin) => {
+  const submitExercise = useCallback(async (exerciseId, code, inputData, options = {}) => {
     setSubmittingExerciseId(exerciseId);
     try {
-      const result = await submitExerciseApi(exerciseId, code, stdin);
-      toast.success(`Ejercicio "${result.exercise_title}" enviado. Resultado: ${result.is_correct ? 'Correcto' : 'Incorrecto'}`);
+      const result = await progressService.submitExercise(exerciseId, code, inputData);
 
-      // FIX: Instead of refetching all page data (which causes a loading flicker),
-      // we now only refetch the progress information.
-      await refetchProgress();
+      updateExerciseProgress(exerciseId, result.is_correct);
 
+      if (result.is_correct) {
+        progressService.getLessonProgress(lessonId).then(setLessonProgress);
+      }
+
+      // --- FIX: Only show default toasts if not disabled by options ---
+      if (!options.disableToast) {
+        if (result.is_correct) {
+          toast.success('¡Ejercicio correcto!');
+        } else {
+          toast.error(result.validation_result?.error || 'Respuesta incorrecta.');
+        }
+      }
       return result;
-    } catch (err) {
-      const errorMsg = err.response?.data?.detail || "Error al enviar el ejercicio.";
-      toast.error(errorMsg);
-      throw err; // Re-throw so the component can handle it if needed
+    } catch (error) {
+      if (!options.disableToast) {
+        toast.error(error.response?.data?.detail || 'Error al enviar el ejercicio.');
+      }
+      throw error; // Re-throw error so the calling component can handle it
     } finally {
       setSubmittingExerciseId(null);
     }
-  }, [refetchProgress]); // Dependency array updated to use the new function.
+  }, [lessonId, updateExerciseProgress]); // <-- Updated dependencies
 
   const getExerciseProgress = useCallback((exerciseId) => {
-    return lessonProgress?.exercises_progress?.find(p => p.exercise_id === exerciseId) || null;
-  }, [lessonProgress]);
+    return exercisesProgress[exerciseId] || null;
+  }, [exercisesProgress]);
 
-  const nextLessonInfo = lesson?.next_lesson;
+  const isLessonCompleted = lessonProgress?.is_completed || false;
 
   return {
     lesson,
     exercises,
-    isLessonCompleted: lessonProgress?.is_completed || false,
+    isLessonCompleted,
     getExerciseProgress,
     loading,
     error,

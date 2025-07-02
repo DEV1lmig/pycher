@@ -67,6 +67,7 @@ class Exercise(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     instructions = Column(Text)
+    explanation = Column(Text, nullable=True)
     starter_code = Column(Text)
     validation_type = Column(String, nullable=True)
     validation_rules = Column(JSONB, nullable=True)
@@ -127,8 +128,12 @@ class UserModuleProgress(Base):
 
 class UserLessonProgress(Base):
     __tablename__ = "user_lesson_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "lesson_id", name="uq_user_lesson_progress"),
+    )
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # Assuming a User model exists
+    # --- FIX: Add the ForeignKey constraint to user_id ---
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"))
 
     is_completed = Column(Boolean, default=False)
@@ -143,9 +148,7 @@ class UserLessonProgress(Base):
     # user = relationship("User", back_populates="lesson_progress") # Assuming User model and relationship
     lesson = relationship("Lesson", back_populates="user_progress_entries")
     last_accessed_exercise = relationship("Exercise", foreign_keys=[last_accessed_exercise_id])
-    __tablename__args__ = (
-        UniqueConstraint("user_id", "lesson_id", name="uq_user_lesson_progress"),
-    )
+
     @property
     def module_id(self) -> int:
         if self.lesson:

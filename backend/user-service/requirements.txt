@@ -15,3 +15,5 @@ alembic
 weasyprint
 Jinja2
 httpx
+bcrypt
+passlib[bcrypt]

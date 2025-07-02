@@ -35,11 +35,6 @@ export const startModule = async (moduleId) => {
   return response.data;
 };
 
-export const completeModule = async (moduleId) => {
-  const response = await apiClient.post(`/api/v1/users/modules/${moduleId}/complete`);
-  return response.data;
-};
-
 export const getModuleProgress = async (moduleId) => {
   const response = await apiClient.get(`/api/v1/users/modules/${moduleId}/progress`);
   return response.data;
@@ -56,13 +51,9 @@ export const startLesson = async (lessonId) => {
   return response.data;
 };
 
-export const completeLesson = async (lessonId) => {
-  const response = await apiClient.post(`/api/v1/users/lessons/${lessonId}/complete`);
-  return response.data;
-};
-
 export const getLessonProgress = async (lessonId) => {
   const response = await apiClient.get(`/api/v1/users/lessons/${lessonId}/progress`);
+  console.log('Lesson progress response:', response);
   return response.data;
 };
 
@@ -136,10 +127,8 @@ const progressService = {
   getLastAccessed,
   getCourseProgressSummary,
   startModule,
-  completeModule,
   getModuleProgress,
   startLesson,
-  completeLesson,
   getLessonProgress,
   submitExercise,
   getCourseExam,
@@ -148,6 +137,8 @@ const progressService = {
   submitExamAttempt,
   getUserExamAttempts,
   getBatchModuleProgress,
+  getBatchLessonProgress,
+  getCompletedExercisesCount,
 };
 
 export default progressService;

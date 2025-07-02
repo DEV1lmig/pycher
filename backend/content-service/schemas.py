@@ -65,6 +65,7 @@ class ExerciseBase(BaseModel):
     title: str
     description: str
     instructions: Optional[str] = None
+    expleanation: Optional[str] = None
     starter_code: Optional[str] = None
     solution_code: Optional[str] = None
     test_cases: Optional[str] = None

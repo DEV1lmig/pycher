@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func as sql_func
 from sqlalchemy.exc import IntegrityError
 import os
-import random
+import httpx
+import logging
 from fastapi import HTTPException, status
 # Assuming utils.py is in the same directory as services.py
 from utils import get_password_hash, verify_password, generate_input_from_constraints
@@ -18,8 +19,6 @@ from schemas import ( # Adjusted if your schemas are structured differently
 import logging # Ensure logging is imported
 logger = logging.getLogger(__name__) # Ensure logger is initialized
 
-import httpx
-import json # If you need to dump json for feedback, otherwise not strictly needed here
 
 # Ensure EXECUTION_SERVICE_URL is defined, e.g.:
 # EXECUTION_SERVICE_URL = os.getenv("EXECUTION_SERVICE_URL", "http://execution-service:8001")
@@ -30,94 +29,81 @@ EXECUTION_SERVICE_URL = os.getenv("EXECUTION_SERVICE_URL", "http://execution-ser
 # --- Helper functions for cascading completion ---
 
 def _check_and_update_lesson_completion(db: Session, user_id: int, lesson_id: int):
-    db.flush()  # Ensure any pending changes are flushed before querying
+    """
+    Checks if all exercises in a lesson are completed by a user. If so, marks the
+    lesson as complete and triggers module/course progress updates.
+    This is the single source of truth for lesson completion.
+    """
+    db.flush()
     logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Starting _check_and_update_lesson_completion.")
-    lesson = db.query(Lesson).options(selectinload(Lesson.module)).filter(Lesson.id == lesson_id).first() # Eager load module
-    if not lesson:
-        logger.warning(f"User ID {user_id}: _check_and_update_lesson_completion: Lesson ID {lesson_id} not found.")
+    lesson = db.query(Lesson).options(selectinload(Lesson.module)).filter(Lesson.id == lesson_id).first()
+    if not lesson or not lesson.module:
+        logger.error(f"Lesson {lesson_id} or its module not found. Cannot update progress.")
         return
 
-    if not lesson.module: # Check if module is loaded
-        logger.error(f"Lesson ID {lesson_id} does not have an associated module. Cannot update module/course progress.")
-        return # Or handle appropriately
-
-    lesson_exercises = db.query(Exercise.id).filter(Exercise.lesson_id == lesson_id).all()
-    exercise_ids_in_lesson = [e.id for e in lesson_exercises]
-    logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Found {len(exercise_ids_in_lesson)} exercises: {exercise_ids_in_lesson}")
-
-    if not exercise_ids_in_lesson:
-        logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: Lesson has no exercises. Considering it complete if progress record exists.")
-        lesson_progress = db.query(UserLessonProgress).filter(
-            UserLessonProgress.user_id == user_id,
-            UserLessonProgress.lesson_id == lesson_id
-        ).first()
-        if lesson_progress and not lesson_progress.is_completed:
-            lesson_progress.is_completed = True
-            lesson_progress.completed_at = dt.utcnow()
-            db.add(lesson_progress)
-            logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: SETTING UserLessonProgress (no exercises) .is_completed to True. Staged for commit.")
-            _check_and_update_module_completion(db, user_id, lesson.module_id)
-            recalculate_and_update_course_progress(db, user_id, lesson.module.course_id)
+    # Ensure a progress record for the lesson exists. It should have been created by start_lesson.
+    lesson_progress = db.query(UserLessonProgress).filter(
+        UserLessonProgress.user_id == user_id,
+        UserLessonProgress.lesson_id == lesson_id
+    ).first()
+    if not lesson_progress:
+        logger.error(f"CRITICAL: No UserLessonProgress found for User {user_id}, Lesson {lesson_id}. Cannot mark as complete.")
         return
 
-    all_exercises_correctly_submitted = True
-    for exercise_id_in_loop in exercise_ids_in_lesson:
-        logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Checking Exercise ID {exercise_id_in_loop} for correct submission.")
-        correct_submission = db.query(UserExerciseSubmission).filter(
+    # If already complete, do nothing further.
+    if lesson_progress.is_completed:
+        logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: Lesson already marked as complete.")
+        return
+
+    exercise_ids_in_lesson = [e.id for e in db.query(Exercise.id).filter(Exercise.lesson_id == lesson_id).all()]
+
+    all_exercises_correct = True
+    if exercise_ids_in_lesson:
+        correctly_submitted_count = db.query(UserExerciseSubmission.exercise_id).filter(
             UserExerciseSubmission.user_id == user_id,
-            UserExerciseSubmission.exercise_id == exercise_id_in_loop,
+            UserExerciseSubmission.exercise_id.in_(exercise_ids_in_lesson),
             UserExerciseSubmission.is_correct == True
-        ).first()
+        ).distinct().count()
+        all_exercises_correct = (correctly_submitted_count == len(exercise_ids_in_lesson))
 
-        if not correct_submission:
-            all_exercises_correctly_submitted = False
-            logger.warning(f"User ID {user_id}, Lesson ID {lesson_id}: Exercise ID {exercise_id_in_loop} NOT found as correctly submitted. Lesson will not be marked complete based on this check.")
-            break
-        else:
-            logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Exercise ID {exercise_id_in_loop} IS correctly submitted.")
+    # A lesson is complete if it has no exercises OR if all its exercises are correct.
+    if all_exercises_correct:
+        lesson_progress.is_completed = True
+        lesson_progress.completed_at = dt.utcnow()
+        db.add(lesson_progress)
+        logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: Conditions met. Marking lesson as completed.")
 
-    logger.debug(f"User ID {user_id}, Lesson ID {lesson_id}: Final check for all_exercises_correctly_submitted: {all_exercises_correctly_submitted}")
-
-    if all_exercises_correctly_submitted:
-        # Always try to find the existing progress record.
-        # It should have been created when the lesson was first started.
-        lesson_progress = db.query(UserLessonProgress).filter(
-            UserLessonProgress.user_id == user_id,
-            UserLessonProgress.lesson_id == lesson_id
-        ).first() # There should only be one record per user/lesson.
-
-        if lesson_progress:
-            # Only update if it's not already marked as complete to avoid redundant operations.
-            if not lesson_progress.is_completed:
-                lesson_progress.is_completed = True
-                lesson_progress.completed_at = dt.utcnow()
-                db.add(lesson_progress)
-                logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: All exercises are correct. Marking lesson as completed.")
-
-                # Since the lesson is now complete, check if this completes the module and course.
-                _check_and_update_module_completion(db, user_id, lesson.module_id)
-                recalculate_and_update_course_progress(db, user_id, lesson.module.course_id)
-            else:
-                logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: Lesson was already marked as complete. No changes made.")
-        else:
-            # This block prevents creating a new record. If no record exists, it's a logic error elsewhere
-            # (e.g., start_lesson failed), and we should log it instead of creating a duplicate.
-            logger.error(f"CRITICAL ERROR: Attempted to complete Lesson ID {lesson_id} for User ID {user_id}, but no UserLessonProgress record was found. The record should be created when a lesson is first started.")
+        # --- FIX: The update chain is now linear and correct. ---
+        # A lesson completion ONLY triggers a module check. The module check will handle the rest.
+        _check_and_update_module_completion(db, user_id, lesson.module_id)
+        # REMOVED: recalculate_and_update_course_progress(db, user_id, lesson.module.course_id)
     else:
-        logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: Not all exercises correctly submitted. Lesson completion status unchanged.")
+        logger.info(f"User ID {user_id}, Lesson ID {lesson_id}: Not all exercises are complete. Lesson completion status unchanged.")
 
 
 def _check_and_update_module_completion(db: Session, user_id: int, module_id: int):
     logger.debug(f"Checking module completion for User ID: {user_id}, Module ID: {module_id}")
 
-    # CRITICAL FIX: Flush the session to ensure the just-completed lesson's
-    # status is visible to the queries below within the same transaction.
+    # Flush to see the result of the lesson completion that triggered this call.
     db.flush()
 
     module = db.query(Module).options(selectinload(Module.course)).filter(Module.id == module_id).first()
     if not module or not module.course:
         logger.warning(f"Module or course not found for module_id={module_id}")
         return
+
+    # --- START: FIX - Define missing variables ---
+    course_id = module.course.id
+
+    module_progress = db.query(UserModuleProgress).filter(
+        UserModuleProgress.user_id == user_id,
+        UserModuleProgress.module_id == module_id
+    ).first()
+
+    if not module_progress:
+        logger.error(f"CRITICAL: No UserModuleProgress found for User {user_id}, Module {module_id}.")
+        return
+    # --- END: FIX ---
 
     lesson_ids_query = db.query(Lesson.id).filter(Lesson.module_id == module_id)
     total_lessons_in_module = lesson_ids_query.count()
@@ -134,104 +120,66 @@ def _check_and_update_module_completion(db: Session, user_id: int, module_id: in
         ).count()
         all_completed = (completed_lessons_count == total_lessons_in_module)
 
-    if all_completed:
-        logger.info(f"All {total_lessons_in_module} lessons in module {module_id} are complete for user {user_id}.")
-        module_progress = db.query(UserModuleProgress).filter(
-            UserModuleProgress.user_id == user_id,
-            UserModuleProgress.module_id == module_id
-        ).first()
+    logger.debug(f"User ID {user_id}, Module ID {module_id}: Lessons completed: {completed_lessons_count}/{total_lessons_in_module}. All completed: {all_completed}")
 
-        # Step 1: Mark the current module as complete if it's not already.
-        if module_progress and not module_progress.is_completed:
-            module_progress.is_completed = True
-            module_progress.completed_at = dt.utcnow()
-            db.add(module_progress)
-            logger.info(f"User {user_id} completed module {module_id}")
+    if all_completed and not module_progress.is_completed:
+        # --- START: FIX - Mark the module as complete ---
+        module_progress.is_completed = True
+        module_progress.completed_at = dt.utcnow()
+        db.add(module_progress)
+        logger.info(f"User {user_id} has completed all lessons for Module {module_id}. Marking module as complete.")
 
-        # Step 2: ALWAYS check to unlock the next module. This is now outside the conditional above.
-        # This makes the unlock logic resilient to being re-run.
-        next_module = db.query(Module).filter(
-            Module.course_id == module.course_id,
-            Module.order_index > module.order_index
-        ).order_by(Module.order_index.asc()).first()
-
-        if next_module:
-            next_module_progress = db.query(UserModuleProgress).filter(
-                UserModuleProgress.user_id == user_id,
-                UserModuleProgress.module_id == next_module.id
-            ).first()
-            if next_module_progress and not next_module_progress.is_unlocked:
-                next_module_progress.is_unlocked = True
-                db.add(next_module_progress)
-                logger.info(f"User {user_id} UNLOCKED next module {next_module.id}")
-
-        # Step 3: Trigger course completion checks.
-        _check_and_update_course_completion(db, user_id, module.course_id)
-        recalculate_and_update_course_progress(db, user_id, module.course_id)
+        # Now that this module is complete, check if the entire course is complete
+        _check_and_update_course_completion(db, user_id, course_id)
+        # --- END: FIX ---
     else:
-        # This log will now tell you exactly how many lessons are missing.
-        logger.info(f"User {user_id} has not completed all lessons in module {module_id}. "
-                    f"({completed_lessons_count}/{total_lessons_in_module} completed)")
+        # If not all lessons are complete, just recalculate the overall course percentage
+        recalculate_and_update_course_progress(db, user_id, course_id)
 
 
 def _check_and_update_course_completion(db: Session, user_id: int, course_id: int):
-    logger.debug(f"Checking course completion for User ID: {user_id}, Course ID: {course_id}")
-    course = db.query(Course).filter(Course.id == course_id).first()
-    if not course:
-        logger.warning(f"_check_and_update_course_completion: Course ID {course_id} not found.")
-        return
-
-    # Get all modules for this course
-    course_modules = db.query(Module.id).filter(Module.course_id == course_id).all()
-    module_ids_in_course = [m.id for m in course_modules]
+    """
+    Checks if all modules in a course are completed. If so, unlocks the final exam.
+    This function is triggered after a module is completed.
+    """
+    logger.debug(f"User ID {user_id}, Course ID {course_id}: Starting _check_and_update_course_completion.")
 
     enrollment = db.query(UserCourseEnrollment).filter(
         UserCourseEnrollment.user_id == user_id,
         UserCourseEnrollment.course_id == course_id,
-        UserCourseEnrollment.is_active_enrollment == True
+        UserCourseEnrollment.is_active == True
     ).first()
 
     if not enrollment:
-        logger.warning(f"User ID {user_id}, Course ID {course_id}: No active enrollment found in _check_and_update_course_completion.")
+        logger.warning(f"User {user_id} has no active enrollment for Course {course_id}. Cannot check course completion.")
         return
 
-    if not module_ids_in_course:
-        logger.info(f"Course ID {course_id} has no modules. Considering it complete for User ID {user_id}.")
-        if not enrollment.is_completed:
-            enrollment.is_completed = True
-            enrollment.progress_percentage = 100.0
-            enrollment.exam_unlocked = True # ADDED: Unlock exam if course has no modules but is completed
-            db.add(enrollment)
-            logger.info(f"Marked Course ID {course_id} (no modules) as complete and exam unlocked for User ID {user_id}.")
+    if enrollment.exam_unlocked:
+        logger.info(f"User {user_id}, Course {course_id}: Exam already unlocked. Recalculating progress.")
+        recalculate_and_update_course_progress(db, user_id, course_id)
         return
 
-    all_modules_completed = True
-    for module_id in module_ids_in_course:
-        module_progress = db.query(UserModuleProgress).filter(
+    module_ids_in_course_query = db.query(Module.id).filter(Module.course_id == course_id)
+    total_modules_in_course = module_ids_in_course_query.count()
+
+    if total_modules_in_course > 0:
+        completed_modules_count = db.query(UserModuleProgress.id).filter(
             UserModuleProgress.user_id == user_id,
-            UserModuleProgress.module_id == module_id,
+            UserModuleProgress.module_id.in_(module_ids_in_course_query),
             UserModuleProgress.is_completed == True
-        ).first()
-        if not module_progress:
-            all_modules_completed = False
-            logger.debug(f"User ID {user_id}, Course ID {course_id}: Module ID {module_id} not completed. Course not yet complete.")
-            break
+        ).count()
+        all_modules_completed = (completed_modules_count >= total_modules_in_course)
+    else:
+        all_modules_completed = True # A course with no modules is considered "ready for exam".
 
-    logger.debug(f"User ID {user_id}, Course ID {course_id}: All modules completed status: {all_modules_completed}")
+    logger.debug(f"User ID {user_id}, Course ID {course_id}: Modules completed: {completed_modules_count}/{total_modules_in_course}. All completed: {all_modules_completed}")
 
-    if all_modules_completed:
-        if not enrollment.is_completed: # Only update if not already marked as completed
-            enrollment.is_completed = True
-            enrollment.progress_percentage = 100.0 # Mark as 100%
-            enrollment.exam_unlocked = True # ADDED: Unlock exam when all modules are completed
-            db.add(enrollment)
-            logger.info(f"All modules in Course ID {course_id} completed. Marked course as complete and exam unlocked for User ID {user_id}.")
-        # If already completed, exam_unlocked should have been set previously, but we can ensure it here too.
-        elif not enrollment.exam_unlocked: # If course is completed but exam somehow not unlocked
-            enrollment.exam_unlocked = True
-            db.add(enrollment)
-            logger.info(f"Course ID {course_id} was already complete. Ensured exam is unlocked for User ID {user_id}.")
-    # No db.commit() here, it should be handled by the calling function (e.g., complete_exercise or complete_module)
+    if all_modules_completed and not enrollment.exam_unlocked:
+        enrollment.exam_unlocked = True
+        db.add(enrollment)
+        logger.info(f"User {user_id} has completed all modules for Course {course_id}. Exam is now unlocked. Staged for commit.")
+
+    recalculate_and_update_course_progress(db, user_id, course_id)
 
 
 # --- Existing Service Functions (Modified or to be reviewed) ---
@@ -467,6 +415,7 @@ def start_lesson(db: Session, user_id: int, lesson_id: int):
 
 
     # --- LESSON PROGRESS HANDLING (ATOMIC GET-OR-CREATE) ---
+    # --- FIX: This logic is now robust against race conditions due to the DB constraint ---
     progress = db.query(UserLessonProgress).filter(
         UserLessonProgress.user_id == user_id,
         UserLessonProgress.lesson_id == lesson_id
@@ -474,32 +423,31 @@ def start_lesson(db: Session, user_id: int, lesson_id: int):
 
     if not progress:
         try:
-            # Attempt to create the new record.
-            progress = UserLessonProgress(
-                user_id=user_id,
-                lesson_id=lesson_id,
-                started_at=dt.utcnow(),
-                is_completed=False # Explicitly set to false on start
-            )
+            progress = UserLessonProgress(user_id=user_id, lesson_id=lesson_id, started_at=dt.utcnow())
             db.add(progress)
-            # Commit this creation immediately to resolve any potential race condition.
-            # This will fail with an IntegrityError if a concurrent process committed first
-            # AND a unique constraint exists on (user_id, lesson_id) in the database model.
-            db.commit()
-            logger.info(f"Created UserLessonProgress for User ID {user_id}, Lesson ID {lesson_id}")
-            db.refresh(progress)
+            # We flush here to ensure the record exists before we continue.
+            # The commit will happen at the end of the function.
+            db.flush()
+            logger.info(f"Created new UserLessonProgress for User {user_id}, Lesson {lesson_id}.")
         except IntegrityError:
+            # This block handles the race condition. If another request created the record
+            # between our .first() check and our .flush(), the DB will raise an IntegrityError.
+            # We rollback the failed insert and fetch the record that now exists.
             db.rollback()
-            logger.warning(f"Race condition handled: UserLessonProgress for User {user_id}, Lesson {lesson_id} already exists.")
-            # The record was created by a concurrent process. Fetch it again.
+            logger.warning(f"Race condition handled: UserLessonProgress for U:{user_id} L:{lesson_id} was created by another request. Fetching existing record.")
             progress = db.query(UserLessonProgress).filter(
                 UserLessonProgress.user_id == user_id,
                 UserLessonProgress.lesson_id == lesson_id
-            ).one() # Use .one() as we are now certain it exists.
+            ).first()
+            if not progress:
+                # This should be virtually impossible to hit but is good practice.
+                logger.error(f"CRITICAL FAILURE: Could not create or find UserLessonProgress for U:{user_id} L:{lesson_id} after IntegrityError.")
+                raise HTTPException(status_code=500, detail="Could not initialize lesson progress.")
         except Exception as e:
             db.rollback()
-            logger.error(f"Unexpected error during UserLessonProgress creation for User {user_id}, Lesson {lesson_id}: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="Could not create lesson progress record.")
+            logger.error(f"An unexpected error occurred while creating UserLessonProgress for U:{user_id} L:{lesson_id}: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Could not initialize lesson progress due to a server error.")
+
 
     # --- Proceed with other updates now that we have a 'progress' record ---
     progress.lesson = lesson_model_instance # Ensure relationship is loaded for the response
@@ -517,6 +465,9 @@ def start_lesson(db: Session, user_id: int, lesson_id: int):
     db.add(enrollment)
     db.add(module_progress)
 
+    # --- FIX: Recalculate progress BEFORE committing ---
+    # This ensures that any subsequent logic has the most up-to-date percentage.
+    recalculate_and_update_course_progress(db, user_id, enrollment.course_id)
 
     try:
         db.commit()
@@ -622,13 +573,59 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
     else: # Default case for regular lesson exercises
         if not exercise.lesson or not exercise.lesson.module:
             raise HTTPException(status_code=500, detail="Lesson exercise is not properly linked to a lesson and module.")
+
+        # --- FIX: Ensure the lesson is marked as started before proceeding ---
+        try:
+            logger.info(f"Ensuring lesson {exercise.lesson_id} is started for user {user_id} before completing exercise.")
+            start_lesson(db=db, user_id=user_id, lesson_id=exercise.lesson_id)
+        except HTTPException as e:
+            # If start_lesson fails (e.g., module locked), propagate the error
+            logger.error(f"Failed to start lesson {exercise.lesson_id} during exercise completion for user {user_id}. Detail: {e.detail}")
+            raise e
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while trying to start lesson {exercise.lesson_id} for user {user_id}. Error: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Could not ensure lesson is started.")
     # --- END: REFACTORED VALIDATION ---
 
-    # In a real scenario, you would call the execution service here.
-    # For this fix, we'll assume it passes.
-    all_system_tests_passed = True
-    representative_output_for_db = "Simulated correct output"
-    current_test_error = ""
+    # --- START: Call Execution Service ---
+    logger.info(f"Calling execution service for exercise {exercise_id} for user {user_id}")
+    payload = {
+        "exercise_id": exercise.id,
+        "code": code_submitted,
+        "input_data": input_data,  # This will be None for submissions, which is correct
+        "timeout": 10  # A reasonable default timeout
+    }
+    try:
+        url = f"{EXECUTION_SERVICE_URL}/execute"
+        # The execution service might take a moment, so a slightly longer timeout for the request itself is wise.
+        with httpx.Client(timeout=12.0) as client:
+            response = client.post(url, json=payload)
+            response.raise_for_status()  # Raise an exception for 4xx/5xx responses
+
+        result_data = response.json()
+        all_system_tests_passed = result_data.get("passed", False)
+        # Use 'output' from the response model which maps to 'actual_output'
+        representative_output_for_db = result_data.get("output", "")
+        # Use 'error' from the response model which maps to 'message'
+        current_test_error = result_data.get("error", "") if not all_system_tests_passed else ""
+        logger.info(f"Execution service response for EID {exercise_id}: Passed={all_system_tests_passed}")
+
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Execution service returned an error status {e.response.status_code} for EID {exercise_id}. Response: {e.response.text}", exc_info=True)
+        all_system_tests_passed = False
+        representative_output_for_db = e.response.text
+        current_test_error = f"Error de validación: El servicio de ejecución devolvió un error ({e.response.status_code})."
+    except httpx.RequestError as e:
+        logger.error(f"Could not connect to execution service at {EXECUTION_SERVICE_URL}. Error: {e}", exc_info=True)
+        all_system_tests_passed = False
+        representative_output_for_db = ""
+        current_test_error = "Error de validación: No se pudo conectar con el servicio de ejecución. Por favor, inténtalo de nuevo más tarde."
+    except Exception as e:
+        logger.error(f"An unexpected error occurred during execution service call for EID {exercise_id}. Error: {e}", exc_info=True)
+        all_system_tests_passed = False
+        representative_output_for_db = ""
+        current_test_error = "Error de validación: Ocurrió un error inesperado durante la validación del código."
+    # --- END: Call Execution Service ---
 
     submission_record = db.query(UserExerciseSubmission).filter(
         UserExerciseSubmission.user_id == user_id,
@@ -670,20 +667,55 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
 
     # If the exercise is correct, trigger the correct cascade of progress updates.
     if all_system_tests_passed:
-        if exercise.validation_type == "exam" and exercise.course_id:
-            logger.info(f"Exam exercise {exercise.id} for course {exercise.course_id} passed by user {user_id}. Checking for course completion.")
-            # First, update the progress percentage.
-            recalculate_and_update_course_progress(db, user_id, exercise.course_id)
-            # Then, run the final check to mark the course as complete and unlock the next one.
-            _check_and_unlock_next_course(db, user_id, exercise.course_id)
-        else: # This now safely handles all non-exam (i.e., regular) exercises
-            logger.info(f"Lesson exercise {exercise.id} for lesson {exercise.lesson_id} passed by user {user_id}. Checking for lesson completion.")
+        # --- START: FIX for module exam completion ---
+        # This logic now correctly handles all three types of exercises.
+
+        # 1. Regular lesson exercise
+        if exercise.lesson_id is not None:
+            logger.info(f"Correct submission for lesson exercise {exercise.id}. Triggering lesson completion check for lesson {exercise.lesson_id}.")
             _check_and_update_lesson_completion(db, user_id, exercise.lesson_id)
+
+        # 2. Module-level exam
+        elif exercise.module_id is not None and exercise.lesson_id is None:
+            logger.info(f"Correct submission for module exam {exercise.id}. Triggerging module completion check for module {exercise.module_id}.")
+            _check_and_update_module_completion(db, user_id, exercise.module_id)
+
+        # 3. Course-level (final) exam
+        elif exercise.course_id is not None and exercise.module_id is None and exercise.lesson_id is None:
+            logger.info(f"Correct submission for final course exam {exercise.id}. Finalizing course completion for course {exercise.course_id}.")
+            _finalize_course_completion(db, user_id, exercise.course_id)
+            # Note: The logic to unlock the *next* course can be added here if needed.
 
     db.commit()
     db.refresh(submission_record)
 
-    return submission_record
+    return submission_record, result_data
+
+
+def _finalize_course_completion(db: Session, user_id: int, course_id: int):
+    """
+    Marks a course as fully completed for a user.
+    This is triggered after the user successfully passes the final exam.
+    """
+    logger.info(f"Finalizing course completion for User {user_id}, Course {course_id}.")
+
+    enrollment = db.query(UserCourseEnrollment).filter(
+        UserCourseEnrollment.user_id == user_id,
+        UserCourseEnrollment.course_id == course_id
+    ).first()
+
+    if not enrollment:
+        logger.error(f"CRITICAL: Could not find enrollment for User {user_id} in Course {course_id} to finalize completion.")
+        return
+
+    if not enrollment.is_completed:
+        enrollment.is_completed = True
+        enrollment.progress_percentage = 100.0
+        enrollment.completed_at = dt.utcnow()
+        db.add(enrollment)
+        logger.info(f"Enrollment for User {user_id}, Course {course_id} marked as complete with 100% progress.")
+    else:
+        logger.warning(f"Attempted to finalize course {course_id} for user {user_id}, but it was already marked as complete.")
 
 
 def get_batch_module_progress_details(db: Session, user_id: int, module_ids: list[int]) -> dict:
@@ -878,43 +910,10 @@ def start_module(db: Session, user_id: int, module_id: int):
         lessons_progress=[] # Populate if needed
     )
 
-def complete_module(db: Session, user_id: int, module_id: int):
-    module_progress = db.query(UserModuleProgress).filter(
-        UserModuleProgress.user_id == user_id,
-        UserModuleProgress.module_id == module_id
-    ).first()
-    if not module_progress:
-        raise HTTPException(status_code=404, detail="Module progress not found")
-    if not module_progress.is_completed:
-        module_progress.is_completed = True
-        module_progress.completed_at = dt.utcnow()
-        db.add(module_progress)
-        db.commit()
-        db.refresh(module_progress)
-
-        # Unlock the next module for this user
-        current_module = db.query(Module).filter(Module.id == module_id).first()
-        if current_module:
-            next_module = db.query(Module).filter(
-                Module.course_id == current_module.course_id,
-                Module.order_index > current_module.order_index
-            ).order_by(Module.order_index.asc()).first()
-            if next_module:
-                next_progress = db.query(UserModuleProgress).filter(
-                    UserModuleProgress.user_id == user_id,
-                    UserModuleProgress.module_id == next_module.id
-                ).first()
-                if not next_progress:
-                    next_progress = UserModuleProgress(
-                        user_id=user_id,
-                        module_id=next_module.id,
-                        started_at=None,
-                        is_completed=False,
-                        is_unlocked=True  # <-- Unlock here
-                    )
-                    db.add(next_progress)
-                    db.commit()
-    return module_progress
+# --- REMOVED FUNCTION ---
+# The complete_module function has been removed. Module completion is now handled
+# exclusively by the _check_and_update_module_completion helper function, which is
+# triggered automatically when a lesson is completed. This ensures data integrity.
 
 def get_user_module_progress(db: Session, user_id: int, module_id: int) -> Optional[UserModuleProgressResponse]:
     db.expire_all()
@@ -979,26 +978,9 @@ def get_user_module_progress(db: Session, user_id: int, module_id: int) -> Optio
         lessons_progress=detailed_lessons_progress # Add lessons_progress
     )
 
-def complete_lesson(db: Session, user_id: int, lesson_id: int):
-    lesson_progress = db.query(UserLessonProgress).filter(
-        UserLessonProgress.user_id == user_id,
-        UserLessonProgress.lesson_id == lesson_id
-    ).first()
-
-    # If the record doesn't exist, it's a logic error. Do not create one.
-    if not lesson_progress:
-        logger.error(f"CRITICAL ERROR: Attempted to complete Lesson {lesson_id} for User {user_id}, but the lesson was never started.")
-        raise HTTPException(status_code=404, detail="Lesson progress not found. Cannot complete a lesson that has not been started.")
-
-    # Only update if it's not already completed.
-    if not lesson_progress.is_completed:
-        lesson_progress.is_completed = True
-        lesson_progress.completed_at = dt.utcnow()
-        db.add(lesson_progress)
-        db.commit()
-        db.refresh(lesson_progress)
-
-    return lesson_progress
+# --- REMOVED FUNCTION ---
+# The complete_lesson function has been removed to prevent inconsistent state.
+# All lesson completions should now flow through the _check_and_update_lesson_completion helper.
 
 def get_course_exam(db: Session, course_id: int):
     return db.query(CourseExam).filter(CourseExam.course_id == course_id).first()
@@ -1061,16 +1043,7 @@ def get_course_progress_summary(db: Session, user_id: int, course_id: int):
     ).first()
 
     if not enrollment:
-        # This will be handled by the frontend if useCourseAccess returns null/undefined
-        # For direct API calls, a 404 might be appropriate if the endpoint expects it.
-        # For now, let's assume the calling context handles a missing enrollment.
-        # If called by an endpoint that should 404, raise HTTPException here.
-        # raise HTTPException(status_code=404, detail="User not enrolled in this course")
-        # Returning None or an empty dict might be better if the frontend expects to check for it.
-        # For consistency with UserEnrollmentWithProgressResponse, let's prepare for a potential 404 if no enrollment.
-        # However, the frontend's useCourseAccess().getCourseProgress() likely handles null.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not enrolled in this course")
-
 
     total_lessons = db.query(Lesson).join(Module).filter(Module.course_id == course_id).count()
     completed_lessons_count = db.query(UserLessonProgress).join(Lesson).join(Module).filter(
@@ -1079,18 +1052,13 @@ def get_course_progress_summary(db: Session, user_id: int, course_id: int):
         UserLessonProgress.is_completed == True
     ).count()
 
-    # --- ADD THESE LINES ---
     total_exercises = db.query(Exercise).join(Lesson).join(Module).filter(Module.course_id == course_id).count()
     completed_exercises = db.query(UserExerciseSubmission).join(Exercise).join(Lesson).join(Module).filter(
         Module.course_id == course_id,
         UserExerciseSubmission.user_id == user_id,
         UserExerciseSubmission.is_correct == True
     ).count()
-    # -----------------------
 
-    # --- Progress Percentage Calculation with Exam ---
-    # Define how much lessons and exam contribute.
-    # For example, lessons up to 90%, exam the final 10%.
     LESSONS_MAX_CONTRIBUTION = 90.0
     EXAM_CONTRIBUTION = 10.0
 
@@ -1098,8 +1066,6 @@ def get_course_progress_summary(db: Session, user_id: int, course_id: int):
     if total_lessons > 0:
         current_lesson_progress_pct = (completed_lessons_count / total_lessons) * LESSONS_MAX_CONTRIBUTION
 
-    # If all lessons are completed (based on enrollment.is_completed flag, which means all modules are done)
-    # ensure lesson progress contribution is at its max.
     if enrollment.is_completed:
         current_lesson_progress_pct = LESSONS_MAX_CONTRIBUTION
 
@@ -1120,31 +1086,34 @@ def get_course_progress_summary(db: Session, user_id: int, course_id: int):
         ).first()
         if exam_submission:
             exam_passed_for_progress = True
-            # Add exam contribution only if all lessons are also considered complete
             if enrollment.is_completed:
                 final_progress_percentage += EXAM_CONTRIBUTION
 
     # Cap progress at 100%
     final_progress_percentage = min(round(final_progress_percentage, 2), 100.0)
 
-    # Determine true course completion (all lessons/modules AND exam if it exists)
-    is_truly_course_completed = enrollment.is_completed and (not exam_exercise_for_course or exam_passed_for_progress)
+    # --- CRITICAL: Unambiguous course completion flag ---
+    # True only if all modules are complete AND (if exam exists, it is passed)
+    is_truly_course_completed = bool(enrollment.is_completed and (not exam_exercise_for_course or exam_passed_for_progress))
 
     return {
         "course_id": course_id,
         "user_id": user_id,
         "completed_lessons": completed_lessons_count,
         "total_lessons": total_lessons,
-        "completed_exercises": completed_exercises,   # <-- ADD THIS
-        "total_exercises": total_exercises,           # <-- ADD THIS
+        "completed_exercises": completed_exercises,
+        "total_exercises": total_exercises,
         "progress_percentage": final_progress_percentage,
-        "is_course_completed": is_truly_course_completed, # This now reflects overall completion including exam
-        "exam_unlocked": enrollment.exam_unlocked, # CRITICAL: Pass the flag from the enrollment record
-        "exam_passed": exam_passed_for_progress, # Useful for UI to know if exam itself was passed
+        "is_course_completed": is_truly_course_completed,  # <-- Use this flag in the frontend!
+        "exam_unlocked": enrollment.exam_unlocked,
+        "exam_passed": exam_passed_for_progress,
         "last_accessed": enrollment.last_accessed,
         "last_accessed_module_id": enrollment.last_accessed_module_id,
         "last_accessed_lesson_id": enrollment.last_accessed_lesson_id,
-        "id": enrollment.id,        "enrollment_date": enrollment.enrollment_date,        "total_time_spent_minutes": enrollment.total_time_spent_minutes    }
+        "id": enrollment.id,
+        "enrollment_date": enrollment.enrollment_date,
+        "total_time_spent_minutes": enrollment.total_time_spent_minutes
+    }
 
 def get_user_enrollments_with_progress(db: Session, user_id: int) -> list[UserCourseEnrollment]:
     """
@@ -1214,43 +1183,105 @@ def unenroll_user_from_course(db: Session, user_id: int, course_id: int):
     return
 
 def get_user_lesson_progress_detail(db: Session, user_id: int, lesson_id: int) -> Optional[LessonProgressDetailResponse]:
+    logger.info(f"get_user_lesson_progress_detail: Called for User ID {user_id}, Lesson ID {lesson_id}")
     lesson_progress = db.query(UserLessonProgress).filter(
         UserLessonProgress.user_id == user_id,
         UserLessonProgress.lesson_id == lesson_id
     ).first()
 
+    # --- START: ROBUST FIX for next_lesson_info logic with LOGGING ---
+    current_lesson = db.query(Lesson).options(
+        selectinload(Lesson.module)
+    ).filter(Lesson.id == lesson_id).first()
+
+    if not current_lesson:
+        logger.error(f"get_user_lesson_progress_detail: Could not find Lesson with ID {lesson_id}.")
+        raise HTTPException(status_code=404, detail="Lesson not found")
+
+    logger.debug(f"Found current lesson: ID {current_lesson.id}, Module ID {current_lesson.module_id}, Order Index {current_lesson.order_index}")
+
+    next_lesson_info = None
+
+    # 1. Try to find the next lesson in the current module
+    logger.debug(f"Step 1: Searching for next lesson in Module ID {current_lesson.module_id} with order_index > {current_lesson.order_index}")
+    next_lesson_in_module = db.query(Lesson).filter(
+        Lesson.module_id == current_lesson.module_id,
+        Lesson.order_index > current_lesson.order_index
+    ).order_by(Lesson.order_index.asc()).first()
+
+    if next_lesson_in_module:
+        logger.info(f"Found next lesson within the same module. Next Lesson ID: {next_lesson_in_module.id}")
+        next_lesson_info = {"id": next_lesson_in_module.id, "title": next_lesson_in_module.title}
+    else:
+        logger.info(f"No subsequent lesson found in Module ID {current_lesson.module_id}. Proceeding to Step 2.")
+        # 2. If no next lesson, find the first lesson of the next unlocked module
+        logger.debug(f"Step 2: Searching for next module in Course ID {current_lesson.module.course_id} with order_index > {current_lesson.module.order_index}")
+        next_module = db.query(Module).filter(
+            Module.course_id == current_lesson.module.course_id,
+            Module.order_index > current_lesson.module.order_index
+        ).order_by(Module.order_index.asc()).first()
+
+        if next_module:
+            logger.info(f"Found next module: ID {next_module.id}, Title: '{next_module.title}'. Checking if unlocked for User ID {user_id}.")
+            # Check if the user has access to this next module
+            next_module_progress = db.query(UserModuleProgress).filter(
+                UserModuleProgress.user_id == user_id,
+                UserModuleProgress.module_id == next_module.id,
+                UserModuleProgress.is_unlocked == True
+            ).first()
+
+            if next_module_progress:
+                logger.info(f"Next module (ID: {next_module.id}) is unlocked. Searching for its first lesson.")
+                first_lesson_in_next_module = db.query(Lesson).filter(
+                    Lesson.module_id == next_module.id
+                ).order_by(Lesson.order_index.asc()).first()
+
+                if first_lesson_in_next_module:
+                    logger.info(f"Found first lesson in next module. Next Lesson ID: {first_lesson_in_next_module.id}")
+                    next_lesson_info = {"id": first_lesson_in_next_module.id, "title": first_lesson_in_next_module.title}
+                else:
+                    logger.warning(f"Next module (ID: {next_module.id}) is unlocked but contains no lessons.")
+            else:
+                logger.warning(f"Found next module (ID: {next_module.id}), but it is LOCKED for User ID {user_id}.")
+        else:
+            logger.info("No subsequent module found in the course. This is the last module.")
+    # --- END: ROBUST FIX for next_lesson_info logic with LOGGING ---
+
     if not lesson_progress:
         logger.info(f"No UserLessonProgress found for User ID {user_id}, Lesson ID {lesson_id}. Lesson not started by user.")
         return LessonProgressDetailResponse(
-            lesson_id=lesson_id,  # Always use the path param, which is an int
+            lesson_id=lesson_id,
             is_completed=False,
             started_at=None,
             completed_at=None,
-            exercises_progress=[]
+            exercises_progress=[],
+            next_lesson_info=next_lesson_info # Return next lesson even if current is not started
         )
-    # ... rest of your logic ...
 
     # Fetch exercises for the lesson
     lesson_exercises = db.query(Exercise).filter(Exercise.lesson_id == lesson_id).order_by(Exercise.order_index).all()
 
     exercises_progress_info_list: List[ExerciseProgressInfo] = []
     for exercise_entity in lesson_exercises:
-        # Get the latest submission for this exercise by the user
-        latest_submission = db.query(UserExerciseSubmission).filter(
+        submission = db.query(UserExerciseSubmission).filter(
             UserExerciseSubmission.user_id == user_id,
             UserExerciseSubmission.exercise_id == exercise_entity.id
         ).order_by(UserExerciseSubmission.submitted_at.desc()).first()
 
+        # --- START: FIX for ValidationError ---
+        # The ExerciseProgressInfo schema requires a 'title' and has an 'attempts' field.
+        # We need to provide them from the exercise and submission objects.
         exercises_progress_info_list.append(
             ExerciseProgressInfo(
                 exercise_id=exercise_entity.id,
-                title=exercise_entity.title, # Assuming ExerciseProgressInfo has a title field
-                is_correct=latest_submission.is_correct if latest_submission else None,
-                attempts=int(latest_submission.attempt_number) if (latest_submission and latest_submission.attempt_number is not None) else 0,
-                last_submitted_at=latest_submission.submitted_at if latest_submission else None
-                # Add other fields to ExerciseProgressInfo as needed and populate them here
+                title=exercise_entity.title,
+                is_correct=submission.is_correct if submission else False,
+                attempts=submission.attempt_number if submission else 0,
+                last_submitted_at=submission.submitted_at if submission else None,
+                passed=submission.passed if submission else None # <-- ADD THIS LINE
             )
         )
+        # --- END: FIX for ValidationError ---
 
     logger.info(f"get_user_lesson_progress_detail for User ID {user_id}, Lesson ID {lesson_id} - DB value for lesson_progress.is_completed: {lesson_progress.is_completed}")
     return LessonProgressDetailResponse(
@@ -1258,8 +1289,10 @@ def get_user_lesson_progress_detail(db: Session, user_id: int, lesson_id: int) -
         is_completed=lesson_progress.is_completed,
         started_at=lesson_progress.started_at,
         completed_at=lesson_progress.completed_at,
-        exercises_progress=exercises_progress_info_list # Pass the populated list
+        exercises_progress=exercises_progress_info_list,
+        next_lesson_info=next_lesson_info
     )
+
 
 def get_user_progress_report_data(db: Session, user_id: int) -> UserProgressReportDataSchema:
     logger.info(f"Starting to fetch progress report data for user_id: {user_id}")
@@ -1562,8 +1595,39 @@ def get_or_create_current_exam_exercise(db: Session, user_id: int, course_id: in
     """
     Gets the user's active exam exercise for a course.
     If the active attempt has too many failures, or none exists, it assigns a new one.
+    **Crucially, it first checks if the user has already passed an exam for this course.**
     """
-    # 1. Look for an existing active attempt for this course
+    # --- START: FIX - Check if the exam is unlocked for the user ---
+    enrollment = db.query(UserCourseEnrollment).filter(
+        UserCourseEnrollment.user_id == user_id,
+        UserCourseEnrollment.course_id == course_id
+    ).first()
+
+    if not enrollment or not enrollment.exam_unlocked:
+        logger.warning(f"User {user_id} attempted to access exam for Course {course_id}, but it is not unlocked.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Debes completar todos los módulos del curso antes de acceder al examen."
+        )
+    # --- END: FIX ---
+
+    # --- START: CORRECTED FIX - Check UserExamAttempt table for a passed attempt ---
+    #  1. Check if the user has any passed attempt for this course.
+    already_passed_attempt = db.query(UserExamAttempt).filter(
+        UserExamAttempt.user_id == user_id,
+        UserExamAttempt.course_id == course_id,
+        UserExamAttempt.passed == True
+    ).first()
+
+    if already_passed_attempt:
+        logger.warning(f"User {user_id} attempted to start a new exam for Course {course_id} but has already passed one (Attempt ID: {already_passed_attempt.id}).")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Ya has aprobado el examen para este curso. No puedes comenzar uno nuevo."
+        )
+    # --- END: CORRECTED FIX ---
+
+    # 2. Look for an existing active attempt for this course
     active_attempt = db.query(UserExamAttempt).filter(
         UserExamAttempt.user_id == user_id,
         UserExamAttempt.course_id == course_id,
@@ -1583,6 +1647,7 @@ def get_or_create_current_exam_exercise(db: Session, user_id: int, course_id: in
 
     # 4. Fetch a new random exercise for the course
     logger.info(f"Fetching a new random exam for User {user_id}, Course {course_id}.")
+
     new_exam_exercise = db.query(Exercise).filter(
         Exercise.course_id == course_id,
         Exercise.module_id == None,

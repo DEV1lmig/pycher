@@ -1,14 +1,14 @@
 import { BookOpen, Code } from "lucide-react" // Removed Clock
 import AnimatedContent from '../ui/animated-content'
 import { useEffect, useState } from "react";
-import { getUserEnrollments } from "@/services/userService"; // Import service to get enrollments
+import { getMyEnrollments } from "@/services/progressService"; // Import service to get enrollments
 
 export function StatsCards({completedExercisesCount}) {
   const [enrolledCoursesCount, setEnrolledCoursesCount] = useState(0);
   // Placeholder for completed exercises - ideally, this would come from a dedicated backend endpoint
 
   useEffect(() => {
-    getUserEnrollments()
+    getMyEnrollments()
       .then(enrollments => {
         setEnrolledCoursesCount(enrollments.length);
         // TODO: Fetch actual completed exercises count.

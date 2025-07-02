@@ -203,6 +203,11 @@ class UserExerciseSubmissionResponse(BaseModel):
     is_correct: bool
     output: Optional[str]
     attempt_number: int
+    # --- START: ADD THIS FIELD ---
+    # This field will hold the detailed validation result from the execution service
+    # and will be populated manually in the route.
+    validation_result: Optional[Dict[str, Any]] = None
+    # --- END: ADD THIS FIELD ---
 
     # This will be populated from the eager-loaded relationship in the service
     exercise: ExerciseBasicInfo
@@ -356,6 +361,7 @@ class ExerciseProgressInfo(BaseModel):
     is_correct: Optional[bool] = None
     attempts: int = 0
     last_submitted_at: Optional[datetime] = None
+    passed: Optional[bool] = None
     # score: Optional[int] = None # Uncomment if you track score per exercise submission and want to show it here
 
     class Config:
@@ -366,7 +372,9 @@ class LessonProgressDetailResponse(BaseModel):
     is_completed: bool
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
-    exercises_progress: List[ExerciseProgressInfo] # Expects a list of ExerciseProgressInfo
+    exercises_progress: List[ExerciseProgressInfo]
+    next_lesson_info: Optional[Dict[str, Any]] = None  # Optional: to include next lesson info if available
+    # Expects a list of ExerciseProgressInfo
 
     class Config:
         from_attributes = True

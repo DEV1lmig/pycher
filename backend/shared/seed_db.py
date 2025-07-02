@@ -3,13 +3,14 @@ import os
 from sqlalchemy.orm import Session as SQLAlchemySession # Renamed to avoid conflict
 from sqlalchemy import create_engine, inspect, text # ADDED text
 from sqlalchemy.orm import sessionmaker
+from passlib.context import CryptContext
 import logging
 import hashlib # Ensure hashlib is imported at the top
 # Ensure all models that need to be cleared are imported
 from models import (
     Base, Course, Module, Lesson, User, Progress, Exercise,
     UserCourseEnrollment, UserModuleProgress, UserLessonProgress,
-    UserExerciseSubmission, ExamQuestion, CourseExam, UserExamAttempt # Added CourseExam
+    UserExerciseSubmission, ExamQuestion, CourseExam, UserExamAttempt
 )
 
 # Database connection
@@ -158,26 +159,59 @@ def clear_data(session: SQLAlchemySession):
         raise
 
 def clear_data_from_level(session: SQLAlchemySession, highest_level_changed: str):
+    """
+    Clears data from the database starting from the specified level and going down the dependency chain.
+    For example, if 'modules' is the level, it will clear exercises, lessons, and modules, but leave courses intact.
+    """
     logger.info(f"Clearing data from level '{highest_level_changed}' downwards...")
+
+    # The hierarchy for clearing. If a level is cleared, all levels below it (to the left) must also be cleared.
+    hierarchy = ["exercises", "lessons", "modules", "courses"]
+
     try:
+        start_index = hierarchy.index(highest_level_changed)
+    except ValueError:
+        logger.error(f"Invalid clear level: {highest_level_changed}. Aborting clear operation.")
+        return
+
+    levels_to_clear = hierarchy[:start_index + 1]
+    logger.info(f"Levels to clear: {levels_to_clear}")
+
+    try:
+        # Always clear user progress tables first, as they can depend on any level.
         session.query(UserExerciseSubmission).delete(synchronize_session=False)
         session.query(UserLessonProgress).delete(synchronize_session=False)
         session.query(UserModuleProgress).delete(synchronize_session=False)
         session.query(UserCourseEnrollment).delete(synchronize_session=False)
         session.query(Progress).delete(synchronize_session=False)
-        session.query(ExamQuestion).delete(synchronize_session=False)
         session.query(UserExamAttempt).delete(synchronize_session=False)
-        session.query(Exercise).delete(synchronize_session=False)
-        session.query(Lesson).delete(synchronize_session=False)
-        session.query(Module).delete(synchronize_session=False)
-        session.query(CourseExam).delete(synchronize_session=False)  # <-- Now safe to delete
-        session.query(Course).delete(synchronize_session=False)
+
+        # Now clear content tables based on the hierarchy, in the correct dependency order (children first).
+        if "exercises" in levels_to_clear:
+            logger.info("Clearing Exercise table...")
+            session.query(Exercise).delete(synchronize_session=False)
+
+        if "lessons" in levels_to_clear:
+            logger.info("Clearing Lesson table...")
+            session.query(Lesson).delete(synchronize_session=False)
+
+        if "modules" in levels_to_clear:
+            logger.info("Clearing Module table...")
+            session.query(Module).delete(synchronize_session=False)
+
+        if "courses" in levels_to_clear:
+            logger.info("Clearing Course and related tables...")
+            # CourseExam depends on Course, so it should be cleared if courses are cleared.
+            session.query(CourseExam).delete(synchronize_session=False)
+            session.query(Course).delete(synchronize_session=False)
+
         session.commit()
-        logger.info("Successfully cleared all data in dependency order.")
+        logger.info("Successfully cleared data based on the specified level.")
     except Exception as e:
         session.rollback()
-        logger.error(f"Error clearing data: {e}", exc_info=True)
+        logger.error(f"Error during level-based data clearing: {e}", exc_info=True)
         raise
+
 
 def reset_sequences_for_level(session: SQLAlchemySession, highest_level_changed: str):
     """Resets sequences from the specified level downwards."""
@@ -189,12 +223,14 @@ def reset_sequences_for_level(session: SQLAlchemySession, highest_level_changed:
         start_index = CLEAR_LEVEL_HIERARCHY.index(highest_level_changed)
     except ValueError:
         logger.error(f"Invalid reset level: {highest_level_changed}. Will attempt to reset all known sequences.")
-        # Add all sequences if level is unknown or if it's 'courses'
+        # Add all sequences if level is unknown
         for key in SEQUENCES_FOR_LEVEL:
             sequences_to_reset_names.update(SEQUENCES_FOR_LEVEL[key])
 
     if start_index != -1:
-         levels_for_sequence_reset = CLEAR_LEVEL_HIERARCHY[start_index:]
+         # --- FIX: Correct the slice to reset the correct levels ---
+         # We want to reset sequences for the changed level and all levels that depend on it (i.e., those with a lower index).
+         levels_for_sequence_reset = CLEAR_LEVEL_HIERARCHY[:start_index + 1]
          for level in levels_for_sequence_reset:
              if level in SEQUENCES_FOR_LEVEL:
                  sequences_to_reset_names.update(SEQUENCES_FOR_LEVEL[level])
@@ -369,6 +405,85 @@ def seed_course_exams(session: SQLAlchemySession):
     session.commit()
     logger.info("Course exams seeded.")
 
+# --- START: ADD NEW FUNCTION TO SEED TEST USERS AND THEIR PROGRESS ---
+def seed_users_and_progress(session: SQLAlchemySession):
+    """
+    Seeds users and their detailed progress from seed_users.json.
+    This function is destructive and will delete existing data for the users defined in the JSON file.
+    """
+    logger.info("Starting to seed test users and their progress...")
+    users_seed_path = os.path.join(SEED_DATA_DIR, "seed_users.json")
+
+    if not os.path.exists(users_seed_path):
+        logger.warning(f"{users_seed_path} not found. Skipping test user seeding.")
+        return
+
+    with open(users_seed_path, 'r', encoding='utf-8') as f:
+        users_data = json.load(f)
+
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    for user_profile in users_data:
+        user_info = user_profile.get("user_info", {})
+        user_id = user_info.get("id")
+
+        if not user_id:
+            logger.warning("Skipping user profile with no ID.")
+            continue
+
+        logger.info(f"Processing user ID: {user_id} ({user_info.get('username')})")
+
+        # --- Clear existing data for this specific user to ensure a clean slate ---
+        session.query(UserExerciseSubmission).filter_by(user_id=user_id).delete(synchronize_session=False)
+        session.query(UserLessonProgress).filter_by(user_id=user_id).delete(synchronize_session=False)
+        session.query(UserModuleProgress).filter_by(user_id=user_id).delete(synchronize_session=False)
+        session.query(UserCourseEnrollment).filter_by(user_id=user_id).delete(synchronize_session=False)
+        session.query(User).filter_by(id=user_id).delete(synchronize_session=False)
+
+        # --- FIX: Commit the deletes to finalize them before adding new data ---
+        session.commit()
+
+        # --- Seed new user data in a new transaction block ---
+        try:
+            hashed_password = pwd_context.hash(user_info.get("password", "default_password"))
+            new_user = User(
+                id=user_id,
+                username=user_info.get("username"),
+                email=user_info.get("email"),
+                hashed_password=hashed_password,
+                first_name=user_info.get("first_name"),
+                last_name=user_info.get("last_name"),
+                is_active=True
+            )
+            session.add(new_user)
+
+            # --- FIX: Flush the session to make the new user available in the DB transaction ---
+            # This ensures that the user record exists before any progress records are added.
+            session.flush()
+
+            for enrollment_data in user_profile.get("enrollments", []):
+                session.add(UserCourseEnrollment(**enrollment_data))
+
+            for module_progress_data in user_profile.get("module_progress", []):
+                session.add(UserModuleProgress(**module_progress_data))
+
+            for lesson_progress_data in user_profile.get("lesson_progress", []):
+                session.add(UserLessonProgress(**lesson_progress_data))
+
+            for submission_data in user_profile.get("exercise_submissions", []):
+                session.add(UserExerciseSubmission(**submission_data))
+
+            # --- Commit the entire transaction for this user ---
+            session.commit()
+            logger.info(f"Successfully seeded user {user_id} and their progress.")
+        except Exception as e:
+            logger.error(f"Failed to seed user {user_id}: {e}", exc_info=True)
+            session.rollback() # Rollback the transaction for this specific user on error
+
+    logger.info("Test user seeding process complete.")
+# --- END: ADD NEW FUNCTION ---
+
+
 if __name__ == "__main__":
     logger.info("Starting database seeding process...")
     Base.metadata.create_all(bind=engine) # Ensure tables exist
@@ -411,27 +526,30 @@ if __name__ == "__main__":
             clear_data_from_level(session, reseed_level)
             reset_sequences_for_level(session, reseed_level)
 
+            # --- START: CORRECTED RESEEDING LOGIC ---
             if reseed_level == "courses":
+                logger.info("Executing full reseed: courses -> modules -> lessons -> exams -> exercises")
                 seed_courses(session)
                 seed_modules(session)
                 seed_lessons(session)
-                seed_course_exams(session)   # <-- This must come AFTER seed_courses
+                seed_course_exams(session)
                 seed_exercises(session)
             elif reseed_level == "modules":
+                logger.info("Executing partial reseed: modules -> lessons -> exams -> exercises")
                 seed_modules(session)
                 seed_lessons(session)
                 seed_course_exams(session)
                 seed_exercises(session)
             elif reseed_level == "lessons":
+                logger.info("Executing partial reseed: lessons -> exams -> exercises")
                 seed_lessons(session)
                 seed_course_exams(session)
                 seed_exercises(session)
             elif reseed_level == "exercises":
-                    seed_courses(session)
-                    seed_modules(session)
-                    seed_lessons(session)
-                    seed_course_exams(session)
-                    seed_exercises(session)
+                logger.info("Executing partial reseed: exercises only")
+                seed_exercises(session)
+                seed_course_exams(session)
+            # --- END: CORRECTED RESEEDING LOGIC ---
 
             save_seed_file_hashes(current_seed_files_hashes)
             logger.info(f"Reseeding from level '{reseed_level}' complete.")
@@ -442,6 +560,17 @@ if __name__ == "__main__":
             seed_lessons(session)
             seed_course_exams(session)       # <-- ADD THIS LINE
             seed_exercises(session)
+
+        # --- START: ADD LOGIC TO RUN THE NEW USER SEEDER BASED ON ENV VAR ---
+        if os.getenv("SEED_TEST_USERS", "false").lower() == "true":
+            logger.info("SEED_TEST_USERS environment variable is set to true.")
+            seed_users_and_progress(session)
+        else:
+            logger.info("SEED_TEST_USERS is not set to true. Skipping test user seeding.")
+            # Fallback to the original simple user seeder if needed
+            seed_users(session)
+        # --- END: ADD LOGIC TO RUN THE NEW USER SEEDER ---
+
     except Exception as e:
         logger.error(f"CRITICAL ERROR during seeding process: {e}", exc_info=True)
         session.rollback()

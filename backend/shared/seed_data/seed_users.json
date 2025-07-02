@@ -1,0 +1,119 @@
+[
+  {
+    "user_info": {
+      "id": 101,
+      "username": "user_beginner",
+      "email": "beginner@pycher.com",
+      "password": "password123",
+      "first_name": "Beginner",
+      "last_name": "User"
+    },
+    "enrollments": [
+      {
+        "user_id": 101,
+        "course_id": 1,
+        "is_completed": false,
+        "progress_percentage": 25.0
+      }
+    ],
+    "module_progress": [
+      { "user_id": 101, "module_id": 1, "is_completed": true, "is_unlocked": true }
+    ],
+    "lesson_progress": [
+      { "user_id": 101, "lesson_id": 1, "is_completed": true },
+      { "user_id": 101, "lesson_id": 2, "is_completed": true },
+      { "user_id": 101, "lesson_id": 3, "is_completed": true }
+    ],
+    "exercise_submissions": [
+      { "user_id": 101, "exercise_id": 1, "lesson_id": 1, "is_correct": true, "code_submitted": "print(\"Su sintaxis es clara y legible\")" },
+      { "user_id": 101, "exercise_id": 2, "lesson_id": 2, "is_correct": true, "code_submitted": "ciudad = \"Bogotá\"\npoblacion = 8000000\nprint(f\"La ciudad de {ciudad} tiene {poblacion} habitantes.\")" },
+      { "user_id": 101, "exercise_id": 3, "lesson_id": 3, "is_correct": true, "code_submitted": "largo = 10\nancho = 5\narea = largo * ancho\nprint(f\"El área de un rectángulo de {largo}x{ancho} es {area}\")" }
+    ]
+  },
+  {
+    "user_info": {
+      "id": 102,
+      "username": "user_intermediate",
+      "email": "intermediate@pycher.com",
+      "password": "password123",
+      "first_name": "Intermediate",
+      "last_name": "User"
+    },
+    "enrollments": [
+      {
+        "user_id": 102,
+        "course_id": 1,
+        "is_completed": false,
+        "progress_percentage": 50.0
+      }
+    ],
+    "module_progress": [
+      { "user_id": 102, "module_id": 1, "is_completed": true, "is_unlocked": true },
+      { "user_id": 102, "module_id": 2, "is_completed": true, "is_unlocked": true }
+    ],
+    "lesson_progress": [
+      { "user_id": 102, "lesson_id": 1, "is_completed": true },
+      { "user_id": 102, "lesson_id": 2, "is_completed": true },
+      { "user_id": 102, "lesson_id": 3, "is_completed": true },
+      { "user_id": 102, "lesson_id": 4, "is_completed": true },
+      { "user_id": 102, "lesson_id": 5, "is_completed": true },
+      { "user_id": 102, "lesson_id": 6, "is_completed": true }
+    ],
+    "exercise_submissions": [
+      { "user_id": 102, "exercise_id": 1, "lesson_id": 1, "is_correct": true, "code_submitted": "print(\"Su sintaxis es clara y legible\")" },
+      { "user_id": 102, "exercise_id": 2, "lesson_id": 2, "is_correct": true, "code_submitted": "ciudad = \"Bogotá\"\npoblacion = 8000000\nprint(f\"La ciudad de {ciudad} tiene {poblacion} habitantes.\")" },
+      { "user_id": 102, "exercise_id": 3, "lesson_id": 3, "is_correct": true, "code_submitted": "largo = 10\nancho = 5\narea = largo * ancho\nprint(f\"El área de un rectángulo de {largo}x{ancho} es {area}\")" },
+      { "user_id": 102, "exercise_id": 4, "lesson_id": 4, "is_correct": true, "code_submitted": "nombre = input()\nprint(f\"¡Hola, {nombre}!\")" },
+      { "user_id": 102, "exercise_id": 5, "lesson_id": 5, "is_correct": true, "code_submitted": "edad_en_texto = input()\nedad_en_numero = int(edad_en_texto)\nedad_en_dias = edad_en_numero * 365\nprint(f\"Tienes aproximadamente {edad_en_dias} días de vida.\")" },
+      { "user_id": 102, "exercise_id": 6, "lesson_id": 6, "is_correct": true, "code_submitted": "temperatura = 25\nif temperatura > 30:\n    print(\"Hace calor\")\nelif temperatura < 10:\n    print(\"Hace frío\")\nelse:\n    print(\"El clima es agradable\")" }
+    ]
+  },
+  {
+    "user_info": {
+      "id": 103,
+      "username": "user_advanced",
+      "email": "advanced@pycher.com",
+      "password": "password123",
+      "first_name": "Advanced",
+      "last_name": "User"
+    },
+    "enrollments": [
+      {
+        "user_id": 103,
+        "course_id": 1,
+        "is_completed": false,
+        "progress_percentage": 90.0,
+        "exam_unlocked": true
+      }
+    ],
+    "module_progress": [
+      { "user_id": 103, "module_id": 1, "is_completed": true, "is_unlocked": true },
+      { "user_id": 103, "module_id": 2, "is_completed": true, "is_unlocked": true },
+      { "user_id": 103, "module_id": 3, "is_completed": true, "is_unlocked": true }
+    ],
+    "lesson_progress": [
+      { "user_id": 103, "lesson_id": 1, "is_completed": true },
+      { "user_id": 103, "lesson_id": 2, "is_completed": true },
+      { "user_id": 103, "lesson_id": 3, "is_completed": true },
+      { "user_id": 103, "lesson_id": 4, "is_completed": true },
+      { "user_id": 103, "lesson_id": 5, "is_completed": true },
+      { "user_id": 103, "lesson_id": 6, "is_completed": true },
+      { "user_id": 103, "lesson_id": 7, "is_completed": true },
+      { "user_id": 103, "lesson_id": 8, "is_completed": true },
+      { "user_id": 103, "lesson_id": 9, "is_completed": true },
+      { "user_id": 103, "lesson_id": 10, "is_completed": true }
+    ],
+    "exercise_submissions": [
+      { "user_id": 103, "exercise_id": 1, "lesson_id": 1, "is_correct": true, "code_submitted": "print(\"Su sintaxis es clara y legible\")" },
+      { "user_id": 103, "exercise_id": 2, "lesson_id": 2, "is_correct": true, "code_submitted": "ciudad = \"Bogotá\"\npoblacion = 8000000\nprint(f\"La ciudad de {ciudad} tiene {poblacion} habitantes.\")" },
+      { "user_id": 103, "exercise_id": 3, "lesson_id": 3, "is_correct": true, "code_submitted": "largo = 10\nancho = 5\narea = largo * ancho\nprint(f\"El área de un rectángulo de {largo}x{ancho} es {area}\")" },
+      { "user_id": 103, "exercise_id": 4, "lesson_id": 4, "is_correct": true, "code_submitted": "nombre = input()\nprint(f\"¡Hola, {nombre}!\")" },
+      { "user_id": 103, "exercise_id": 5, "lesson_id": 5, "is_correct": true, "code_submitted": "edad_en_texto = input()\nedad_en_numero = int(edad_en_texto)\nedad_en_dias = edad_en_numero * 365\nprint(f\"Tienes aproximadamente {edad_en_dias} días de vida.\")" },
+      { "user_id": 103, "exercise_id": 6, "lesson_id": 6, "is_correct": true, "code_submitted": "temperatura = 25\nif temperatura > 30:\n    print(\"Hace calor\")\nelif temperatura < 10:\n    print(\"Hace frío\")\nelse:\n    print(\"El clima es agradable\")" },
+      { "user_id": 103, "exercise_id": 7, "lesson_id": 7, "is_correct": true, "code_submitted": "numero = int(input())\nif numero % 2 == 0:\n    print(\"Par\")\nelse:\n    print(\"Impar\")" },
+      { "user_id": 103, "exercise_id": 8, "lesson_id": 8, "is_correct": true, "code_submitted": "lista_compra = [\"leche\", \"pan\", \"huevos\"]\nproducto_buscado = input()\nif producto_buscado in lista_compra:\n    print(\"Sí, está en la lista\")\nelse:\n    print(\"No, hay que añadirlo\")" },
+      { "user_id": 103, "exercise_id": 9, "lesson_id": 9, "is_correct": true, "code_submitted": "palabra = input()\ncontador = 0\nfor letra in palabra:\n    if letra.lower() in 'aeiou':\n        contador += 1\nprint(contador)" },
+      { "user_id": 103, "exercise_id": 10, "lesson_id": 10, "is_correct": true, "code_submitted": "for i in range(5, 0, -1):\n    print(i)\nprint(\"¡Despegue!\")" }
+    ]
+  }
+]

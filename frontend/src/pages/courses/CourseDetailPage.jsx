@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react"; // Import useMemo
 import { useParams, Link } from "@tanstack/react-router"; // Added useNavigate
 import { getCourseById, getModulesByCourseId, getCourseExamExercises } from "@/services/contentService";
-import { getCourseProgressSummary, getBatchModuleProgress } from "@/services/progressService"; // Importing progress service
-import { enrollInCourse, unenrollFromCourse } from "@/services/userService"; // Remove isNextCourseUnlocked
+import { getCourseProgressSummary, getBatchModuleProgress, enrollInCourse } from "@/services/progressService";
+import { unenrollFromCourse } from "@/services/userService"; // Remove isNextCourseUnlocked
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { BookOpen, Clock, Users, Star, Home, Lock, CheckCircle, LogOut, PlusCircle } from "lucide-react"; // Added LogOut, PlusCircle
 import { ModuleCard } from "@/components/courses/ModuleCard";
@@ -21,13 +21,13 @@ export default function CourseDetailPage() {
   const { courseId } = useParams({ from: courseDetailRoute.id });
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
-  const [courseProgress, setCourseProgress] = useState(null); // Summary progress
+  // const [courseProgress, setCourseProgress] = useState(null); // REMOVED: This state is redundant and causes the stale data issue.
   const [moduleProgresses, setModuleProgresses] = useState({});
   const [examExercise, setExamExercise] = useState(null);
   const [examUnlocked, setExamUnlocked] = useState(false);
 
   const { hasAccessToCourse, getCourseProgress, refreshEnrollments, loading: courseAccessLoading } = useCourseAccess();
-  const userCourseProgress = getCourseProgress(parseInt(courseId)); // Detailed enrollment progress for this course
+  const userCourseProgress = getCourseProgress(parseInt(courseId)); // This is now the single source of truth for progress.
 
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -77,7 +77,7 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     fetchModulesAndProgress();
-    getCourseProgressSummary(courseId).then(setCourseProgress); // Sets overall summary
+    // getCourseProgressSummary(courseId).then(setCourseProgress); // REMOVED: We now rely on the useCourseAccess hook.
   }, [courseId, fetchModulesAndProgress]);
 
   useEffect(() => {
@@ -220,12 +220,6 @@ export default function CourseDetailPage() {
   // The useMemo block has been moved from here to the top of the component.
 
   // ADD CONSOLE LOGS HERE before returning JSX
-  ("CourseDetailPage: Rendering checks for ExamCard:");
-  ("  - isUserEnrolledInThisCourse:", isUserEnrolledInThisCourse);
-  ("  - isCourseCompleted:", isCourseCompleted);
-  ("  - examExercise (raw):", examExercise);
-  ("  - examUnlocked:", examUnlocked);
-  ("  - userCourseProgress (for context):", userCourseProgress);
 
 
   return (
@@ -278,17 +272,17 @@ export default function CourseDetailPage() {
                 <p className="text-white mb-4 text-lg">{course.description}</p>
               </div>
 
-              {isUserEnrolledInThisCourse && courseProgress && (
+              {isUserEnrolledInThisCourse && userCourseProgress && (
                 <div className="bg-primary/20 rounded-lg p-4 min-w-[200px] md:ml-6 mt-4 md:mt-0">
                   <h3 className="text-white font-semibold mb-2">Tu Progreso</h3>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-gray-300">Completado:</span>
-                    <span className="text-white font-bold">{Math.round(courseProgress.progress_percentage ?? 1)}%</span>
+                    <span className="text-white font-bold">{Math.round(userCourseProgress.progress_percentage ?? 0)}%</span>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2">
                     <div
                       className="bg-secondary h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${courseProgress.progress_percentage ?? 1}%` }}
+                      style={{ width: `${userCourseProgress.progress_percentage ?? 0}%` }}
                     ></div>
                   </div>
                 </div>
@@ -412,13 +406,6 @@ export default function CourseDetailPage() {
         confirmButtonVariant={modalState.confirmVariant}
         isConfirmDisabled={modalState.isLoading}
       />
-
-      {/* After the modules grid */}
-      {isUserEnrolledInThisCourse && isCourseCompleted && examExercise && examUnlocked && (
-        <div className="mx-6 mt-8">
-          <ExamCard exam={examExercise} isLocked={false} />
-        </div>
-      )}
     </DashboardLayout>
   );
 }
