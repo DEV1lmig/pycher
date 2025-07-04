@@ -58,6 +58,37 @@ export const getNextLessonInfo = async (lessonId) => {
   }
 };
 
+export const downloadUserManual = async (filename) => {
+  try {
+    // Request the PDF file from the content-service as a binary large object (blob)
+    const response = await apiClient.get(`/api/v1/content/pdf/${filename}`, {
+      responseType: 'blob',
+    });
+
+    // Create a URL for the blob object
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+
+    // Create a temporary anchor element to trigger the download
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename); // Set the desired filename
+
+    // Append to the document, click, and then remove
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // Clean up the blob URL
+    window.URL.revokeObjectURL(url);
+
+    return { success: true, filename };
+  } catch (error) {
+    console.error("Error downloading PDF:", error);
+    // Re-throw the error to be handled by the calling component
+    throw new Error(error.response?.data?.detail || "Failed to download the user manual.");
+  }
+};
+
 export const getCourseExamExercises = async (courseId) => {
     const response = await apiClient.get(`/api/v1/content/courses/${courseId}/exam-exercises`);
     return response.data;

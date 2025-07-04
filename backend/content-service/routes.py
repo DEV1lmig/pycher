@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
+import os
 from sqlalchemy.orm import Session
 import models # Ensure models is imported (e.g., from ..shared import models or similar)
 from typing import List, Optional, Dict # Ensure List and Optional are imported
@@ -10,6 +12,25 @@ from services import get_user_context
 logger = logging.getLogger("content-service")
 
 router = APIRouter()
+
+PDF_DIRECTORY = "pdfs"  # Directory where your PDFs are stored
+
+@router.get("/pdf/{pdf_name}")
+async def get_pdf(pdf_name: str):
+    """
+    Endpoint to download an existing PDF file.
+    """
+    # Basic security check to prevent path traversal
+    if ".." in pdf_name or pdf_name.startswith("/"):
+        raise HTTPException(status_code=400, detail="Invalid PDF name")
+
+    pdf_path = os.path.join(PDF_DIRECTORY, pdf_name)
+
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=404, detail="PDF not found")
+
+    return FileResponse(pdf_path, media_type="application/pdf", filename=pdf_name)
+
 
 @router.get("/modules", response_model=List[schemas.Module])
 def get_modules(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

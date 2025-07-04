@@ -71,46 +71,74 @@ async def execute_code(request: Request):
         except httpx.RequestError as e:
             return {"error": f"Error: {str(e)}", "output": "", "execution_time": 0}
 
-@app.get("/api/v1/content/{path:path}")
-async def content_service(request: Request, path: str):
-    """Route content requests to the content service"""
+@app.api_route("/api/v1/content/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def content_service_proxy(request: Request, path: str):
+    """Proxy requests to the content service, handling both JSON and binary responses."""
     if "content-service" not in SERVICE_URLS:
         raise HTTPException(status_code=503, detail="Content service not available")
 
-    # Forward the request to the content service
     url = f"{SERVICE_URLS['content-service']}/api/v1/content/{path}"
 
     async with httpx.AsyncClient() as client:
         try:
-            # Forward the request method (GET, POST, etc)
-            method = request.method.lower()
-            request_func = getattr(client, method)
+            # Build the request to forward
+            req = client.build_request(
+                method=request.method,
+                url=url,
+                headers={k: v for k, v in request.headers.items() if k.lower() not in ['host']},
+                params=request.query_params,
+                content=await request.body(),
+                timeout=60.0
+            )
 
-            # Get headers and query parameters
-            headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'content-length']}
+            # Send the request to the downstream service
+            response = await client.send(req)
+            response.raise_for_status() # Raise an exception for 4xx/5xx responses
 
-            # Get body for non-GET requests
-            content = await request.body() if method != "get" else None
+            # Check content type to decide how to forward the response
+            content_type = response.headers.get("content-type", "").lower()
 
-            if method == "get":
-                response = await request_func(
-                    url,
-                    headers=headers,
-                    params=request.query_params,
-                    timeout=30.0
+            # These headers are managed by the ASGI server, so we don't forward them
+            excluded_headers = {
+                "connection", "keep-alive", "transfer-encoding", "content-encoding"
+            }
+            forward_headers = {
+                k: v for k, v in response.headers.items() if k.lower() not in excluded_headers
+            }
+
+            if "application/json" in content_type:
+                return JSONResponse(
+                    content=response.json(),
+                    status_code=response.status_code,
+                    headers=forward_headers
                 )
             else:
-                response = await request_func(
-                    url,
-                    headers=headers,
-                    params=request.query_params,
-                    content=content,
-                    timeout=30.0
+                # For PDF, images, etc., return the raw content
+                return Response(
+                    content=response.content,
+                    status_code=response.status_code,
+                    headers=forward_headers,
+                    media_type=content_type
                 )
 
-            return response.json()
+        except httpx.HTTPStatusError as e:
+            # Forward the error response from the downstream service
+            error_detail = "Content service error"
+            try:
+                error_detail = e.response.json()
+            except json.JSONDecodeError:
+                error_detail = e.response.text
+            return JSONResponse(
+                content={"detail": error_detail},
+                status_code=e.response.status_code
+            )
         except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"Error: {str(e)}")
+            logger.error(f"RequestError connecting to content service: {e}")
+            raise HTTPException(status_code=503, detail=f"Error connecting to content service: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error in content_service_proxy: {e}")
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail="An unexpected error occurred in the API Gateway.")
 
 @app.api_route("/api/v1/ai/chat/stream", methods=["POST"])
 async def ai_chat_stream(request: Request):

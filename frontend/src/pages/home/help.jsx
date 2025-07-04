@@ -1,10 +1,29 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout"
 import Accordion from "../../components/ui/accordion";
 import FadeContent from "../../components/ui/fade-content.jsx";
 import AnimatedContent from "../../components/ui/animated-content.jsx";
 import Waves from "@/components/ui/waves";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { downloadUserManual } from "@/services/contentService";
+import { toast } from "react-hot-toast";
 
 export default function HelpPage() {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadUserManual("manual_de_usuario_pycher.pdf");
+      toast.success("La descarga del manual ha comenzado.");
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const faqItems = [
     {
       title: "¿Cómo me registro?",
@@ -60,9 +79,18 @@ export default function HelpPage() {
               yGap={36}
             />
             </div>
-            <div className="relative z-20">
-            <h2 className="relative z-10 text-4xl font-bold text-center px-2 mix-blend-lighten"
-            >Preguntas Frecuentes</h2>
+            <div className="relative z-20 flex flex-col items-center">
+              <h2 className="relative z-10 text-4xl font-bold text-center px-2 mix-blend-lighten">
+                Preguntas Frecuentes
+              </h2>
+              <Button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="mt-4 bg-primary hover:bg-primary/80 text-white font-semibold"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {isDownloading ? "Descargando..." : "Descargar Manual de Usuario"}
+              </Button>
             </div>
         </div>
         </FadeContent>
