@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export function ExamStatusCard({ examExercise, isUnlocked, isCompleted, courseId }) {
-  const linkTarget = `/course/${courseId}/exam/${examExercise.id}`;
+  // UPDATE: The link now correctly points to the static exam interface route.
+  // The backend will determine the specific exercise when this page loads.
+  const linkTarget = `/courses/${courseId}/exam-interface`;
 
   const getCardState = () => {
     if (isCompleted) {
       return {
-        cardClass: "bg-gradient-to-br from-green-500/20 to-green-400/20 border-green-500/30",
+        cardClass: "bg-gradient-to-br from-green-500/20 to-green-400/20 border-green-500/30 hover:scale-[1.02] transition-transform duration-300",
         title: examExercise.title,
         icon: <CheckCircle className="h-4 w-4 text-green-400" />,
-        buttonText: "Ver Resultados",
+        // UPDATE: Button text changed for review mode.
+        buttonText: "Revisar Examen",
         buttonVariant: "secondary",
         isDisabled: false,
         description: "¡Felicidades! Has completado y aprobado el examen final de este curso.",
@@ -73,7 +76,8 @@ export function ExamStatusCard({ examExercise, isUnlocked, isCompleted, courseId
 
   return (
     <Card className={state.cardClass}>
-      {isUnlocked && !isCompleted ? (
+      {/* UPDATE: The link is now enabled for both unlocked and completed (review) states */}
+      {isUnlocked || isCompleted ? (
         <Link to={linkTarget} className="block h-full">
           {cardContent}
         </Link>

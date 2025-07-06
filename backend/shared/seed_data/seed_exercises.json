@@ -5,9 +5,9 @@
     "module_id": 1,
     "lesson_id": 1,
     "order_index": 1,
-    "title": "Ejercicio 1.1.1: Tu Primer Print",
-    "description": "Usa la función print() para mostrar un mensaje específico en pantalla.",
-    "instructions": "Tu primera misión en Python es comunicarte con el mundo.\n\nPara ello:\n1. Usa la función `print()` para mostrar un mensaje en la pantalla.\n2. La frase que debes imprimir es exactamente: `Su sintaxis es clara y legible`.\n3. Recuerda que los textos (strings) en Python se escriben entre comillas. Por ejemplo: `print(\"Hola\")`.",
+    "title": "Ejercicio 1.1.1: El '¡Hola, mundo!'",
+    "description": "Usa la función print() para mostrar tu primer mensaje y confirmar que tu entorno funciona.",
+    "instructions": "Tu primera misión en Python es comunicarte con el mundo. La función `print()` es la herramienta fundamental para mostrar información en la pantalla, ya sea para ver el resultado de una operación o para depurar tu código.\n\n**Tu Tarea:**\n1. Usa la función `print()` para mostrar un mensaje en la pantalla.\n2. La frase que debes imprimir es exactamente: `Su sintaxis es clara y legible`.",
     "starter_code": "# Usa la función print() para mostrar la frase requerida\nprint(\"...\")",
     "validation_type": "simple_print",
     "validation_rules": {
@@ -30,9 +30,9 @@
     "module_id": 1,
     "lesson_id": 2,
     "order_index": 1,
-    "title": "Ejercicio 1.2.1: Creando Variables",
-    "description": "Crea variables para almacenar el nombre de una ciudad y su población, y luego muéstralas.",
-    "instructions": "Imagina que quieres guardar datos sobre una ciudad para usarlos más tarde.\n\nPara hacerlo:\n1. Crea una variable llamada `ciudad` y asígnale el valor de texto \"Madrid\".\n2. Crea otra variable llamada `poblacion` y asígnale el valor numérico 3300000.\n3. Usa `print()` para mostrar el contenido de la variable `ciudad`.\n4. En una nueva línea, usa `print()` para mostrar el contenido de la variable `poblacion`.",
+    "title": "Ejercicio 1.2.1: Almacenando Datos en Variables",
+    "description": "Practica la creación de variables para guardar diferentes tipos de datos: texto (str) y números (int).",
+    "instructions": "Las variables son como cajas con etiquetas donde guardas información para usarla más tarde. En este ejercicio, almacenarás datos sobre una ciudad.\n\n**Tu Tarea:**\n1. Crea una variable llamada `ciudad` y asígnale el valor de texto \"Madrid\".\n2. Crea otra variable llamada `poblacion` y asígnale el valor numérico 3300000.\n3. Muestra el contenido de cada variable en una línea separada usando `print()`.",
     "starter_code": "# 1. Define la variable para la ciudad\n\n# 2. Define la variable para la población\n\n# 3. Imprime la ciudad\n\n# 4. Imprime la población",
     "validation_type": "simple_print",
     "validation_rules": {
@@ -61,9 +61,9 @@
     "module_id": 1,
     "lesson_id": 3,
     "order_index": 1,
-    "title": "Ejercicio 1.3.1: Cálculo de Área con f-string",
-    "description": "Calcula el área de un rectángulo y muestra el resultado en una frase bien formateada.",
-    "instructions": "Vamos a aplicar tus nuevas habilidades matemáticas y de formato de texto.\n\nPara ello:\n1. Crea una variable `largo` y asígnale el valor 10.\n2. Crea una variable `ancho` y asígnale el valor 5.\n3. Crea una variable `area` que guarde el resultado de multiplicar `largo` por `ancho`.\n4. Usa un **f-string** con la función `print()` para mostrar el mensaje exacto: `El área de un rectángulo de 10x5 es 50.`",
+    "title": "Ejercicio 1.3.1: Operaciones y Formateo de Texto",
+    "description": "Combina operaciones aritméticas y f-strings para calcular y presentar un resultado de forma dinámica.",
+    "instructions": "En este ejercicio aplicarás dos habilidades clave: realizar cálculos matemáticos y presentar los resultados de una manera legible y profesional usando f-strings.\n\n**Tu Tarea:**\n1. Define dos variables, `largo` con valor 10 y `ancho` con valor 5.\n2. Crea una variable `area` que guarde el resultado de multiplicar `largo` por `ancho`.\n3. Usa un **f-string** para mostrar el mensaje exacto: `El área de un rectángulo de 10x5 es 50.`",
     "starter_code": "largo = 10\nancho = 5\n# Calcula el área\narea = 0\n# Usa un f-string para imprimir el resultado\n",
     "validation_type": "simple_print",
     "validation_rules": {
@@ -90,9 +90,9 @@
     "module_id": 2,
     "lesson_id": 4,
     "order_index": 4,
-    "title": "Ejercicio 2.1.1: Saludo Personalizado",
-    "description": "Crea un programa que pida tu nombre y te salude con un mensaje personalizado.",
-    "instructions": "Piensa que quieres que el programa te dé la bienvenida usando tu nombre, como cuando un amigo te saluda por tu nombre.\n\nPara lograrlo:\n1. Pide que la persona escriba su nombre usando `input()`.\n2. Guarda ese nombre en una variable.\n3. Usa `print()` junto con un f-string para imprimir un saludo que diga: `¡Hola, [nombre]!`, donde [nombre] será el texto que ingresó la persona.\n\nEjemplo: Si alguien escribe \"Ana\", debe aparecer: `¡Hola, Ana!`.",
+    "title": "Ejercicio 2.1.1: Creando un Programa Interactivo",
+    "description": "Usa la función input() para capturar el nombre del usuario y crear una respuesta personalizada.",
+    "instructions": "Es hora de que tus programas 'escuchen'. La función `input()` te permite recibir datos del usuario para hacer tus aplicaciones dinámicas.\n\n**Tu Tarea:**\n1. Usa `input()` para pedir al usuario que escriba su nombre.\n2. Guarda ese nombre en una variable.\n3. Usa un f-string para imprimir un saludo personalizado que diga: `¡Hola, [nombre]!`.",
     "starter_code": "nombre = input()\n# Usa un f-string para imprimir el saludo",
     "validation_type": "saludo_personalizado",
     "validation_rules": {
@@ -134,11 +134,11 @@
     "module_id": 2,
     "lesson_id": 5,
     "order_index": 5,
-    "title": "Ejercicio 2.2.1: Convierte tu edad a días",
-    "description": "Convierte la edad de un usuario (en años) a días.",
-    "instructions": "Imagina que quieres saber cuántos días has vivido hasta ahora.\n\nPara hacerlo:\n1. Pide al usuario que escriba su edad en años usando `input()`.\n2. Convierte esa edad de texto a número entero usando `int()`.\n3. Multiplica la edad por 365 para obtener la edad en días.\n4. Usa un f-string para mostrar un mensaje que diga: `Tienes aproximadamente [X] días de vida.`, donde [X] es el resultado.",
+    "title": "Ejercicio 2.2.1: Aplicando la Conversión de Tipos",
+    "description": "Recibe un dato del usuario como texto, conviértelo a número (int) y realiza un cálculo.",
+    "instructions": "Este ejercicio refuerza un concepto clave: `input()` siempre devuelve texto. Para hacer matemáticas, primero debes 'traducir' o convertir ese texto a un tipo numérico.\n\n**Tu Tarea:**\n1. Pide al usuario su edad en años usando `input()`.\n2. Convierte la entrada a un número entero con `int()`.\n3. Calcula el equivalente en días (edad * 365).\n4. Muestra el resultado en la frase exacta: `Tienes aproximadamente [X] días de vida.` usando un f-string.",
     "starter_code": "edad_en_texto = input()\n# Convierte la edad a número\nedad_en_numero = 0\n# Calcula la edad en días\nedad_en_dias = 0\n# Imprime el resultado con un f-string\n",
-    "validation_type": "simple_print",
+    "validation_type": "dynamic_output",
     "validation_rules": {
       "requires_input_function": true,
       "input_constraints": {
@@ -167,9 +167,9 @@
     "module_id": 2,
     "lesson_id": 6,
     "order_index": 6,
-    "title": "Ejercicio 2.3.1: ¿Puede alquilar un coche?",
-    "description": "Usando operadores lógicos, determina si un usuario puede alquilar un coche.",
-    "instructions": "Una empresa de alquiler de coches tiene estas reglas:\n- Si la persona tiene 25 años o más, puede alquilar.\n- Si tiene entre 21 y 24 años (inclusive), sólo podrá si `tiene_permiso_padres` es `True`.\n\nTu tarea es:\n1. Usar las variables `edad_usuario` y `tiene_permiso_padres` que ya están definidas.\n2. Crear una variable `puede_alquilar` que almacene el resultado (`True` o `False`) de evaluar las condiciones con operadores lógicos (`>=`, `and`, `or`).\n3. Imprimir el valor de `puede_alquilar`.",
+    "title": "Ejercicio 2.3.1: Lógica de Negocios con Operadores",
+    "description": "Aplica operadores lógicos (and, or) para implementar un conjunto de reglas de negocio.",
+    "instructions": "Los programas a menudo deben implementar reglas del mundo real. En este caso, las de una empresa de alquiler de coches.\n\n**Reglas:**\n- Un cliente puede alquilar si tiene 25 años o más.\n- Un cliente puede alquilar si tiene entre 21 y 24 años, **y** además `tiene_permiso_padres` es `True`.\n\n**Tu Tarea:**\n1. Usa las variables `edad_usuario` y `tiene_permiso_padres`.\n2. Crea una variable `puede_alquilar` que almacene el resultado booleano (`True` o `False`) de evaluar las reglas.\n3. Imprime el valor de `puede_alquilar`.",
     "starter_code": "edad_usuario = 22\ntiene_permiso_padres = False\n\n# Escribe la expresión lógica aquí. Debes usar 'and' y 'or'.\npuede_alquilar = False\n\nprint(puede_alquilar)",
     "validation_type": "simple_print",
     "validation_rules": {
@@ -198,48 +198,63 @@
     "module_id": 2,
     "lesson_id": 7,
     "order_index": 7,
-    "title": "Ejercicio 2.4.1: Verificar si un número es par o impar",
-    "description": "Dado un número entero ingresado por el usuario, indica si es par o impar.",
-    "instructions": "Para saber si un número es par, podemos ver si el residuo de su división entre 2 es cero.\n\nPara hacerlo:\n1. Pide al usuario que ingrese un número entero con `input()`.\n2. Convierte la entrada a `int`.\n3. Usa una sentencia `if/else` y el operador módulo (`%`) para decidir.\n4. Si el número es par (residuo es 0), imprime la palabra `Par`.\n5. Si no lo es, imprime la palabra `Impar`.",
+    "title": "Ejercicio 2.4.1: Tomando Decisiones con if/else",
+    "description": "Usa una estructura if/else para ejecutar diferentes bloques de código según una condición.",
+    "instructions": "La capacidad de tomar decisiones es fundamental. En este ejercicio, tu programa decidirá si un número es par o impar.\n\n**Tu Tarea:**\n1. Pide al usuario un número entero.\n2. Convierte la entrada a `int`.\n3. Usa una sentencia `if/else` y el operador módulo (`%`) para comprobar si el residuo de la división entre 2 es cero.\n4. Si es par, imprime `Par`.\n5. De lo contrario, imprime `Impar`.",
     "starter_code": "numero = int(input())\n\n# Escribe tu sentencia if/else aquí\n",
-      "validation_type": "conditional_print",
-      "validation_rules": {
-        "test_cases": [
-          {"input": "10", "expected_output": "Par\n"},
-          {"input": "7", "expected_output": "Impar\n"},
-          {"input": "0", "expected_output": "Par\n"},
-          {"input": "1234", "expected_output": "Par\n"},
-          {"input": "1235", "expected_output": "Impar\n"}
-        ],
-        "requires_input_function": true,
-        "input_constraints": {
-          "type": "int",
-          "min": 0,
-          "max": 10000
+    "validation_type": "conditional_print",
+    "validation_rules": {
+      "test_cases": [
+        {
+          "input": "10",
+          "expected_output": "Par\n"
         },
-        "expected_print_options": [
-          "Par",
-          "Impar"
-        ],
-        "expected_print_count": 1,
-        "strict_whitespace": true,
-        "case_sensitive": true,
-        "custom_feedback": {
-          "missing_modulo": "No olvides usar el operador % para calcular el residuo.",
-          "wrong_output": "Imprime exactamente 'Par' o 'Impar', con la mayúscula inicial.",
-          "wrong_print_count": "Solo debes imprimir una línea de respuesta."
+        {
+          "input": "7",
+          "expected_output": "Impar\n"
+        },
+        {
+          "input": "0",
+          "expected_output": "Par\n"
+        },
+        {
+          "input": "1234",
+          "expected_output": "Par\n"
+        },
+        {
+          "input": "1235",
+          "expected_output": "Impar\n"
         }
+      ],
+      "requires_input_function": true,
+      "input_constraints": {
+        "type": "int",
+        "min": 0,
+        "max": 10000
+      },
+      "expected_print_options": [
+        "Par",
+        "Impar"
+      ],
+      "expected_print_count": 1,
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "missing_modulo": "No olvides usar el operador % para calcular el residuo.",
+        "wrong_output": "Imprime exactamente 'Par' o 'Impar', con la mayúscula inicial.",
+        "wrong_print_count": "Solo debes imprimir una línea de respuesta."
       }
+    }
   },
-{
+  {
     "id": 8,
     "course_id": 1,
     "module_id": 3,
     "lesson_id": 8,
     "order_index": 8,
-    "title": "Ejercicio 3.1.1: Cuenta Regresiva",
-    "description": "Usa un bucle 'while' para crear una cuenta regresiva.",
-    "instructions": "Imagina que estás por lanzar un cohete y necesitas una cuenta regresiva.\n\nPara hacerlo:\n1. Crea una variable `contador` que empiece en 5.\n2. Usa un bucle `while` que se ejecute mientras `contador` sea mayor que 0.\n3. Dentro del bucle, imprime el valor actual de `contador`.\n4. En cada repetición, resta 1 a `contador`.\n5. Cuando el bucle termine, imprime el mensaje: `¡Despegue!`",
+    "title": "Ejercicio 3.1.1: Repetición con `while`",
+    "description": "Implementa un bucle 'while' para ejecutar una acción un número determinado de veces.",
+    "instructions": "Los bucles `while` son perfectos para repetir una acción mientras una condición se cumpla. Aquí simularás una cuenta regresiva.\n\n**Tu Tarea:**\n1. Crea una variable `contador` inicializada en 5.\n2. Escribe un bucle `while` que se ejecute mientras `contador` sea mayor que 0.\n3. Dentro del bucle, imprime el valor de `contador`.\n4. **Importante:** Asegúrate de decrementar `contador` en 1 en cada iteración para evitar un bucle infinito.\n5. Al salir del bucle, imprime el mensaje: `¡Despegue!`",
     "starter_code": "contador = 5\n# Escribe tu bucle while aquí\n\n# Imprime el mensaje final",
     "validation_type": "simple_print",
     "validation_rules": {
@@ -259,9 +274,9 @@
     "module_id": 3,
     "lesson_id": 9,
     "order_index": 9,
-    "title": "Ejercicio 3.2.1: Contar vocales en una palabra",
-    "description": "Cuenta cuántas vocales hay en una palabra que el usuario ingresa.",
-    "instructions": "Piensa que quieres contar las vocales (a, e, i, o, u) en una palabra que alguien te dice.\n\nPara hacerlo:\n1. Pide una palabra usando `input()` y guárdala en la variable `palabra`.\n2. Crea una variable `contador` inicializada en 0.\n3. Usa un bucle `for` para recorrer cada `letra` de la `palabra`.\n4. Dentro del bucle, comprueba si la `letra` está en el string 'aeiouAEIOU'.\n5. Si es una vocal, incrementa el `contador`.\n6. Al final, imprime el valor del `contador`.",
+    "title": "Ejercicio 3.2.1: Iterando sobre una Secuencia con `for`",
+    "description": "Usa un bucle 'for' para recorrer cada carácter de un string y realizar una acción.",
+    "instructions": "El bucle `for` es la herramienta ideal para procesar cada elemento de una colección, como los caracteres de una palabra.\n\n**Tu Tarea:**\n1. Pide una palabra al usuario con `input()`.\n2. Inicializa una variable `contador` en 0.\n3. Escribe un bucle `for` que recorra cada `letra` de la palabra ingresada.\n4. Dentro del bucle, usa una condición para verificar si la `letra` es una vocal (mayúscula o minúscula).\n5. Si es vocal, incrementa tu `contador`.\n6. Después del bucle, imprime el valor final del `contador`.",
     "starter_code": "palabra = input()\nvocales = 'aeiouAEIOU'\ncontador = 0\n# Escribe tu bucle for aquí\n\nprint(contador)",
     "validation_type": "dynamic_output",
     "validation_rules": {
@@ -293,39 +308,54 @@
     "module_id": 3,
     "lesson_id": 10,
     "order_index": 10,
-    "title": "Ejercicio 3.3.1: Buscando en la Lista de la Compra",
-    "description": "Comprueba si un producto que quiere el usuario ya está en la lista de la compra.",
-    "instructions": "Imagina que tienes una lista de cosas por comprar y quieres revisar rápidamente si un artículo ya está apuntado.\n\nPara hacerlo:\n1. Tienes una lista ya creada: `lista_compra = [\"leche\", \"pan\", \"huevos\"]`.\n2. Pide al usuario que escriba un producto usando `input()`.\n3. Comprueba si el producto que escribió el usuario está en `lista_compra`.\n4. Si está, imprime el mensaje: `Sí, está en la lista`.\n5. Si no está, imprime: `No, hay que añadirlo`.",
+    "title": "Ejercicio 3.3.1: Trabajando con Listas",
+    "description": "Crea una lista y utiliza el operador 'in' dentro de una estructura condicional para comprobar la existencia de un elemento.",
+    "instructions": "Las listas nos permiten guardar colecciones de datos. Una operación muy común es verificar si un elemento ya forma parte de ella.\n\n**Tu Tarea:**\n1. Se te proporciona una lista: `lista_compra = [\"leche\", \"pan\", \"huevos\"]`.\n2. Pide al usuario que escriba un producto.\n3. Usa una estructura `if/else` y el operador `in` para comprobar si el producto del usuario está en `lista_compra`.\n4. Si está, imprime: `Sí, está en la lista`.\n5. Si no está, imprime: `No, hay que añadirlo`.",
     "starter_code": "lista_compra = [\"leche\", \"pan\", \"huevos\"]\nproducto_buscado = input()\n# Escribe tu lógica if/else aquí\n",
-      "validation_type": "conditional_print",
-      "validation_rules": {
-        "allow_free_form_input": true,
-        "test_cases": [
-          {"input": "leche", "expected_output": "Sí, está en la lista\n"},
-          {"input": "tomate", "expected_output": "No, hay que añadirlo\n"},
-          {"input": "huevos", "expected_output": "Sí, está en la lista\n"},
-          {"input": "pan", "expected_output": "Sí, está en la lista\n"},
-          {"input": "cebolla", "expected_output": "No, hay que añadirlo\n"}
-        ],
-        "requires_input_function": true,
-        "input_constraints": {
-          "type": "string",
-          "min_length": 3,
-          "max_length": 10,
-          "charset": "alpha"
+    "validation_type": "conditional_print",
+    "validation_rules": {
+      "allow_free_form_input": true,
+      "test_cases": [
+        {
+          "input": "leche",
+          "expected_output": "Sí, está en la lista\n"
         },
-        "expected_print_options": [
-          "Sí, está en la lista",
-          "No, hay que añadirlo"
-        ],
-        "expected_print_count": 1,
-        "strict_whitespace": true,
-        "case_sensitive": true,
-        "custom_feedback": {
-          "wrong_output": "El mensaje impreso no es el esperado. Revisa si escribiste 'Sí, está en la lista' o 'No, hay que añadirlo' exactamente.",
-          "wrong_print_count": "Solo debes imprimir una línea de respuesta."
+        {
+          "input": "tomate",
+          "expected_output": "No, hay que añadirlo\n"
+        },
+        {
+          "input": "huevos",
+          "expected_output": "Sí, está en la lista\n"
+        },
+        {
+          "input": "pan",
+          "expected_output": "Sí, está en la lista\n"
+        },
+        {
+          "input": "cebolla",
+          "expected_output": "No, hay que añadirlo\n"
         }
+      ],
+      "requires_input_function": true,
+      "input_constraints": {
+        "type": "string",
+        "min_length": 3,
+        "max_length": 10,
+        "charset": "alpha"
+      },
+      "expected_print_options": [
+        "Sí, está en la lista",
+        "No, hay que añadirlo"
+      ],
+      "expected_print_count": 1,
+      "strict_whitespace": true,
+      "case_sensitive": true,
+      "custom_feedback": {
+        "wrong_output": "El mensaje impreso no es el esperado. Revisa si escribiste 'Sí, está en la lista' o 'No, hay que añadirlo' exactamente.",
+        "wrong_print_count": "Solo debes imprimir una línea de respuesta."
       }
+    }
   },
   {
     "id": 11,
@@ -333,9 +363,9 @@
     "module_id": 3,
     "lesson_id": 11,
     "order_index": 11,
-    "title": "Ejercicio 3.4.1: Función de Conversión de Temperatura",
-    "description": "Crea y usa una función para convertir grados Celsius a Fahrenheit.",
-    "instructions": "Para organizar mejor tu código, vamos a crear una herramienta específica para convertir temperaturas.\n\nPara ello:\n1. Define una función llamada `convertir_a_fahrenheit` que acepte un parámetro (los grados celsius).\n2. Dentro de la función, aplica la fórmula: `F = (Celsius * 9/5) + 32` y usa `return` para devolver el resultado.\n3. Fuera de la función, pide al usuario que ingrese una temperatura en Celsius con `input()` y conviértela a `float`.\n4. Llama a tu función, pasándole la temperatura del usuario como argumento.\n5. Guarda el resultado que la función te devuelve en una variable e imprímela.",
+    "title": "Ejercicio 3.4.1: Creando tu Primera Función",
+    "description": "Define una función que toma un argumento, realiza un cálculo y devuelve un resultado con 'return'.",
+    "instructions": "Las funciones nos permiten encapsular lógica en bloques reutilizables. En este ejercicio, crearás una herramienta para convertir temperaturas.\n\n**Tu Tarea:**\n1. Define una función llamada `convertir_a_fahrenheit` que acepte un parámetro llamado `celsius`.\n2. Dentro de la función, aplica la fórmula `F = (Celsius * 9/5) + 32`.\n3. Usa la palabra clave `return` para devolver el resultado del cálculo.\n4. Fuera de la función, pide al usuario una temperatura y conviértela a `float`.\n5. Llama a tu función, pasándole el valor del usuario, y guarda el resultado en una variable.\n6. Imprime el resultado final.",
     "starter_code": "# 1. Define tu función aquí\ndef convertir_a_fahrenheit(celsius):\n    # Escribe la fórmula y el return\n    return 0.0\n\n# 3. Pide la temperatura al usuario\ntemp_celsius = float(input())\n\n# 4. Llama a la función y guarda el resultado\ntemp_fahrenheit = convertir_a_fahrenheit(temp_celsius)\n\n# 5. Imprime el resultado final\nprint(temp_fahrenheit)",
     "validation_type": "dynamic_output",
     "validation_rules": {

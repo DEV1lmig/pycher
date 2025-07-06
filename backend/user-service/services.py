@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__) # Ensure logger is initialized
 # EXECUTION_SERVICE_URL = os.getenv("EXECUTION_SERVICE_URL", "http://execution-service:8001")
 # For local dev without docker-compose for services:
 EXECUTION_SERVICE_URL = os.getenv("EXECUTION_SERVICE_URL", "http://execution-service:8001") # Or your configured URL
+CONTENT_SERVICE_URL = os.getenv("CONTENT_SERVICE_URL", "http://content-service:8002")
 
 
 # --- Helper functions for cascading completion ---
@@ -1593,11 +1594,12 @@ EXAM_FAILURE_LIMIT = 5
 
 def get_or_create_current_exam_exercise(db: Session, user_id: int, course_id: int):
     """
-    Gets the user's active exam exercise for a course.
-    If the active attempt has too many failures, or none exists, it assigns a new one.
-    **Crucially, it first checks if the user has already passed an exam for this course.**
+    Gets the user's exam exercise for a course.
+    - If the user has already passed, it returns the exercise they passed for review.
+    - If they have an active attempt, it returns that exercise.
+    - If the active attempt has too many failures, or none exists, it assigns a new one.
     """
-    # --- START: FIX - Check if the exam is unlocked for the user ---
+    # --- Check if the exam is unlocked for the user ---
     enrollment = db.query(UserCourseEnrollment).filter(
         UserCourseEnrollment.user_id == user_id,
         UserCourseEnrollment.course_id == course_id
@@ -1609,23 +1611,20 @@ def get_or_create_current_exam_exercise(db: Session, user_id: int, course_id: in
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Debes completar todos los módulos del curso antes de acceder al examen."
         )
-    # --- END: FIX ---
 
-    # --- START: CORRECTED FIX - Check UserExamAttempt table for a passed attempt ---
-    #  1. Check if the user has any passed attempt for this course.
-    already_passed_attempt = db.query(UserExamAttempt).filter(
+    # --- 1. Check for a passed attempt (Review Mode) ---
+    passed_attempt = db.query(UserExamAttempt).filter(
         UserExamAttempt.user_id == user_id,
         UserExamAttempt.course_id == course_id,
         UserExamAttempt.passed == True
     ).first()
 
-    if already_passed_attempt:
-        logger.warning(f"User {user_id} attempted to start a new exam for Course {course_id} but has already passed one (Attempt ID: {already_passed_attempt.id}).")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Ya has aprobado el examen para este curso. No puedes comenzar uno nuevo."
-        )
-    # --- END: CORRECTED FIX ---
+    if passed_attempt:
+        logger.info(f"User {user_id} is re-entering a passed exam (Attempt ID: {passed_attempt.id}). Returning exercise {passed_attempt.exercise_id} for review.")
+        # Return the specific exercise the user passed.
+        return db.query(Exercise).filter(Exercise.id == passed_attempt.exercise_id).first()
+
+    # --- If no passed attempt, proceed with logic for taking the exam ---
 
     # 2. Look for an existing active attempt for this course
     active_attempt = db.query(UserExamAttempt).filter(
@@ -1634,47 +1633,62 @@ def get_or_create_current_exam_exercise(db: Session, user_id: int, course_id: in
         UserExamAttempt.is_active == True
     ).first()
 
-    # 2. If an attempt exists and is within the failure limit, return its exercise
+    # 3. If an attempt exists and is within the failure limit, return its exercise
     if active_attempt and active_attempt.failure_count < EXAM_FAILURE_LIMIT:
         logger.info(f"Returning existing active exam (Exercise ID: {active_attempt.exercise_id}) for User {user_id}.")
         return db.query(Exercise).filter(Exercise.id == active_attempt.exercise_id).first()
 
-    # 3. If attempt exists but has too many failures, deactivate it
+    # 4. If attempt exists but has too many failures, deactivate it
     if active_attempt:
         logger.warning(f"Deactivating exam attempt {active_attempt.id} for User {user_id} due to reaching failure limit ({active_attempt.failure_count} failures).")
         active_attempt.is_active = False
         db.add(active_attempt)
 
-    # 4. Fetch a new random exercise for the course
-    logger.info(f"Fetching a new random exam for User {user_id}, Course {course_id}.")
+    # 5. Fetch a new random exercise FOR the course FROM THE CONTENT SERVICE
+    logger.info(f"Fetching a new random exam for User {user_id}, Course {course_id} from content-service.")
 
-    new_exam_exercise = db.query(Exercise).filter(
-        Exercise.course_id == course_id,
-        Exercise.module_id == None,
-        Exercise.lesson_id == None,
-        Exercise.validation_type == 'exam'
-    ).order_by(sql_func.random()).first()
+    try:
+        # This is an internal service-to-service call, no user token needed.
+        url = f"{CONTENT_SERVICE_URL}/api/v1/content/courses/{course_id}/exam/exercise"
+        with httpx.Client() as client:
+            response = client.get(url)
+            response.raise_for_status()
+        new_exam_exercise_data = response.json()
+        # We only need the ID to create the attempt record.
+        # The full exercise object will be fetched by the frontend from the content-service as usual.
+        new_exam_exercise_id = new_exam_exercise_data.get("id")
+        if not new_exam_exercise_id:
+            raise HTTPException(status_code=500, detail="Content service returned invalid exam exercise data.")
 
-    if not new_exam_exercise:
-        raise HTTPException(status_code=404, detail="No exam exercises found for this course.")
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="No exam exercises found for this course.")
+        else:
+            logger.error(f"Error fetching exam from content-service: {e.response.status_code} - {e.response.text}")
+            raise HTTPException(status_code=500, detail="Failed to retrieve exam exercise from content service.")
+    except httpx.RequestError as e:
+        logger.error(f"Could not connect to content-service to fetch exam: {e}")
+        raise HTTPException(status_code=500, detail="Could not connect to content service.")
+
 
     # Find the corresponding CourseExam for this course.
     course_exam = db.query(CourseExam).filter(CourseExam.course_id == course_id).first()
     if not course_exam:
         raise HTTPException(status_code=500, detail="Exam configuration error: exercise found but no parent exam record.")
 
-    # 5. Create a new UserExamAttempt record for the new exercise
+    # 6. Create a new UserExamAttempt record for the new exercise
     new_attempt = UserExamAttempt(
         user_id=user_id,
         course_id=course_id,
         exam_id=course_exam.id,
-        exercise_id=new_exam_exercise.id,
+        exercise_id=new_exam_exercise_id, # Use the ID from the content service
         is_active=True,
         failure_count=0
     )
     db.add(new_attempt)
     db.commit() # Commit deactivation of old and creation of new
     db.refresh(new_attempt)
-    logger.info(f"Created new exam attempt {new_attempt.id} (Exercise ID: {new_exam_exercise.id}) for User {user_id}.")
+    logger.info(f"Created new exam attempt {new_attempt.id} (Exercise ID: {new_exam_exercise_id}) for User {user_id}.")
 
-    return new_exam_exercise
+    # Return the full exercise data we got from the content service
+    return new_exam_exercise_data
