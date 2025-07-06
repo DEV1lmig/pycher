@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useMatch } from "@tanstack/react-router"; // Ensure useMatch is imported
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { getModuleById, getCourseById } from "@/services/contentService";
-// --- FIX: Import the entire progressService module ---
 import progressService from "@/services/progressService";
 import LessonCodeExecutor from "@/components/editor/LessonCodeExecutor";
 import { lessonWithCodeRoute, examInterfaceRoute } from "@/router";
@@ -11,35 +10,43 @@ import AnimatedContent from "@/components/ui/animated-content";
 import FadeContent from "@/components/ui/fade-content";
 import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { Home, BookOpen, ArrowRightCircle, CheckCircle, Loader2, AlertCircle, BookText, Edit3 } from "lucide-react";
-import LessonChatDrawer from "@/components/ai/LessonChatDrawer";
+import LessonChatBot from "@/components/ai/LessonChatBot";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useLessonDetail } from '@/hooks/useLessonDetail'; // #useLessonDetail.js
+import { getUserProfile } from "@/services/userService"; // 1. Import getUserProfile
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
 
 export default function LessonWithCodePage() {
   const navigate = useNavigate();
-  // MODIFIED: Provide an empty object to useMatch() to potentially satisfy internal expectations.
-  // This is line 23 where the error originates.
   const currentRouteMatch = useMatch({});
-
-  // Safely determine isExamMode, checking if currentRouteMatch is defined.
   const isExamMode = currentRouteMatch?.routeId === examInterfaceRoute.id;
 
-  // Use the 'from' option with useParams based on the determined mode.
-  // This relies on isExamMode being correctly determined.
   const params = useParams({
     from: isExamMode ? examInterfaceRoute.id : lessonWithCodeRoute.id,
   });
 
-  // Log params for further debugging if needed
-  // console.log("LessonWithCodePage: Extracted params:", params);
-
-  // Now, lessonId and courseIdForExam will be correctly typed and sourced
   const lessonId = !isExamMode ? params.lessonId : undefined;
   const courseIdForExam = isExamMode ? params.courseId : undefined;
+
+  // 2. Add state to hold the user's profile data
+  const [user, setUser] = useState(null);
+
+  // 3. Fetch the user profile when the component mounts
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const profileData = await getUserProfile();
+        setUser(profileData);
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+        // Optionally, handle the error, e.g., by redirecting to login
+      }
+    };
+    fetchUser();
+  }, []); // Empty dependency array means this runs once on mount
 
   // Lesson detail hook (only used if not in exam mode)
   // This part remains the same, as lessonId will be correctly undefined in exam mode
@@ -298,7 +305,9 @@ export default function LessonWithCodePage() {
       </div>
       <AnimatedContent distance={40} direction="vertical" reverse={true} config={{ tension: 100, friction: 20 }} initialOpacity={0.2} animateOpacity scale={1} threshold={0.2} >
         <div className="relative rounded-lg p-8 mx-6 my-6 shadow-2xl border border-primary-opaque/0">
-          <div className="absolute rounded-3xl overflow-hidden inset-0 z-10"> <Waves lineColor="rgba(152, 128, 242, 0.4)" backgroundColor="#160f30" waveSpeedX={0.02} waveSpeedY={0.01} waveAmpX={70} waveAmpY={20} friction={0.9} tension={0.01} maxCursorMove={60} xGap={12} yGap={36} /> </div>
+          <div className="absolute rounded-3xl overflow-hidden inset-0 z-10">
+            <Waves lineColor="rgba(152, 128, 242, 0.4)" backgroundColor="#160f30" waveSpeedX={0.02} waveSpeedY={0.01} waveAmpX={70} waveAmpY={20} friction={0.9} tension={0.01} maxCursorMove={60} xGap={12} yGap={36} />
+          </div>
           <div className="relative z-20">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
@@ -329,7 +338,7 @@ export default function LessonWithCodePage() {
                     </Button>
                   </div>
                 )}
-                 {isExamMode && isExamCorrect === true && ( // Exam Passed
+                {isExamMode && isExamCorrect === true && ( // Exam Passed
                   <div className="flex items-center text-green-400 bg-green-900/50 px-3 py-1 rounded-md mb-1 md:mb-0">
                     <CheckCircle className="h-5 w-5 mr-2" />
                     <span>Examen Aprobado</span>
@@ -341,6 +350,25 @@ export default function LessonWithCodePage() {
                     <span>Examen No Aprobado. Inténtalo de nuevo.</span>
                   </div>
                 )}
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => {
+                    if (isExamMode) {
+                      navigate({ to: `/courses/${courseIdForExam}` });
+                    } else {
+                      const targetModuleId = moduleData?.id || lessonDataFromHook?.module_id;
+                      if (targetModuleId) {
+                        navigate({ to: `/module/${targetModuleId}` });
+                      } else {
+                        toast.error("No se pudo determinar el módulo para volver.");
+                        navigate({ to: `/courses` });
+                      }
+                    }
+                  }}
+                >
+                  {isExamMode ? "Volver al Curso" : "Volver al Módulo"}
+                </Button>
               </div>
             </div>
           </div>
@@ -348,7 +376,14 @@ export default function LessonWithCodePage() {
       </AnimatedContent>
 
       <FadeContent blur={true} duration={300} easing="ease-out" initialOpacity={0} delay={100}>
-        <div className="grid grid-cols-1 md:grid-cols-2 mx-6 gap-6 custom-scroll" style={{ height: "calc(100vh - 300px)" }} >
+        <div
+          className={`grid gap-6 mx-6 custom-scroll transition-all duration-300 ${
+            chatDrawerOpen
+              ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+              : "grid-cols-1 md:grid-cols-2"
+          }`}
+          style={{ height: "calc(100vh - 300px)" }}
+        >
           {/* Content/Instructions Column */}
           <div className="bg-primary-opaque/10 border border-primary-opaque/0 rounded-lg shadow px-6 p-5 flex flex-col overflow-y-auto custom-scroll flex-1" style={{ maxHeight: "calc(100vh - 300px)" }}>
             <h2 className="font-bold text-lg text-secondary mb-2">
@@ -423,40 +458,29 @@ export default function LessonWithCodePage() {
                 </p>
               </div>
             )}
+            <Button
+              className="mt-4 self-end"
+              variant="secondary"
+              onClick={() => setChatDrawerOpen(true)}
+            >
+              💬 Abrir Chat IA
+            </Button>
           </div>
-        </div>
-        {/* Footer Navigation Button */}
-        <div className="mx-6 my-8 flex justify-between items-center">
-          <Button variant="outline" onClick={() => {
-            if (isExamMode) {
-              navigate({ to: `/courses/${courseIdForExam}` });
-            } else {
-              const targetModuleId = moduleData?.id || lessonDataFromHook?.module_id;
-              if (targetModuleId) {
-                navigate({ to: `/module/${targetModuleId}` });
-              } else {
-                toast.error("No se pudo determinar el módulo para volver.");
-                navigate({ to: `/courses` }); // Fallback to courses list
-              }
-            }
-          }}>
-            {isExamMode ? "Volver al Curso" : "Volver al Módulo"}
-          </Button>
-        </div>
 
-        {/* AI Chat Drawer */}
-        {!chatDrawerOpen && (
-          <button className="fixed bottom-6 right-6 z-[10000] bg-primary-700 text-white rounded-full px-5 py-3 shadow-lg hover:bg-primary-800 transition" onClick={() => setChatDrawerOpen(true)} aria-label="Abrir chat" style={{ fontWeight: "bold", fontSize: "1.1rem" }} >
-            💬 Chat IA
-          </button>
-        )}
-        {chatDrawerOpen && (
-          <LessonChatDrawer
-            open={chatDrawerOpen} onOpenChange={setChatDrawerOpen}
-            lessonContent={chatContextContent}
-            exercisePrompt={currentExercise?.description}
-          />
-        )}
+          {/* Chat Sidebar */}
+          {chatDrawerOpen && (
+            <aside className="h-full min-h-0 flex flex-col xl:col-span-1 col-span-full">
+              <LessonChatBot
+                onClose={() => setChatDrawerOpen(false)}
+                lessonContext={chatContextContent}
+                starterCode={currentExercise?.starter_code || ""}
+                // 4. Pass the user ID from the state
+                userId={user?.id}
+                lessonId={lessonId}
+              />
+            </aside>
+          )}
+        </div>
       </FadeContent>
       {courseProgress?.is_course_completed && (
   <>

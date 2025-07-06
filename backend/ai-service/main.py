@@ -20,7 +20,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 if not GITHUB_TOKEN:
     raise ValueError("GITHUB_TOKEN environment variable not set. Please set it.")
 
-SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "Eres un asistente de IA útil.") # Added a default for SYSTEM_PROMPT
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT") # Added a default for SYSTEM_PROMPT
 
 # Endpoint for GitHub Models API (see docs)
 GITHUB_MODELS_ENDPOINT = os.getenv("GITHUB_MODELS_ENDPOINT", "https://models.github.ai/inference") # Added default
@@ -49,6 +49,14 @@ class CodeFeedbackRequest(BaseModel):
     code: str
     challenge_description: Optional[str] = None
     level: str = Field(default="beginner", pattern="^(beginner|intermediate|advanced)$")
+
+class ChatStreamRequest(BaseModel):
+    """Model for the streaming chat endpoint, accepting either a query or code."""
+    query: Optional[str] = None
+    code: Optional[str] = None
+    lesson_context: Optional[str] = None
+    starter_code: Optional[str] = None
+    instruction: Optional[str] = None
 
 class AIResponse(BaseModel):
     content: str
@@ -114,8 +122,7 @@ async def health_check():
 @app.post("/hint", response_model=AIResponse, tags=["Code Assistance"])
 async def get_hint(request: HintRequest):
     """Provides a hint for the given Python code and context."""
-    prompt = f"""
-    Act as a helpful AI programming tutor.
+    user_message = f"""
     I am learning Python at the {request.difficulty} level and need help with my code.
 
     My code:
@@ -246,59 +253,57 @@ async def explain_code(request: CodeFeedbackRequest):
     response_data = await generate_ai_response(prompt)
     return AIResponse(**response_data)
 
-@app.post("/chat/stream", tags=["Chat"])
-async def chat_stream(request: HintRequest):
-    """
-    Streams AI chat responses in Spanish.
-    """
-    prompt = f"""
-    Actúa como un tutor de Python. Responde siempre en español.
-    {request.instruction or ""}
-    Código del usuario:
-    ```python
-    {request.code}
-    ```
-    {f"Error: {request.error}" if request.error else ""}
-    """
 
-    # This is a synchronous iterator
+@app.post("/chat/stream", tags=["Chat"])
+async def chat_stream(request: ChatStreamRequest):
+    """
+    Streams AI chat responses. It intelligently handles natural language
+    questions and code help requests based on the provided input.
+    """
+    # Build the user's message based on whether it's a question or code
+    user_message = ""
+    if request.query:
+        # The user is asking a question
+        user_message = f"Tengo la siguiente pregunta: {request.query}"
+    elif request.code:
+        # The user is asking for help with their code
+        user_message = f"Necesito ayuda con este código:\n```python\n{request.code}\n```"
+    else:
+        # If neither is provided, return an error
+        raise HTTPException(status_code=422, detail="Se requiere un 'query' o 'code'.")
+
+    # Add specific instructions to the user message if provided
+    if request.instruction:
+        user_message = f"{request.instruction}\n\n{user_message}"
+
+    # Add the lesson context to the user's message for better answers
+    if request.lesson_context:
+        user_message += f"\n\nAquí está el contexto de la lección actual para que lo tengas en cuenta:\n---CONTEXTO---\n{request.lesson_context}\n---FIN DE CONTEXTO---"
+    if request.starter_code:
+        user_message += f"\n\nEste es el código de inicio del ejercicio:\n---CÓDIGO DE INICIO---\n{request.starter_code}\n---FIN DE CÓDIGO DE INICIO---"
+
+
+    # Call the AI with the structured messages
     response_stream = client.complete(
         model=MODEL_NAME,
         messages=[
-            {"role": "system", "content": "Eres un tutor de Python. Responde siempre en español."},
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message}
         ],
         stream=True,
-        max_tokens=512,
+        max_tokens=1024,
         temperature=0.7,
     )
 
     async def streamer_wrapper():
         try:
-            # Iterate over the synchronous iterator in a thread pool
             for chunk in response_stream:
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
                     if delta and delta.content:
                         yield delta.content
-                        await asyncio.sleep(0) # Yield control to the event loop
-                else:
-                    # Handle chunks without choices or content if necessary, or just skip
-                    await asyncio.sleep(0) # Yield control even if not yielding data
+                        await asyncio.sleep(0)
         except Exception as e:
             logger.error(f"Error during streaming: {e}", exc_info=True)
-            # Optionally yield an error message to the client
-            # yield f"STREAM_ERROR: {str(e)}"
-        finally:
-            # Ensure any resources held by response_stream are cleaned up if applicable
-            # For some SDKs, a close() method might be available.
-            # Check azure-ai-inference docs for StreamingChatCompletions cleanup.
-            if hasattr(response_stream, 'close') and callable(response_stream.close):
-                try:
-                    response_stream.close()
-                    logger.info("Closed response_stream.")
-                except Exception as e_close:
-                    logger.error(f"Error closing response_stream: {e_close}", exc_info=True)
-
 
     return StreamingResponse(streamer_wrapper(), media_type="text/event-stream")

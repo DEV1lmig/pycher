@@ -115,12 +115,14 @@ export const getNextLearningStep = async ({ user_progress, current_topic }) => {
 }
 
 // Stream chat with the AI (returns an async generator)
-export async function* streamChat({ code, instruction = "" }) {
+export async function* streamChat({ code, lessonContext, starterCode, instruction = "" }) {
   const response = await fetch(`${API_URL}/api/v1/ai/chat/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       code,
+      lesson_context: lessonContext,
+      starter_code: starterCode,
       instruction: instruction + " Responde en español."
     }),
   });

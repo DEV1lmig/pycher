@@ -7,6 +7,13 @@
         "context7": {
             "type": "http",
             "url": "https://mcp.context7.com/mcp"
+        },
+        "notionApi": {
+            "command": "npx",
+            "args": ["-y", "@notionhq/notion-mcp-server"],
+            "env": {
+                "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer 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\", \"Notion-Version\": \"2022-06-28\" }"
+         }
         }
     }
 }
