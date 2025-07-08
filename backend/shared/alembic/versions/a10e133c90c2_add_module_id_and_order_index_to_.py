@@ -34,6 +34,18 @@ def column_exists(conn, table_name: str, column_name: str, schema: str = 'public
     return result.scalar_one()
 
 
+def constraint_exists(conn, constraint_name: str, schema: str = 'public') -> bool:
+    """Checks if a constraint exists."""
+    sql = text(f"""
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.table_constraints
+            WHERE table_schema = :schema AND constraint_name = :constraint_name
+        )
+    """)
+    return conn.execute(sql, {'schema': schema, 'constraint_name': constraint_name}).scalar_one()
+
+
 def upgrade() -> None:
     """Upgrade schema."""
     bind = op.get_bind()
@@ -49,11 +61,20 @@ def upgrade() -> None:
     op.alter_column('exercises', 'lesson_id',
                existing_type=sa.INTEGER(),
                nullable=True)
-    try:
-        op.create_foreign_key('fk_exercises_module_id', 'exercises', 'modules', ['module_id'], ['id'])
-    except Exception:
-        # It's possible the foreign key already exists, ignore error if so.
-        pass
+
+    # This is the critical fix:
+    fk_name = 'fk_exercises_module_id'
+    if not constraint_exists(bind, fk_name):
+        # Before creating the FK, ensure there are no orphaned module_id values.
+        # This assumes that if a module_id doesn't exist in the modules table, it should be NULL.
+        # Adjust the logic if exercises must always belong to a module.
+        op.execute("""
+            UPDATE exercises e
+            SET module_id = NULL
+            WHERE NOT EXISTS (SELECT 1 FROM modules m WHERE m.id = e.module_id)
+        """)
+        op.create_foreign_key(fk_name, 'exercises', 'modules', ['module_id'], ['id'])
+
     if column_exists(bind, 'exercises', 'points'):
         op.drop_column('exercises', 'points')
     if column_exists(bind, 'exercises', 'difficulty'):
