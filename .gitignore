@@ -8,3 +8,4 @@
 /backend/user-service/__pycache__
 /backend/content-service/__pycache__
 /backend/shared/alembic/__pycache__
+.env.development

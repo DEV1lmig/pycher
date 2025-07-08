@@ -260,23 +260,36 @@ async def chat_stream(request: ChatStreamRequest):
     Streams AI chat responses. It intelligently handles natural language
     questions and code help requests based on the provided input.
     """
-    # Build the user's message based on whether it's a question or code
-    user_message = ""
-    if request.query:
-        # The user is asking a question
-        user_message = f"Tengo la siguiente pregunta: {request.query}"
-    elif request.code:
-        # The user is asking for help with their code
-        user_message = f"Necesito ayuda con este código:\n```python\n{request.code}\n```"
-    else:
-        # If neither is provided, return an error
-        raise HTTPException(status_code=422, detail="Se requiere un 'query' o 'code'.")
+    # --- Lógica de construcción de prompt mejorada ---
+    message_parts = []
 
-    # Add specific instructions to the user message if provided
+    # El 'query' es el mensaje o pregunta directa del usuario.
+    # Es la parte más importante de la interacción.
+    if request.query:
+        # Etiquetamos el mensaje del usuario para que la IA entienda que es una comunicación directa.
+        message_parts.append(f"El mensaje del alumno es: '{request.query}'")
+
+    # El 'code' es el contexto del editor del usuario.
+    if request.code:
+        # Se añade una condición para evitar tratar saludos simples como código.
+        # Si el 'query' y el 'code' son idénticos y cortos, probablemente es un saludo.
+        is_simple_greeting = (request.query and request.query.lower().strip() == request.code.lower().strip() and len(request.code.split()) < 3)
+
+        if not is_simple_greeting:
+            message_parts.append(f"Actualmente, su editor de código contiene lo siguiente:\n```python\n{request.code}\n```")
+
+    # Si no hay ni query ni código, no se puede continuar.
+    if not message_parts:
+        raise HTTPException(status_code=422, detail="Se requiere un 'query' o 'code' para iniciar la conversación.")
+
+    # Une todas las partes del mensaje en un solo prompt coherente.
+    user_message = "\n\n".join(message_parts)
+
+    # La instrucción general (si existe) se antepone para guiar a la IA.
     if request.instruction:
         user_message = f"{request.instruction}\n\n{user_message}"
 
-    # Add the lesson context to the user's message for better answers
+    # Añadir el contexto de la lección y el código de inicio, como antes.
     if request.lesson_context:
         user_message += f"\n\nAquí está el contexto de la lección actual para que lo tengas en cuenta:\n---CONTEXTO---\n{request.lesson_context}\n---FIN DE CONTEXTO---"
     if request.starter_code:
