@@ -80,7 +80,7 @@ export function LoginForm() {
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-2">
         <Label htmlFor="username" className="text-white">
-          Username o Correo Electrónico
+          Username
         </Label>
         <Input
           id="username"

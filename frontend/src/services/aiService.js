@@ -16,7 +16,7 @@ export const getCodeHint = async ({ code, error, instruction }) => {
   try {
     // Ensure instruction is always in Spanish
     const fullInstruction = (instruction ? instruction + " " : "") + "Responde en español.";
-    const response = await apiClient.post('/api/v1/ai/hint', {
+    const response = await apiClient.post('api/v1/ai/hint', {
       code,
       error,
       instruction: fullInstruction
@@ -40,7 +40,7 @@ export const getCodeHint = async ({ code, error, instruction }) => {
 export const evaluateCode = async ({ code, expected_output, actual_output, description }) => {
   try {
     const fullDescription = (description ? description + " " : "") + "Responde en español.";
-    const response = await apiClient.post('/api/v1/ai/evaluate', {
+    const response = await apiClient.post('api/v1/ai/evaluate', {
       code,
       expected_output,
       actual_output,
@@ -63,7 +63,7 @@ export const evaluateCode = async ({ code, expected_output, actual_output, descr
  */
 export const getCodeFeedback = async ({ code, challenge_description, level = 'beginner' }) => {
   try {
-    const response = await apiClient.post('/api/v1/ai/feedback', {
+    const response = await apiClient.post('api/v1/ai/feedback', {
       code,
       challenge_description,
       level
@@ -84,7 +84,7 @@ export const getCodeFeedback = async ({ code, challenge_description, level = 'be
  */
 export const explainCode = async ({ code, level = 'beginner' }) => {
   try {
-    const response = await apiClient.post('/api/v1/ai/explain', {
+    const response = await apiClient.post('api/v1/ai/explain', {
       code,
       level
     });
@@ -104,7 +104,7 @@ export const explainCode = async ({ code, level = 'beginner' }) => {
  */
 export const getNextLearningStep = async ({ user_progress, current_topic }) => {
   try {
-    const response = await apiClient.post('/api/v1/ai/learning-path', {
+    const response = await apiClient.post('api/v1/ai/learning-path', {
       user_progress,
       current_topic
     });
@@ -116,7 +116,7 @@ export const getNextLearningStep = async ({ user_progress, current_topic }) => {
 
 // Stream chat with the AI (returns an async generator)
 export async function* streamChat({ code, lessonContext, starterCode, instruction = "" }) {
-  const response = await fetch(`${API_URL}/api/v1/ai/chat/stream`, {
+  const response = await fetch(`${API_URL}api/v1/ai/chat/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

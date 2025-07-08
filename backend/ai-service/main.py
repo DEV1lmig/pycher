@@ -137,7 +137,7 @@ async def get_hint(request: HintRequest):
     Focus on explaining the underlying concepts or suggesting specific areas to check.
     Do NOT provide the corrected code or the full solution. Keep the hint focused and actionable for a {request.difficulty} learner.
     """
-    response_data = await generate_ai_response(prompt)
+    response_data = await generate_ai_response(user_message)
     return AIResponse(**response_data) # Unpack dict into the model
 
 @app.post("/evaluate", response_model=AIResponse, tags=["Code Assistance"])
