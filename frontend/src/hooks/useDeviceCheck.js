@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { UAParser } from 'ua-parser-js';
 
 /**
  * Hook to check if the user is on an unsupported mobile or tablet device.
@@ -9,13 +10,11 @@ export function useDeviceCheck() {
 
   useEffect(() => {
     // This check runs only once on the client-side.
-    const userAgent = navigator.userAgent;
-    const isMobileOrTablet = /Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(userAgent);
+    const parser = new UAParser(navigator.userAgent);
+    const device = parser.getDevice();
 
-    // We consider any device that identifies as mobile/tablet as unsupported.
-    // You could also add a width check like `window.innerWidth < 1024`
-    // but the user agent is generally sufficient for this purpose.
-    if (isMobileOrTablet) {
+    // We consider 'mobile' and 'tablet' devices as unsupported.
+    if (device.type === 'mobile' || device.type === 'tablet') {
       setIsUnsupported(true);
     }
   }, []);

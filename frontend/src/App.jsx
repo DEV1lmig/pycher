@@ -4,9 +4,17 @@ import { RouterProvider } from '@tanstack/react-router';
 import { queryClient } from './services/api';
 import { router } from './router';
 import { Toaster } from 'react-hot-toast';
+import { useDeviceCheck } from './hooks/useDeviceCheck';
+import UnsupportedDevicePage from './pages/UnsupportedDevicePage';
 import './App.css';
 
 function App() {
+  const isUnsupportedDevice = useDeviceCheck();
+
+  if (isUnsupportedDevice) {
+    return <UnsupportedDevicePage />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
         <Toaster
