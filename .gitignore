@@ -1,4 +1,4 @@
-.env.development
+env.development
 .env.production
 .python-version
 /backend/.env
