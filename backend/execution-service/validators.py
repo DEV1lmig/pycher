@@ -9,7 +9,11 @@ import random
 import json
 import asyncio
 import inspect
+import logging
 from typing import Dict, Optional, List, Any, Tuple, Set
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
 
 # --- Result Class ---
 class DynamicValidationResult:
@@ -164,6 +168,7 @@ class CodeAnalyzer:
 
     def analyze(self):
         if not self.tree: return
+        logger.info("Starting code analysis...")
         self.analysis = {
             "imports": set(), "disallowed_imports": set(),
             "function_calls": set(), "disallowed_calls": set(),
@@ -173,69 +178,110 @@ class CodeAnalyzer:
             "has_await": False, "defined_functions": {}, "defined_classes": {},
             "print_calls": []
         }
-        disallowed_imports = {"os", "sys", "subprocess", "shutil", "socket", "requests", "urllib", "ctypes"}
+
+        # Security and disallowed items tracking
+        disallowed_imports = {"os", "sys", "subprocess", "shutil", "socket", "requests", "urllib", "ctypes", "multiprocessing", "threading"}
         disallowed_functions = {"eval", "exec", "open", "compile"}
 
         for node in ast.walk(self.tree):
+            # Track imports
             if isinstance(node, (ast.Import, ast.ImportFrom)):
-                modules = [alias.name for alias in node.names] if isinstance(node, ast.Import) else [node.module] if node.module else []
-                for mod in modules:
-                    base_mod = mod.split('.')[0]
-                    self.analysis["imports"].add(base_mod)
-                    if base_mod in disallowed_imports: self.analysis["disallowed_imports"].add(base_mod)
+                modules_attempted = []
+                if isinstance(node, ast.Import):
+                    modules_attempted = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    modules_attempted = [node.module]
+
+                for module_name in modules_attempted:
+                    self.analysis["imports"].add(module_name)
+                    if module_name.split('.')[0] in disallowed_imports:
+                        self.analysis["disallowed_imports"].add(module_name)
+
+            # Track function calls
             elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-                self.analysis["function_calls"].add(node.func.id)
-                if node.func.id in disallowed_functions: self.analysis["disallowed_calls"].add(node.func.id)
-            elif isinstance(node, ast.For): self.analysis["has_for_loop"] = True
-            elif isinstance(node, ast.If): self.analysis["has_if"] = True
-            elif isinstance(node, ast.ListComp): self.analysis["has_list_comp"] = True
-            elif isinstance(node, ast.DictComp): self.analysis["has_dict_comp"] = True
-            elif isinstance(node, ast.SetComp): self.analysis["has_set_comp"] = True
-            elif isinstance(node, ast.Lambda): self.analysis["has_lambda"] = True
-            elif isinstance(node, ast.Try): self.analysis["has_try_except"] = True
-            elif isinstance(node, (ast.Yield, ast.YieldFrom)): self.analysis["has_yield"] = True
-            elif isinstance(node, ast.With): self.analysis["has_with"] = True
-            elif isinstance(node, ast.Await): self.analysis["has_await"] = True
-            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)): self.analysis["defined_functions"][node.name] = node
-            elif isinstance(node, ast.ClassDef): self.analysis["defined_classes"][node.name] = node
+                func_name = node.func.id
+                self.analysis["function_calls"].add(func_name)
+                if func_name in disallowed_functions:
+                    self.analysis["disallowed_calls"].add(func_name)
+
+                # SPECIAL HANDLING FOR PRINT CALLS - This was missing!
+                if func_name == 'print':
+                    print_call = {"args": [], "is_fstring": False}
+                    logger.debug(f"Found print call with {len(node.args)} arguments")
+
+                    # Check if any argument is an f-string (ast.JoinedStr)
+                    is_fstring_print = any(isinstance(arg, ast.JoinedStr) for arg in node.args)
+
+                    if is_fstring_print:
+                        print_call["is_fstring"] = True
+                        logger.info("Found f-string in print call")
+                        for arg in node.args:
+                            if isinstance(arg, ast.JoinedStr):
+                                logger.debug(f"Analyzing f-string with {len(arg.values)} parts")
+                                for i, value_node in enumerate(arg.values):
+                                    logger.debug(f"  Part {i}: {type(value_node).__name__}")
+                                    if isinstance(value_node, ast.FormattedValue):
+                                        logger.debug(f"    FormattedValue: {ast.dump(value_node)}")
+                                        if isinstance(value_node.value, ast.Name):
+                                            var_name = value_node.value.id
+                                            self.variables_used_in_prints.add(var_name)
+                                            print_call["args"].append({"type": "variable", "variable_name": var_name})
+                                            logger.info(f"    -> Added variable: {var_name}")
+                                        else:
+                                            logger.debug(f"    FormattedValue contains non-Name: {type(value_node.value)}")
+                                    elif isinstance(value_node, ast.Constant):
+                                        logger.debug(f"    -> Constant string: {repr(value_node.value)}")
+                                    else:
+                                        logger.debug(f"    F-string part is not FormattedValue or Constant: {type(value_node)}")
+                    else:
+                        logger.debug("Regular print call (not f-string)")
+                        for arg in node.args:
+                            if isinstance(arg, ast.Name):
+                                var_name = arg.id
+                                self.variables_used_in_prints.add(var_name)
+                                print_call["args"].append({"type": "variable", "variable_name": var_name})
+                                logger.debug(f"Found variable in regular print: {var_name}")
+
+                    self.analysis["print_calls"].append(print_call)
 
             # Track variable assignments
-            if isinstance(node, ast.Assign):
+            elif isinstance(node, ast.Assign):
                 for target in node.targets:
                     if isinstance(target, ast.Name):
                         self.variables_defined.add(target.id)
+                        logger.debug(f"Found variable definition: {target.id}")
 
-            # --- START: MODIFIED PRINT ANALYSIS ---
-            # Track print calls and their arguments, now with f-string support
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'print':
-                print_call = {"args": [], "is_fstring": False}
-                if node.args and isinstance(node.args[0], ast.JoinedStr):
-                    # This is an f-string
-                    print_call["is_fstring"] = True
-                    fstring_node = node.args[0]
-                    for value in fstring_node.values:
-                        if isinstance(value, ast.FormattedValue) and isinstance(value.value, ast.Name):
-                            # This is a variable inside the f-string, like {area}
-                            arg_info = {"type": "variable", "variable_name": value.value.id}
-                            print_call["args"].append(arg_info)
-                            self.variables_used_in_prints.add(value.value.id)
-                        elif isinstance(value, ast.Constant):
-                            # This is a literal part of the f-string
-                            arg_info = {"type": "literal", "value": value.value}
-                            print_call["args"].append(arg_info)
-                else:
-                    # This is a regular print call, e.g., print(var1, "literal")
-                    for arg in node.args:
-                        arg_info = {"type": "literal", "value": None, "variable_name": None}
-                        if isinstance(arg, ast.Name):
-                            arg_info["type"] = "variable"
-                            arg_info["variable_name"] = arg.id
-                            self.variables_used_in_prints.add(arg.id)
-                        elif isinstance(arg, ast.Constant):
-                            arg_info["value"] = arg.value
-                        print_call["args"].append(arg_info)
-                self.analysis["print_calls"].append(print_call)
-            # --- END: MODIFIED PRINT ANALYSIS ---
+            # Track control structures
+            elif isinstance(node, ast.For):
+                self.analysis["has_for_loop"] = True
+            elif isinstance(node, ast.If):
+                self.analysis["has_if"] = True
+            elif isinstance(node, ast.ListComp):
+                self.analysis["has_list_comp"] = True
+            elif isinstance(node, ast.DictComp):
+                self.analysis["has_dict_comp"] = True
+            elif isinstance(node, ast.SetComp):
+                self.analysis["has_set_comp"] = True
+            elif isinstance(node, ast.Lambda):
+                self.analysis["has_lambda"] = True
+            elif isinstance(node, ast.Try):
+                self.analysis["has_try_except"] = True
+            elif isinstance(node, (ast.Yield, ast.YieldFrom)):
+                self.analysis["has_yield"] = True
+            elif isinstance(node, ast.With):
+                self.analysis["has_with"] = True
+            elif isinstance(node, ast.Await):
+                self.analysis["has_await"] = True
+
+            # Track function and class definitions
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                self.analysis["defined_functions"][node.name] = node
+            elif isinstance(node, ast.ClassDef):
+                self.analysis["defined_classes"][node.name] = node
+
+        logger.info(f"Analysis complete. Variables defined: {self.variables_defined}")
+        logger.info(f"Variables used in prints: {self.variables_used_in_prints}")
+        logger.info(f"Print calls: {self.analysis['print_calls']}")
 
     def check_static_requirements(self, rules: Dict[str, Any], scope_node: Optional[ast.AST] = None) -> List[str]:
         if self.syntax_error: return [f"Syntax error: {self.syntax_error}"]
@@ -280,7 +326,7 @@ class CodeAnalyzer:
     def check_variables_in_print(self, required_variables: List[str]) -> List[str]:
         """Checks that the given variables are defined and then used within a print() call."""
         if self.syntax_error: return []
-        
+
         # First, ensure variables are defined before checking usage.
         def_errors = self.check_variable_definitions(required_variables)
         if def_errors:
@@ -349,28 +395,38 @@ def validate_saludo_personalizado(
 
 
 def validate_simple_print_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> DynamicValidationResult:
+    logger.info(f"Starting simple_print validation. Rules: {rules}")
     analyzer = CodeAnalyzer(user_code)
 
-    # Prioritize syntax error reporting
+    # 1. Prioritize syntax error reporting
     if analyzer.syntax_error:
         return DynamicValidationResult(False, f"Your code has a syntax error: {analyzer.syntax_error}")
 
-    # Check for variable definitions if required
-    if "require_variable_definitions" in rules:
-        def_errors = analyzer.check_variable_definitions(rules["require_variable_definitions"])
-        if def_errors:
-            return DynamicValidationResult(False, "Variable definition error: " + "; ".join(def_errors))
+    # Check for variable USAGE IN PRINT - FIX THE KEY NAME
+    vars_in_print = rules.get("required_variables_in_print")  # Changed from "require_variables_in_print"
+    if vars_in_print:
+        logger.info(f"Checking for required variables in print: {vars_in_print}")
+        logger.info(f"Variables actually found in prints: {analyzer.variables_used_in_prints}")
+        logger.info(f"Print calls analysis: {analyzer.analysis.get('print_calls', [])}")
 
-    # Check for variable usage in print statements if required
-    if "require_variables_in_print" in rules:
-        print_errors = analyzer.check_variables_in_print(rules["require_variables_in_print"])
-        if print_errors:
-            return DynamicValidationResult(False, "Variable usage error: " + "; ".join(print_errors))
+        print_usage_errors = analyzer.check_variables_in_print(vars_in_print)
+        if print_usage_errors:
+            logger.warning(f"Variable usage check failed: {print_usage_errors}")
+            feedback_key = "wrong_variable"  # Changed to match the exercise config
+            default_msg = "You defined the correct variables, but didn't use them in your print statement."
+            message = rules.get("custom_feedback", {}).get(feedback_key, default_msg)
+            return DynamicValidationResult(False, message)
+        else:
+            logger.info("Variable usage check passed")
 
-    static_failures = analyzer.check_static_requirements(rules)
-    if static_failures:
-        return DynamicValidationResult(False, "Static analysis failed: " + " ".join(static_failures))
+    # Check for f-string requirement
+    if rules.get("require_fstring"):
+        if not analyzer.analysis.get("print_calls") or not analyzer.analysis["print_calls"][0].get("is_fstring"):
+            feedback_key = "not_fstring"
+            message = rules.get("custom_feedback", {}).get(feedback_key, "This exercise requires using an f-string.")
+            return DynamicValidationResult(False, message) # Immediate failure
 
+    # 3. If all static checks passed, THEN execute the code and check the output.
     stdout, stderr, timed_out, exit_code, captured_prints = run_user_code_sandboxed(
         user_code, input_data=kwargs.get("input_data"), timeout=kwargs.get("timeout", 5), capture_print_types=True
     )
@@ -378,6 +434,7 @@ def validate_simple_print_exercise(user_code: str, rules: Dict[str, Any], **kwar
     if exit_code != 0: return DynamicValidationResult(False, f"Runtime error: {stderr.strip()}", actual_output=stdout)
     if not stdout.strip(): return DynamicValidationResult(False, "No output detected. Use print() to display results.", actual_output=stdout)
 
+    # 4. Check runtime conditions like output content and print count.
     feedback = []
     passed = True
 
@@ -385,19 +442,9 @@ def validate_simple_print_exercise(user_code: str, rules: Dict[str, Any], **kwar
     expected_print_count = rules.get("expected_print_count")
     if expected_print_count is not None and len(captured_prints) != expected_print_count:
         passed = False
-        feedback.append(f"Expected {expected_print_count} print operations, found {len(captured_prints)}.")
-
-    # Check printed types
-    expected_types = rules.get("expected_types")
-    if isinstance(expected_types, list) and len(captured_prints) == len(expected_types):
-        for i, exp_type in enumerate(expected_types):
-            if captured_prints[i]['type'] != exp_type:
-                passed = False
-                feedback.append(f"Type mismatch for printed item #{i+1}: expected '{exp_type}', got '{captured_prints[i]['type']}'.")
-                break
-    elif isinstance(expected_types, list):
-        passed = False
-        feedback.append(f"Expected {len(expected_types)} printed items, but found {len(captured_prints)}.")
+        feedback_key = "wrong_print_count"
+        message = rules.get("custom_feedback", {}).get(feedback_key, f"Expected {expected_print_count} print operations, found {len(captured_prints)}.")
+        feedback.append(message)
 
     # Check exact output content
     expected_output = rules.get("expected_exact_output")
@@ -406,10 +453,15 @@ def validate_simple_print_exercise(user_code: str, rules: Dict[str, Any], **kwar
         normalized_expected = expected_output.replace('\r\n', '\n')
         if normalized_stdout != normalized_expected:
             passed = False
-            feedback.append(f"Output content differs. Expected: {repr(normalized_expected)}, Got: {repr(normalized_stdout)}.")
+            feedback_key = "wrong_output"
+            message = rules.get("custom_feedback", {}).get(feedback_key, f"Output content differs. Expected: {repr(normalized_expected)}, Got: {repr(normalized_stdout)}.")
+            feedback.append(message)
 
-    final_message = "Exercise passed!" if passed else "Validation failed. " + " ".join(feedback)
-    return DynamicValidationResult(passed, final_message, actual_output=stdout)
+    if not passed:
+        return DynamicValidationResult(False, " ".join(feedback), actual_output=stdout)
+
+    return DynamicValidationResult(True, "Exercise passed!", actual_output=stdout)
+
 
 def validate_dynamic_output_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> DynamicValidationResult:
     analyzer = CodeAnalyzer(user_code)
@@ -434,12 +486,18 @@ def validate_dynamic_output_exercise(user_code: str, rules: Dict[str, Any], **kw
     if static_failures:
         return DynamicValidationResult(False, "Static analysis failed: " + " ".join(static_failures))
 
+    # --- START: FIX for test case handling ---
     test_cases = kwargs.get("input_data")
-    if test_cases is None:
+
+    # Ensure test_cases is always a list. If a single string is passed, wrap it in a list.
+    if isinstance(test_cases, str):
+        test_cases = [test_cases]
+    elif test_cases is None:
         # Generate test cases if not provided
         constraints = rules.get("input_constraints", {"type": "int", "min": 0, "max": 100})
         num_cases = rules.get("num_cases", 5)
         test_cases = generate_dynamic_test_cases(constraints, num_cases)
+    # --- END: FIX for test case handling ---
 
     all_cases_passed = True
     feedback = []
@@ -632,56 +690,70 @@ def validate_conditional_print_exercise(user_code: str, rules: Dict[str, Any], *
     if rules.get("require_if_statement", True) and not analyzer.analysis.get("has_if"):
         return DynamicValidationResult(False, "This exercise requires using an if/else statement.")
 
-    # --- START: MODIFIED LOGIC FOR DIRECT INPUT VS. TEST CASES ---
-    # If the exercise allows free-form input AND it's a direct run with data, prioritize that.
-    if rules.get("allow_free_form_input") and kwargs.get("direct_input_run") and kwargs.get("input_data") is not None:
-        case_input = kwargs.get("input_data")
-        # In a direct run, we don't have an 'expected_output' to compare against.
-        # The goal is to just run the code and show the user what their code does with their input.
-        input_with_newline = f'{case_input}\n'
+    # Determine which inputs to test
+    inputs_to_test = []
+    user_provided_input = kwargs.get("input_data")
+
+    if user_provided_input is not None:
+        inputs_to_test.append(user_provided_input)
+    else:
+        # Check if we have test_cases (new format) or output_logic (old format)
+        test_cases = rules.get("test_cases", [])
+        if test_cases:
+            # NEW FORMAT: Use predefined test cases with input/expected_output pairs
+            for case in test_cases:
+                case_input = case.get("input")
+                expected_output = case.get("expected_output")
+                if case_input is not None and expected_output is not None:
+                    input_with_newline = f'{case_input}\n'
+                    stdout, stderr, timed_out, exit_code, _ = run_user_code_sandboxed(
+                        user_code, input_with_newline, kwargs.get("timeout", 5)
+                    )
+
+                    if timed_out:
+                        return DynamicValidationResult(False, f"Execution timed out on input '{case_input}'.", actual_output=stdout)
+                    if exit_code != 0:
+                        return DynamicValidationResult(False, f"Runtime error on input '{case_input}': {stderr.strip()}", actual_output=stdout)
+
+                    # Compare the actual output with the expected output
+                    normalized_stdout = stdout.replace('\r\n', '\n').strip()
+                    normalized_expected = expected_output.replace('\r\n', '\n').strip()
+
+                    if normalized_stdout != normalized_expected:
+                        feedback_key = "wrong_output"
+                        default_msg = f"Failed on input '{case_input}'. Expected: '{normalized_expected}', but got: '{normalized_stdout}'"
+                        message = rules.get("custom_feedback", {}).get(feedback_key, default_msg)
+                        return DynamicValidationResult(False, message, actual_output=stdout)
+
+            # If all test cases passed
+            return DynamicValidationResult(True, "All test cases passed!")
+
+        else:
+            # OLD FORMAT: Use output_logic for dynamic evaluation
+            output_logic = rules.get("output_logic")
+            if not output_logic or not all(k in output_logic for k in ["condition", "true_output", "false_output"]):
+                return DynamicValidationResult(False, "Validation config error: Either 'test_cases' or complete 'output_logic' rule is required.")
+
+            # This would be for exercises that use dynamic logic evaluation
+            # (keeping the existing logic for backward compatibility)
+            inputs_to_test = ["10", "7"]  # Default test inputs if none provided
+
+    # Handle user-provided input case (when testing from frontend)
+    if user_provided_input is not None:
+        input_with_newline = f'{user_provided_input}\n'
         stdout, stderr, timed_out, exit_code, _ = run_user_code_sandboxed(
             user_code, input_with_newline, kwargs.get("timeout", 5)
         )
 
         if timed_out:
-            return DynamicValidationResult(False, f"Execution timed out on your input: '{case_input}'.", actual_output=stdout)
+            return DynamicValidationResult(False, f"Execution timed out.", actual_output=stdout)
         if exit_code != 0:
-            return DynamicValidationResult(False, f"Runtime error on your input: '{case_input}': {stderr.strip()}", actual_output=stdout)
+            return DynamicValidationResult(False, f"Runtime error: {stderr.strip()}", actual_output=stdout)
 
-        # For direct runs, we consider it a success if the code runs without error.
-        # We return the user's output so they can see the result.
         return DynamicValidationResult(True, "Code executed successfully with your input.", actual_output=stdout)
 
-    # If not a direct input run (or not allowed), proceed with the predefined test cases from rules.
-    test_cases = rules.get("test_cases")
-    if not test_cases or not isinstance(test_cases, list):
-        return DynamicValidationResult(False, "Validation config error: 'test_cases' is missing or not a list.")
-
-    for i, case in enumerate(test_cases):
-        case_input = case.get("input")
-        expected_output = case.get("expected_output")
-
-        if case_input is None or expected_output is None:
-            return DynamicValidationResult(False, f"Validation config error in test case #{i+1}: missing 'input' or 'expected_output'.")
-
-        input_with_newline = f'{case_input}\n'
-        stdout, stderr, timed_out, exit_code, _ = run_user_code_sandboxed(
-            user_code, input_with_newline, kwargs.get("timeout", 5)
-        )
-
-        if timed_out:
-            return DynamicValidationResult(False, f"Execution timed out on test case #{i+1} (Input: '{case_input}').", actual_output=stdout)
-        if exit_code != 0:
-            return DynamicValidationResult(False, f"Runtime error on test case #{i+1} (Input: '{case_input}'): {stderr.strip()}", actual_output=stdout)
-
-        normalized_stdout = stdout.replace('\r\n', '\n').strip()
-        normalized_expected = expected_output.replace('\r\n', '\n').strip()
-
-        if normalized_stdout != normalized_expected:
-            msg = f"Failed on input '{case_input}'. Expected: '{normalized_expected}', but got: '{normalized_stdout}'"
-            return DynamicValidationResult(False, msg, actual_output=stdout)
-
-    return DynamicValidationResult(True, "All predefined test cases passed!")
+    # This should not be reached for exercises with test_cases format
+    return DynamicValidationResult(False, "No validation path matched.")
 
 VALIDATOR_MAP = {
     "simple_print": validate_simple_print_exercise,

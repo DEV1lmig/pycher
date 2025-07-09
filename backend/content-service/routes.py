@@ -247,3 +247,25 @@ def get_random_course_exam_route(
         )
     logger.info(f"Random exam exercise retrieved for course {course_id}: {exam_exercise.id}")
     return exam_exercise
+
+@router.get("/courses/{course_id}/exam/exercise", summary="Get random exam exercise for course")
+def get_course_exam_exercise_route(course_id: int, db: Session = Depends(get_db)):
+    """
+    Returns a random exam exercise for the specified course.
+    This is used by user-service for exam assignment.
+    """
+    exercise = services.get_course_exam_exercise(db, course_id)
+    if not exercise:
+        raise HTTPException(status_code=404, detail="No exam exercises found for this course")
+
+    return {
+        "id": exercise.id,
+        "title": exercise.title,
+        "description": exercise.description,
+        "instructions": exercise.instructions,
+        "starter_code": exercise.starter_code,
+        "validation_type": exercise.validation_type,
+        "validation_rules": exercise.validation_rules,
+        "hints": exercise.hints,
+        "course_id": exercise.course_id
+    }

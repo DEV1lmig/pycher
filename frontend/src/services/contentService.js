@@ -7,8 +7,13 @@ export const getAllModules = async () => {
 };
 
 export const getModuleById = async (moduleId) => {
-  const response = await apiClient.get(`/api/v1/content/modules/${moduleId}`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/api/v1/content/modules/${moduleId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching module by ID:", error);
+    throw new Error(error.response?.data?.detail || "Failed to fetch module.");
+  }
 };
 
 export const getLessonsByModuleId = async (moduleId) => {
@@ -17,8 +22,13 @@ export const getLessonsByModuleId = async (moduleId) => {
 };
 
 export const getLessonById = async (lessonId) => {
-  const response = await apiClient.get(`/api/v1/content/lessons/${lessonId}`);
- return response.data;
+  try {
+    const response = await apiClient.get(`/api/v1/content/lessons/${lessonId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching lesson by ID:", error);
+    throw new Error(error.response?.data?.detail || "Failed to fetch lesson.");
+  }
 };
 
 // Exercises
@@ -28,8 +38,13 @@ export const getExercisesByLessonId = async (lessonId) => {
 };
 
 export const getExerciseById = async (exerciseId) => {
-  const response = await apiClient.get(`/api/v1/content/exercises/${exerciseId}`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/api/v1/content/exercises/${exerciseId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching exercise by ID:", error);
+    throw new Error(error.response?.data?.detail || "Failed to fetch exercise.");
+  }
 };
 
 // Courses
@@ -95,6 +110,11 @@ export const getCourseExamExercises = async (courseId) => {
 }
 
 export const getRandomCourseExam = async (courseId) => {
-    const response = await apiClient.get(`/api/v1/content/courses/${courseId}/exam-random`);
-    return response.data;
+    try {
+        const response = await apiClient.get(`/api/v1/content/courses/${courseId}/exam-random`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching random course exam:", error);
+        throw new Error(error.response?.data?.detail || "Failed to fetch random exam.");
+    }
 }

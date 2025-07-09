@@ -93,8 +93,8 @@ def _check_and_update_module_completion(db: Session, user_id: int, module_id: in
         logger.warning(f"Module or course not found for module_id={module_id}")
         return
 
-    # --- START: FIX - Define missing variables ---
     course_id = module.course.id
+    logger.debug(f"Module {module_id} belongs to Course {course_id}, order_index: {module.order_index}")
 
     module_progress = db.query(UserModuleProgress).filter(
         UserModuleProgress.user_id == user_id,
@@ -104,7 +104,6 @@ def _check_and_update_module_completion(db: Session, user_id: int, module_id: in
     if not module_progress:
         logger.error(f"CRITICAL: No UserModuleProgress found for User {user_id}, Module {module_id}.")
         return
-    # --- END: FIX ---
 
     lesson_ids_query = db.query(Lesson.id).filter(Lesson.module_id == module_id)
     total_lessons_in_module = lesson_ids_query.count()
@@ -113,7 +112,6 @@ def _check_and_update_module_completion(db: Session, user_id: int, module_id: in
         logger.info(f"Module ID {module_id} has no lessons. Considering it complete.")
         all_completed = True
     else:
-        # FIX SAWarning: Pass the query object directly to .in_()
         completed_lessons_count = db.query(UserLessonProgress.id).filter(
             UserLessonProgress.user_id == user_id,
             UserLessonProgress.lesson_id.in_(lesson_ids_query),
@@ -124,31 +122,57 @@ def _check_and_update_module_completion(db: Session, user_id: int, module_id: in
     logger.debug(f"User ID {user_id}, Module ID {module_id}: Lessons completed: {completed_lessons_count}/{total_lessons_in_module}. All completed: {all_completed}")
 
     if all_completed and not module_progress.is_completed:
-        # --- START: FIX - Mark the module as complete ---
         module_progress.is_completed = True
         module_progress.completed_at = dt.utcnow()
         db.add(module_progress)
         logger.info(f"User {user_id} has completed all lessons for Module {module_id}. Marking module as complete.")
 
+        # Find the next module in the course based on order_index
+        next_module = db.query(Module).filter(
+            Module.course_id == course_id,
+            Module.order_index > module.order_index
+        ).order_by(Module.order_index.asc()).first()
+
+        logger.debug(f"Searching for next module after order_index {module.order_index} in course {course_id}")
+
+        if next_module:
+            logger.debug(f"Found next module: ID {next_module.id}, order_index {next_module.order_index}")
+            next_module_progress = db.query(UserModuleProgress).filter(
+                UserModuleProgress.user_id == user_id,
+                UserModuleProgress.module_id == next_module.id
+            ).first()
+
+            if next_module_progress:
+                logger.debug(f"Next module progress found. Current is_unlocked: {next_module_progress.is_unlocked}")
+                if not next_module_progress.is_unlocked:
+                    next_module_progress.is_unlocked = True
+                    db.add(next_module_progress)
+                    logger.info(f"✅ UNLOCKED next module (ID: {next_module.id}) for User {user_id}.")
+                else:
+                    logger.info(f"Next module (ID: {next_module.id}) was already unlocked for User {user_id}.")
+            else:
+                logger.error(f"❌ CRITICAL: No UserModuleProgress found for next module {next_module.id} for User {user_id}")
+        else:
+            logger.info(f"Module {module_id} is the last module in the course. No next module to unlock.")
+
         # Now that this module is complete, check if the entire course is complete
         _check_and_update_course_completion(db, user_id, course_id)
-        # --- END: FIX ---
     else:
+        logger.debug(f"Module {module_id} not ready for completion. All lessons complete: {all_completed}, Module already completed: {module_progress.is_completed}")
         # If not all lessons are complete, just recalculate the overall course percentage
         recalculate_and_update_course_progress(db, user_id, course_id)
 
-
 def _check_and_update_course_completion(db: Session, user_id: int, course_id: int):
     """
-    Checks if all modules in a course are completed. If so, unlocks the final exam.
-    This function is triggered after a module is completed.
+    Checks if all REGULAR modules in a course are completed. If so, unlocks the final exam.
+    This function works entirely with user-service data.
     """
     logger.debug(f"User ID {user_id}, Course ID {course_id}: Starting _check_and_update_course_completion.")
 
     enrollment = db.query(UserCourseEnrollment).filter(
         UserCourseEnrollment.user_id == user_id,
         UserCourseEnrollment.course_id == course_id,
-        UserCourseEnrollment.is_active == True
+        UserCourseEnrollment.is_active_enrollment == True
     ).first()
 
     if not enrollment:
@@ -160,26 +184,60 @@ def _check_and_update_course_completion(db: Session, user_id: int, course_id: in
         recalculate_and_update_course_progress(db, user_id, course_id)
         return
 
-    module_ids_in_course_query = db.query(Module.id).filter(Module.course_id == course_id)
-    total_modules_in_course = module_ids_in_course_query.count()
+    # FIX: Use ONLY user-service data - the UserModuleProgress records
+    # Get all module progress records for this user in this course
+    all_module_progress = db.query(UserModuleProgress).filter(
+        UserModuleProgress.user_id == user_id,
+        UserModuleProgress.module_id.in_(
+            # This subquery gets module IDs that belong to this course
+            # But we need to get this data differently...
+            db.query(UserModuleProgress.module_id).filter(
+                UserModuleProgress.user_id == user_id
+            )
+        )
+    ).all()
 
-    if total_modules_in_course > 0:
-        completed_modules_count = db.query(UserModuleProgress.id).filter(
-            UserModuleProgress.user_id == user_id,
-            UserModuleProgress.module_id.in_(module_ids_in_course_query),
-            UserModuleProgress.is_completed == True
-        ).count()
-        all_modules_completed = (completed_modules_count >= total_modules_in_course)
-    else:
-        all_modules_completed = True # A course with no modules is considered "ready for exam".
+    # Better approach: Filter by the modules that were created during enrollment
+    # All UserModuleProgress records for a user represent modules in their enrolled courses
+    course_module_progress = db.query(UserModuleProgress).join(
+        UserCourseEnrollment,
+        UserCourseEnrollment.course_id == course_id
+    ).filter(
+        UserModuleProgress.user_id == user_id,
+        UserCourseEnrollment.user_id == user_id,
+        UserCourseEnrollment.is_active_enrollment == True
+    ).all()
 
-    logger.debug(f"User ID {user_id}, Course ID {course_id}: Modules completed: {completed_modules_count}/{total_modules_in_course}. All completed: {all_modules_completed}")
+    # Even better: Use the enrollment metadata
+    # When enrollment was created, we know which modules belong to the course
+    # We can store this info or derive it from the progress records themselves
 
-    if all_modules_completed and not enrollment.exam_unlocked:
+    # SIMPLEST FIX: Check if ALL modules that have progress records are completed
+    # This assumes that modules with no lessons (exam modules) were created
+    # with is_completed=False and won't be marked complete until exam is passed
+
+    regular_modules_completed = 0
+    total_regular_modules = 0
+
+    for module_progress in all_module_progress:
+        # A "regular" module is one that can be completed through lessons
+        # We can identify these by checking if they've ever been "started"
+        # Exam modules typically are never "started" (started_at remains None)
+        if module_progress.started_at is not None:  # This was a regular module with lessons
+            total_regular_modules += 1
+            if module_progress.is_completed:
+                regular_modules_completed += 1
+
+    logger.info(f"User ID {user_id}, Course ID {course_id}: Regular modules completed: {regular_modules_completed}/{total_regular_modules}")
+
+    all_regular_modules_completed = (regular_modules_completed >= total_regular_modules) if total_regular_modules > 0 else True
+
+    if all_regular_modules_completed and not enrollment.exam_unlocked:
         enrollment.exam_unlocked = True
         db.add(enrollment)
-        logger.info(f"User {user_id} has completed all modules for Course {course_id}. Exam is now unlocked. Staged for commit.")
+        logger.info(f"✅ EXAM UNLOCKED for User {user_id} in Course {course_id}.")
 
+    # Always recalculate progress after a check.
     recalculate_and_update_course_progress(db, user_id, course_id)
 
 
@@ -247,8 +305,8 @@ def enroll_user_in_course(db: Session, user_id: int, course_id: int):
 
     should_increment_count = False
     if existing_enrollment:
-        if not existing_enrollment.is_active_enrollment:
-            existing_enrollment.is_active_enrollment = True
+        if not existing_enrollment.is_active:  # FIX: Changed from is_active_enrollment
+            existing_enrollment.is_active = True  # FIX: Changed from is_active_enrollment
             existing_enrollment.enrollment_date = dt.utcnow() # Reset enrollment date on re-activation
             existing_enrollment.last_accessed = dt.utcnow()
             # Reset progress fields if re-enrolling after unenrolling
@@ -1512,7 +1570,7 @@ def recalculate_and_update_course_progress(db: Session, user_id: int, course_id:
     enrollment = db.query(UserCourseEnrollment).filter(
         UserCourseEnrollment.user_id == user_id,
         UserCourseEnrollment.course_id == course_id,
-        UserCourseEnrollment.is_active_enrollment == True
+        UserCourseEnrollment.is_active_enrollment == True  # CORRECT: Using is_active_enrollment
     ).first()
     if not enrollment:
         logger.warning(f"User ID {user_id}, Course ID {course_id}: No active enrollment found in recalculate_and_update_course_progress.")
@@ -1558,6 +1616,7 @@ def recalculate_and_update_course_progress(db: Session, user_id: int, course_id:
         enrollment.progress_percentage = final_progress_percentage
         db.add(enrollment)
         logger.info(f"User ID {user_id}, Course ID {course_id}: Staged UserCourseEnrollment.progress_percentage to {final_progress_percentage}.")
+
 
 def run_exam_code_validation(code_submitted, exercise, input_data=None, timeout=10):
     """

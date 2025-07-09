@@ -11,7 +11,7 @@ export function OutputDisplay({ output = '', error = '' }) {
           <TabsList>
             <TabsTrigger value="output">Output</TabsTrigger>
             <TabsTrigger value="error" disabled={!hasError} className="data-[state=active]:text-red-500 data-[state=active]:font-medium">
-              {hasError && <span className="w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></span>}
+              {hasError && <span className="w-2 h-2 rounded-full bg-red mr-2 animate-pulse"></span>}
               Errors
             </TabsTrigger>
           </TabsList>

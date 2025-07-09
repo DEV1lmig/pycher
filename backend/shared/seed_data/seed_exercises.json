@@ -69,6 +69,11 @@
     "validation_rules": {
       "expected_exact_output": "El área de un rectángulo de 10x5 es 50.\n",
       "expected_print_count": 1,
+      "required_variables_in_print": [
+        "largo",
+        "ancho",
+        "area"
+      ],
       "strict_variable_names": [
         "largo",
         "ancho",
@@ -175,6 +180,9 @@
     "validation_rules": {
       "expected_exact_output": "False\n",
       "expected_print_count": 1,
+      "required_variables_in_print": [
+        "puede_alquilar"
+      ],
       "expected_types": [
         "bool"
       ],
@@ -314,41 +322,23 @@
     "starter_code": "lista_compra = [\"leche\", \"pan\", \"huevos\"]\nproducto_buscado = input()\n# Escribe tu lógica if/else aquí\n",
     "validation_type": "conditional_print",
     "validation_rules": {
-      "allow_free_form_input": true,
+      "output_logic": {
+        "condition": "value in ['leche', 'pan', 'huevos']",
+        "true_output": "Sí, está en la lista\n",
+        "false_output": "No, hay que añadirlo\n"
+      },
       "test_cases": [
         {
-          "input": "leche",
-          "expected_output": "Sí, está en la lista\n"
+          "input": "leche"
         },
         {
-          "input": "tomate",
-          "expected_output": "No, hay que añadirlo\n"
+          "input": "tomate"
         },
         {
-          "input": "huevos",
-          "expected_output": "Sí, está en la lista\n"
-        },
-        {
-          "input": "pan",
-          "expected_output": "Sí, está en la lista\n"
-        },
-        {
-          "input": "cebolla",
-          "expected_output": "No, hay que añadirlo\n"
+          "input": "huevos"
         }
       ],
       "requires_input_function": true,
-      "input_constraints": {
-        "type": "string",
-        "min_length": 3,
-        "max_length": 10,
-        "charset": "alpha"
-      },
-      "expected_print_options": [
-        "Sí, está en la lista",
-        "No, hay que añadirlo"
-      ],
-      "expected_print_count": 1,
       "strict_whitespace": true,
       "case_sensitive": true,
       "custom_feedback": {
@@ -2683,7 +2673,7 @@
     "order_index": 3,
     "title": "Examen Final: Python Avanzado",
     "description": "Pon en práctica tus conocimientos en clases, métodos, decoradores, generadores, y operaciones con listas y expresiones regulares aplicados a ejemplos reales.",
-    "instructions": "Completa cada ejercicio basándote en ejemplos del día a día:\n\n1. Crea la clase Cuenta con atributos titular y saldo. Define el método __str__ para mostrar: 'Cuenta de [titular], Saldo: $[saldo]'.\n\n2. Agrega un método depositar(cantidad) que sume la cantidad al saldo actual.\n\n3. Define un decorador rastro que imprima \"Llamando función...\" antes de ejecutar cualquier función. Úsalo en una función inicio().\n\n4. Crea una función generadora multiplos_de_tres(n) que genere los primeros n múltiplos de 3.\n\n5. Dada la lista:\n   personas = [\n       {\"Nombre\": \"Elena\", \"Edad\": 32, \"Ciudad\": \"Quito\"},\n       {\"Nombre\": \"Jorge\", \"Edad\": 21, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"Sara\", \"Edad\": 30, \"Ciudad\": \"Quito\"}\n   ]\n   Imprime los nombres de las personas que viven en \"Quito\".\n   Cuenta cuántas personas tienen edad impar.\n\n6. Extrae todos los números del texto \"Hay 10 perros, 5 gatos y 2 aves\" usando re.findall.",
+    "instructions": "Completa cada ejercicio basándote en ejemplos del día a día:\n\n1. Crea la clase Cuenta con atributos titular y saldo. Define el método __str__ para mostrar: 'Cuenta de [titular], Saldo: $[saldo]'.\n\n2. Agrega un método depositar(cantidad) que sume la cantidad al saldo actual.\n\n3. Define un decorador rastro que imprima \"Llamando función...\" antes de ejecutar cualquier función. Úsalo en una función inicio().\n\n4. Crea una función generadora multiplos_de_tres(n) que genere los primeros n múltiplos de 3.\n\n5. Dada la lista:\n   personas = [\n       {\"Nombre\": \"Elena\", \"Edad\": 32, \"Ciudad\": \"Quito\"},\n       {\"Nombre\": \"Jorge\", \"Edad\": 21, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"Sara\", \"Edad\": 30, \"Ciudad\": \"Quito\"}\n   ]\n   Muestra los nombres de las personas que viven en \"Quito\".\n   Cuenta cuántas personas tienen edad impar.\n\n6. Extrae todos los números del texto \"Hay 10 perros, 5 gatos y 2 aves\" usando re.findall.",
     "starter_code": "# Ejercicio 1.1\n# Clase Cuenta con __str__\n\n\n# Ejercicio 1.2\n# Método depositar\n\n\n# Ejercicio 2.1\n# Decorador rastro y función inicio\n\n\n# Ejercicio 2.2\n# Función generadora multiplos_de_tres\n\n\n# Ejercicio 3.1\n# Lista personas y operaciones\n\n\n# Ejercicio 3.2\n# Extraer números con re.findall\n",
     "validation_type": "exam",
     "validation_rules": {

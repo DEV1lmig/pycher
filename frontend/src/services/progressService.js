@@ -80,8 +80,13 @@ export const getCourseExam = async (courseId) => {
  * @returns {Promise<Object>} The exam exercise object.
  */
 export const getCurrentCourseExam = async (courseId) => {
-  const response = await apiClient.get(`/api/v1/users/me/courses/${courseId}/current-exam`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/api/v1/users/me/courses/${courseId}/current-exam`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching current course exam:", error);
+    throw new Error(error.response?.data?.detail || "Failed to fetch current exam.");
+  }
 };
 
 export const startExamAttempt = async (examId) => {

@@ -168,7 +168,8 @@ class UserCourseEnrollment(BaseModel):
     is_completed: bool
     progress_percentage: float
     total_time_spent_minutes: int
-
+    is_active_enrollment: bool
+    is_active: bool# Indicates if the enrollment is currently active
     class Config:
         from_attributes = True
 

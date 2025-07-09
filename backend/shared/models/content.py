@@ -98,7 +98,9 @@ class UserCourseEnrollment(Base): # This will serve as UserCourseProgress
     last_accessed_lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=True)
     is_active_enrollment = Column(Boolean, default=True, nullable=False) # New field for soft delete
     exam_unlocked = Column(Boolean, default=False, nullable=False) # New field for exam unlock status
-
+    is_active = Column(Boolean, default=False) # New field for soft delete
+    # Relationships
+    # user = relationship("User",)
     course = relationship("Course", back_populates="enrollments")
     # Assuming user_id links to a User table not defined in this file
     # user = relationship("User", back_populates="course_enrollments")

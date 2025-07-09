@@ -4,8 +4,20 @@ from pydantic import BaseModel
 import os
 import time
 import logging
+import sys
 from typing import Dict, Optional, List, Any
 import json
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 # Import from the new validators module
 # Assuming validators.py is in the same directory as main.py
@@ -74,11 +86,11 @@ async def health_check():
 @app.post("/execute", response_model=ValidationResultModel)
 async def execute_and_validate_code(request: CodeRequest):
     start_time = time.time()
+    logger.info(f"Starting execution for exercise ID: {request.exercise_id}")
 
     exercise_config = EXERCISES_DATA.get(request.exercise_id)
     if not exercise_config:
-        # Log the error and return a structured error response
-        logging.error(f"Exercise ID {request.exercise_id} not found in EXERCISES_DATA.")
+        logger.error(f"Exercise ID {request.exercise_id} not found in EXERCISES_DATA.")
         return ValidationResultModel(
             output=None,
             error=f"Exercise with ID {request.exercise_id} not found.",
@@ -87,11 +99,12 @@ async def execute_and_validate_code(request: CodeRequest):
         )
 
     validation_type = exercise_config.get("validation_type")
-    # These are the overall rules for the exercise, including any predefined scenarios
     exercise_rules_from_config = exercise_config.get("validation_rules", {})
 
+    logger.info(f"Exercise {request.exercise_id}: validation_type='{validation_type}', rules={exercise_rules_from_config}")
+
     if not validation_type or validation_type not in VALIDATOR_MAP:
-        logging.error(f"No validator defined for exercise type: '{validation_type}' (Exercise ID: {request.exercise_id}).")
+        logger.error(f"No validator defined for exercise type: '{validation_type}' (Exercise ID: {request.exercise_id}).")
         return ValidationResultModel(
             output=None,
             error=f"No validator defined for exercise type: '{validation_type}'.",
