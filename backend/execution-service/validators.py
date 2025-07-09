@@ -166,6 +166,44 @@ class CodeAnalyzer:
         except SyntaxError as e:
             self.syntax_error = str(e)
 
+    def get_class_node(self, class_name: str) -> Optional[ast.ClassDef]:
+        if not self.tree: return None
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.ClassDef) and node.name == class_name:
+                return node
+        return None
+
+    def check_method_or_property_exists(self, class_node: ast.ClassDef, name: str, is_property: bool = False) -> bool:
+        for item in class_node.body:
+            if isinstance(item, ast.FunctionDef) and item.name == name:
+                if not is_property:
+                    return True # It's a method
+                # Check if it has the @property decorator
+                if any(isinstance(d, ast.Name) and d.id == 'property' for d in item.decorator_list):
+                    return True
+        return False
+
+    def check_is_dataclass(self, class_node: ast.ClassDef, frozen: Optional[bool] = None) -> bool:
+        for decorator in class_node.decorator_list:
+            # Simple decorator: @dataclass
+            if isinstance(decorator, ast.Name) and decorator.id == 'dataclass':
+                if frozen is None: return True # Just check for @dataclass
+                if frozen is False: return True # @dataclass is not frozen by default
+
+            # Decorator with arguments: @dataclass(frozen=True)
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name) and decorator.func.id == 'dataclass':
+                if frozen is None: return True # It's a dataclass, regardless of args
+
+                for kw in decorator.keywords:
+                    if kw.arg == 'frozen':
+                        # Check for `frozen=True` or `frozen=False`
+                        if isinstance(kw.value, ast.Constant) and kw.value.value is frozen:
+                            return True
+                # If frozen argument is not present, it defaults to False
+                if frozen is False:
+                    return True
+        return False
+
     def analyze(self):
         if not self.tree: return
         logger.info("Starting code analysis...")
@@ -754,6 +792,121 @@ def validate_conditional_print_exercise(user_code: str, rules: Dict[str, Any], *
 
     # This should not be reached for exercises with test_cases format
     return DynamicValidationResult(False, "No validation path matched.")
+def validate_class_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> DynamicValidationResult:
+    """
+    Validates exercises that require the user to define and use a class.
+    It performs static analysis and then dynamically imports and tests the class.
+    """
+    class_name = rules.get("class_name")
+    if not class_name:
+        return DynamicValidationResult(False, "Validation config error: 'class_name' is missing.")
+
+    # 1. Static Analysis
+    analyzer = CodeAnalyzer(user_code)
+    if analyzer.syntax_error:
+        return DynamicValidationResult(False, f"Your code has a syntax error: {analyzer.syntax_error}")
+
+    class_node = analyzer.get_class_node(class_name)
+    if not class_node:
+        return DynamicValidationResult(False, f"Class '{class_name}' was not found in your code.")
+
+    if rules.get("require_dataclass") and not analyzer.check_is_dataclass(class_node):
+        return DynamicValidationResult(False, f"The class '{class_name}' must be a dataclass. Did you use the '@dataclass' decorator?")
+
+    if rules.get("require_frozen") and not analyzer.check_is_dataclass(class_node, frozen=True):
+         return DynamicValidationResult(False, f"The dataclass '{class_name}' must be immutable. Use '@dataclass(frozen=True)'.")
+
+    # 2. Dynamic Import and Execution of Checks
+    temp_module_path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding='utf-8') as tmp_file:
+            temp_module_path = tmp_file.name
+            tmp_file.write(user_code)
+
+        spec = importlib.util.spec_from_file_location(f"usermodule_{os.path.basename(temp_module_path).replace('.py', '')}", temp_module_path)
+        if not spec or not spec.loader:
+            return DynamicValidationResult(False, "Validator error: Failed to create module spec.")
+
+        user_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(user_module)
+
+        if not hasattr(user_module, class_name):
+            return DynamicValidationResult(False, f"Failed to import class '{class_name}'. Check for errors outside the class definition.")
+
+        UserClass = getattr(user_module, class_name)
+
+        # This dictionary will hold instances created during checks
+        instances = {}
+
+        # Execute checks sequentially
+        for i, check in enumerate(rules.get("checks", [])):
+            check_type = check.get("type")
+            instance_name = check.get("instance_name", "default")
+
+            try:
+                if check_type == "instantiation":
+                    args = check.get("args", [])
+                    kwargs = check.get("kwargs", {})
+                    instance = UserClass(*args, **kwargs)
+                    instances[instance_name] = instance
+
+                elif check_type == "attribute_check":
+                    instance = instances[instance_name]
+                    attr_name = check["attribute"]
+                    expected_value = check["expected_value"]
+                    if not hasattr(instance, attr_name):
+                        return DynamicValidationResult(False, f"Check {i+1} failed: Instance has no attribute '{attr_name}'.")
+                    actual_value = getattr(instance, attr_name)
+                    if actual_value != expected_value:
+                        return DynamicValidationResult(False, f"Check {i+1} failed: Attribute '{attr_name}' should be '{expected_value}', but was '{actual_value}'.")
+
+                elif check_type == "property_check":
+                    instance = instances[instance_name]
+                    prop_name = check["property"]
+                    expected_value = check["expected_value"]
+                    if not hasattr(instance, prop_name):
+                         return DynamicValidationResult(False, f"Check {i+1} failed: Instance has no property '{prop_name}'.")
+                    actual_value = getattr(instance, prop_name)
+                    if actual_value != expected_value:
+                        return DynamicValidationResult(False, f"Check {i+1} failed: Property '{prop_name}' should be '{expected_value}', but was '{actual_value}'.")
+
+                elif check_type == "method_call":
+                    instance = instances[instance_name]
+                    method_name = check["method"]
+                    args = check.get("args", [])
+                    kwargs = check.get("kwargs", {})
+                    if not hasattr(instance, method_name):
+                        return DynamicValidationResult(False, f"Check {i+1} failed: Instance has no method '{method_name}'.")
+                    method = getattr(instance, method_name)
+                    actual_return = method(*args, **kwargs)
+
+                    if "expected_return_value" in check:
+                        expected_return = check["expected_return_value"]
+                        if actual_return != expected_return:
+                            return DynamicValidationResult(False, f"Check {i+1} failed: Method '{method_name}' returned '{actual_return}' but expected '{expected_return}'.")
+
+                    if check.get("saves_return_as"):
+                        instances[check["saves_return_as"]] = actual_return
+
+
+                elif check_type == "str_check":
+                    instance = instances[instance_name]
+                    expected_str = check["expected_output"]
+                    actual_str = str(instance)
+                    if actual_str != expected_str:
+                        return DynamicValidationResult(False, f"Check {i+1} failed: The string representation was incorrect. Expected '{expected_str}', got '{actual_str}'.")
+
+            except Exception as e:
+                return DynamicValidationResult(False, f"An error occurred during check {i+1} ({check_type}): {type(e).__name__}: {e}")
+
+    except Exception as e:
+        return DynamicValidationResult(False, f"A critical error occurred during validation: {type(e).__name__}: {e}")
+    finally:
+        if temp_module_path and os.path.exists(temp_module_path):
+            try: os.unlink(temp_module_path)
+            except Exception: pass
+
+    return DynamicValidationResult(True, "All class checks passed!")
 
 VALIDATOR_MAP = {
     "simple_print": validate_simple_print_exercise,
@@ -763,6 +916,7 @@ VALIDATOR_MAP = {
     "exam": validate_exam_exercise, # Keep for compatibility
     "saludo_personalizado": validate_saludo_personalizado, # <-- ADD THIS LINE
     "flexible_exercise": validate_flexible_exercise,  # Add the new validator
+    "class_exercise": validate_class_exercise,
     # "function_and_output" is deprecated for simplicity.
     # "class_exercise" can be added back here if needed, following the new pattern.
 }

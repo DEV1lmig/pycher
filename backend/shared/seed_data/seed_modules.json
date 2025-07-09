@@ -68,32 +68,32 @@
   {
     "id": 9,
     "course_id": 3,
-    "title": "Módulo 1: Programación Orientada a Objetos",
-    "description": "Da el siguiente paso en tu viaje como programador aprendiendo a modelar el mundo real con clases y objetos. En este módulo, crearás tus propias 'plantillas' de datos con clases, les darás vida como objetos, definirás sus características (atributos) y comportamientos (métodos). Dominarás conceptos clave como `__init__` y `__str__` para construir código más organizado, reutilizable y profesional.",
+    "title": "Módulo 1: Modelado de Datos Funcional con Clases",
+    "description": "Aprende a estructurar datos de forma moderna y segura. En este módulo, usarás decoradores como `@dataclass` para crear clases concisas y robustas. Adoptarás un enfoque funcional, priorizando la inmutabilidad (`frozen=True`) y creando métodos que devuelven nuevas instancias en lugar de modificar el estado. Dominarás el uso de `@property` para exponer datos computados de manera elegante.",
     "order_index": 1,
     "duration_minutes": 75
   },
   {
     "id": 10,
     "course_id": 3,
-    "title": "Módulo 2: Conceptos Avanzados de Funciones",
-    "description": "Lleva tus funciones al siguiente nivel. Aprenderás a 'envolver' y extender su comportamiento con decoradores, una poderosa herramienta para añadir funcionalidades sin modificar el código original. Descubrirás cómo crear secuencias de datos eficientes en memoria con generadores y la palabra clave `yield`, y entenderás a fondo cómo funciona la iteración en Python con `iter()` y `next()`.",
+    "title": "Módulo 2: Herramientas del Paradigma Funcional",
+    "description": "Sumérgete en las herramientas clave de la programación funcional en Python. Aprenderás a extender comportamientos con decoradores, a procesar secuencias de datos de forma eficiente y 'perezosa' (lazy) con generadores (`yield`), y a realizar transformaciones de datos declarativas y elegantes utilizando funciones de orden superior como `map` y `filter`.",
     "order_index": 2,
     "duration_minutes": 75
   },
   {
     "id": 11,
     "course_id": 3,
-    "title": "Módulo 3: Herramientas para el Procesamiento de Datos",
-    "description": "Prepárate para manejar datos como un experto. Aprenderás a simular y procesar datos estructurados, como los de un archivo CSV, usando listas de diccionarios. Perfeccionarás tus habilidades de formateo de texto para crear salidas claras y dinámicas, y te sumergirás en el mundo de las expresiones regulares (`regex`) para validar, buscar y manipular texto con una precisión inigualable.",
+    "title": "Módulo 3: Pipelines de Datos y Procesamiento Funcional",
+    "description": "Aplica tus habilidades funcionales para resolver problemas de procesamiento de datos del mundo real. Aprenderás a construir 'pipelines' de datos limpios y legibles componiendo funciones. Utilizarás list comprehensions anidadas para aplanar estructuras complejas y usarás expresiones regulares (`regex`) como una herramienta potente para la limpieza y validación de datos dentro de tus flujos de trabajo.",
     "order_index": 3,
     "duration_minutes": 75
   },
   {
     "id": 12,
     "course_id": 3,
-    "title": "Examen Final: Python Avanzado",
-    "description": "Demuestra tu dominio de los conceptos avanzados de Python. Este examen evaluará tu capacidad para construir clases y objetos, implementar decoradores y generadores, y procesar datos complejos utilizando listas de diccionarios y expresiones regulares. Resolverás problemas que integran todas las habilidades aprendidas para crear soluciones robustas y eficientes.",
+    "title": "Examen Final: Python Avanzado y Funcional",
+    "description": "Demuestra tu dominio de los conceptos avanzados de Python con un enfoque funcional. Este examen evaluará tu capacidad para modelar datos inmutables con `dataclasses`, implementar decoradores y generadores personalizados, y construir `pipelines` de datos para procesar colecciones complejas usando `map`, `filter` y expresiones regulares.",
     "order_index": 4,
     "duration_minutes": 60,
     "is_exam": true

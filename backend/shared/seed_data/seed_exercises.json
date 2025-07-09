@@ -1074,10 +1074,13 @@
     "starter_code": "# Crea la tupla con los días de la semana\ndias = (\"lunes\", \"martes\", \"miércoles\", \"jueves\", \"viernes\", \"sábado\", \"domingo\")\n\n# Imprime el primer día\nprint(dias[0])\n\n# Imprime el último día\nprint(dias[-1])\n\n# Imprime el día en la posición 3\nprint(dias[3])",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
+      "expected_exact_output": "lunes\ndomingo\njueves\n",
       "expected_print_count": 1,
       "expected_types": [
         "str"
+      ],
+      "required_variables_in_print": [
+        "dias[]"
       ],
       "strict_whitespace": true,
       "case_sensitive": true,
@@ -2097,295 +2100,214 @@
       ]
     }
   },
-  {
+ {
     "id": 34,
     "course_id": 3,
     "module_id": 9,
-    "lesson_id": 24,
-    "order_index": 24,
-    "title": "Ejercicio 1.1: Tu primera clase en Python",
-    "description": "Vamos a crear una clase llamada `Animal` que inicialmente estará vacía. Luego haremos una instancia (un ejemplar) de esa clase y la mostraremos en pantalla.",
-    "instructions": "1. Define una clase vacía llamada `Animal` usando `class`.\n2. Usa `pass` dentro de la clase para que quede vacía.\n3. Crea una variable `animal1` y asígnale una instancia de `Animal`.\n4. Imprime `animal1` para ver que el objeto fue creado.\n\nPiensa que una clase es como el molde para hacer juguetes. Aquí hacemos el molde pero sin detalles, y luego mostramos el juguete que salió del molde.",
-    "starter_code": "# Escribe tu código aquí\n",
-    "validation_type": "simple_print",
+    "lesson_id": 23,
+    "order_index": 1,
+    "title": "Ejercicio 1.1: Estructurando Datos con `@dataclass`",
+    "description": "Convierte un conjunto de datos simples en una clase estructurada y legible usando el decorador `@dataclass`.",
+    "instructions": "En lugar de usar una clase vacía o una tupla, vamos a usar el decorador `@dataclass` para crear una clase `Punto` de forma concisa y moderna.\n\n**Tu Tarea:**\n1. Importa `dataclass` desde el módulo `dataclasses`.\n2. Usa el decorador `@dataclass` sobre una nueva clase llamada `Punto`.\n3. Define dos atributos en la clase: `x: int` e `y: int`.\n4. Crea una instancia de `Punto` con los valores `x=10` e `y=20`.\n5. Imprime la instancia. Observa cómo `@dataclass` te proporciona una representación útil automáticamente.",
+    "starter_code": "from dataclasses import dataclass\n\n# Define tu dataclass aquí\n@dataclass\nclass Punto:\n    x: int\n    y: int\n\n# Crea una instancia e imprímela\nprint(Punto(10, 20))",
+    "validation_type": "class_exercise",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Imagina que tienes una caja para hacer galletas (la clase) pero aún no pones ningún ingrediente ni formas. Crear una instancia es como hacer la primera galleta con ese molde."
+      "class_name": "Punto",
+      "require_dataclass": true,
+      "checks": [
+        {
+          "type": "instantiation",
+          "args": [10, 20],
+          "variable_name": "p1"
+        },
+        {
+          "type": "str_check",
+          "instance_name": "p1",
+          "expected_output": "Punto(x=10, y=20)"
+        },
+        {
+          "type": "attribute_check",
+          "instance_name": "p1",
+          "attribute": "x",
+          "expected_value": 10
+        }
+      ]
+    }
   },
   {
     "id": 35,
     "course_id": 3,
     "module_id": 9,
-    "lesson_id": 25,
-    "order_index": 25,
-    "title": "Ejercicio 1.2: Clase Animal con atributos y método",
-    "description": "Vamos a hacer una clase `Animal` que tenga características como el nombre y la especie, y un método para que el animal se presente diciendo quién es.",
-    "instructions": "1. Crea la clase `Animal`.\n2. En `__init__`, recibe `nombre` y `especie` y guárdalos.\n3. Crea un método `descripcion()` que imprima: `Soy un(a) [especie] y me llamo [nombre].`\n4. Instancia un animal con `\"Luna\"` y `\"gata\"`.\n5. Llama a `descripcion()` para que se presente.\n\nEsto es como cuando conoces a una persona y le preguntas su nombre y de dónde viene, para presentarla a otros.",
-    "starter_code": "# Escribe tu código aquí\n",
-    "validation_type": "simple_print",
+    "lesson_id": 24,
+    "order_index": 2,
+    "title": "Ejercicio 1.2: Garantizando la Inmutabilidad",
+    "description": "Crea una clase inmutable usando `@dataclass(frozen=True)` y define un método que devuelva una nueva instancia con datos actualizados.",
+    "instructions": "Vamos a practicar el paradigma funcional creando una clase inmutable. En lugar de modificar un objeto, crearemos uno nuevo con los datos actualizados.\n\n**Tu Tarea:**\n1. Importa `dataclass`.\n2. Crea una `dataclass` **inmutable** (`frozen=True`) llamada `Usuario` con los atributos `nombre: str` y `activo: bool`.\n3. Añade un método `activar(self)` que **retorne** una nueva instancia de `Usuario` con el mismo nombre, pero con `activo` establecido en `True`.\n4. Crea una instancia `usuario_original` con el nombre \"Alex\" y `activo=False`.\n5. Llama al método `.activar()` del original y guarda el resultado en una variable `usuario_activado`.\n6. Comprueba que el `usuario_original` no ha cambiado y que el `usuario_activado` tiene el estado correcto.",
+    "starter_code": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Usuario:\n    nombre: str\n    activo: bool\n\n    def activar(self):\n        # Retorna una nueva instancia, no modifiques 'self'\n        return Usuario(self.nombre, True)\n\n# No necesitas imprimir nada, el validador probará tu clase.\n",
+    "validation_type": "class_exercise",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Como cuando haces una ficha personal con tu nombre y profesión, y luego dices: “Hola, soy Juan y soy diseñador gráfico.”"
+      "class_name": "Usuario",
+      "require_dataclass": true,
+      "require_frozen": true,
+      "checks": [
+        {
+          "type": "instantiation",
+          "args": ["Alex", false],
+          "variable_name": "original"
+        },
+        {
+          "type": "method_call",
+          "instance_name": "original",
+          "method": "activar",
+          "args": [],
+          "saves_return_as": "activado"
+        },
+        {
+          "type": "attribute_check",
+          "instance_name": "original",
+          "attribute": "activo",
+          "expected_value": false
+        },
+        {
+          "type": "attribute_check",
+          "instance_name": "activado",
+          "attribute": "activo",
+          "expected_value": true
+        }
+      ]
+    }
   },
   {
     "id": 36,
     "course_id": 3,
     "module_id": 9,
-    "lesson_id": 26,
-    "order_index": 26,
-    "title": "Ejercicio 1.3: Clase Coche con métodos especiales",
-    "description": "Vamos a crear una clase `Coche` que tenga marca y kilometraje, y que pueda actualizar cuántos kilómetros ha recorrido. Además, cuando imprimas el coche, mostrará una descripción clara.",
-    "instructions": "1. Crea la clase `Coche` con atributos `marca` y `kilometraje`.\n2. Inicialízalos en `__init__`.\n3. Define `__str__` para mostrar: `Coche: [marca], Kilometraje: [km]`.\n4. Agrega un método `recorrer(km)` para sumar kilómetros al kilometraje.\n5. Crea un coche, imprímelo, llama a `recorrer(100)`, e imprime otra vez.\n\nEsto es como llevar un registro de cuántos kilómetros llevas en tu coche y actualizarlo cada vez que sales a un viaje.",
-    "starter_code": "# Escribe tu código aquí\n",
-    "validation_type": "simple_print",
+    "lesson_id": 25,
+    "order_index": 3,
+    "title": "Ejercicio 1.3: Atributos Computados con `@property`",
+    "description": "Añade lógica a tus clases con métodos que calculan valores y exponlos como atributos de solo lectura con el decorador `@property`.",
+    "instructions": "Las propiedades nos permiten ejecutar un método como si estuviéramos accediendo a un atributo, haciendo el código más limpio e intuitivo.\n\n**Tu Tarea:**\n1. Crea una `dataclass` inmutable (`frozen=True`) llamada `Circulo` con un atributo `radio: float`.\n2. Define un método llamado `area`.\n3. Usa el decorador `@property` sobre el método `area`.\n4. El método debe calcular y retornar el área del círculo (usa `3.14159` para PI). La fórmula es `PI * radio^2`.\n5. No es necesario que imprimas nada, el validador probará tu clase directamente.",
+    "starter_code": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Circulo:\n    radio: float\n\n    @property\n    def area(self):\n        # Calcula y retorna el área\n        return 3.14159 * (self.radio ** 2)\n",
+    "validation_type": "class_exercise",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Como cuando miras el odómetro de tu auto antes y después de un viaje para saber cuántos kilómetros recorriste."
+      "class_name": "Circulo",
+      "require_dataclass": true,
+      "require_frozen": true,
+      "checks": [
+        {
+          "type": "instantiation",
+          "args": [10.0],
+          "variable_name": "c1"
+        },
+        {
+          "type": "property_check",
+          "instance_name": "c1",
+          "property": "area",
+          "expected_value": 314.159
+        },
+        {
+          "type": "instantiation",
+          "args": [1.0],
+          "variable_name": "c2"
+        },
+        {
+          "type": "property_check",
+          "instance_name": "c2",
+          "property": "area",
+          "expected_value": 3.14159
+        }
+      ]
+    }
   },
   {
     "id": 37,
     "course_id": 3,
     "module_id": 10,
-    "lesson_id": 27,
-    "order_index": 27,
-    "title": "Ejercicio 2.1: Crea tu primer decorador",
-    "description": "Vamos a crear un decorador, que es como un 'envoltorio' para funciones, que añade mensajes antes y después de que la función se ejecute.",
-    "instructions": "1. Define una función `mi_decorador` que reciba otra función.\n2. Dentro, define `wrapper` que imprime `Iniciando ejecución...`, luego llama a la función original y finalmente imprime `Ejecución finalizada.`\n3. Decora la función `decir_hola()` que imprime `Hola desde la función.`\n4. Llama a `decir_hola()` y observa el resultado.\n\nEsto es como cuando alguien te presenta antes de que hables en público y te despide después, para dar contexto a tu mensaje.",
-    "starter_code": "# Escribe tu código aquí\n",
+    "lesson_id": 26,
+    "order_index": 1,
+    "title": "Ejercicio 2.1: Decorando Funciones",
+    "description": "Construye un decorador simple que añada un comportamiento extra a una función sin modificar su código interno.",
+    "instructions": "Los decoradores son una de las herramientas más poderosas y características de Python para extender funcionalidades.\n\n**Tu Tarea:**\n1. Define una función decoradora llamada `envoltura_div`.\n2. Dentro, define la función `wrapper` que recibirá los argumentos de la función decorada.\n3. El `wrapper` debe imprimir `\"<div>\"` antes de llamar a la función original.\n4. Después de llamar a la función, debe imprimir `\"</div>\"`.\n5. Decora la función `saludo` que imprime \"Hola Funcional\" para que su salida quede envuelta en etiquetas div.",
+    "starter_code": "def envoltura_div(func):\n    def wrapper(*args, **kwargs):\n        print(\"<div>\")\n        func(*args, **kwargs)\n        print(\"</div>\")\n    return wrapper\n\n@envoltura_div\ndef saludo():\n    print(\"Hola Funcional\")\n\nsaludo()\n",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Como cuando alguien te ayuda a preparar una sorpresa para que todo salga perfecto justo antes y después de que hagas algo."
+      "expected_exact_output": "<div>\nHola Funcional\n</div>\n",
+      "expected_print_count": 3
+    }
   },
   {
     "id": 38,
     "course_id": 3,
     "module_id": 10,
-    "lesson_id": 28,
-    "order_index": 28,
-    "title": "Ejercicio 2.2: Generador de números pares",
-    "description": "Vamos a crear una función que genere números pares de a uno a la vez usando `yield`, para practicar cómo se producen datos sin almacenarlos todos juntos.",
-    "instructions": "1. Define la función `pares(n)` que reciba un número `n`.\n2. Usa `yield` para devolver los primeros `n` números pares empezando desde 0.\n3. Imprime los números que genera `pares(5)`.\n\nEsto es como una máquina que va dando números pares uno por uno cuando se los pides, sin tener que dar toda la lista de golpe.",
-    "starter_code": "# Escribe tu código aquí\n",
+    "lesson_id": 27,
+    "order_index": 2,
+    "title": "Ejercicio 2.2: Creando Secuencias Eficientes con Generadores",
+    "description": "Usa `yield` para crear una función generadora que produzca una secuencia de valores uno a la vez, ahorrando memoria.",
+    "instructions": "Los generadores son clave para escribir código eficiente y funcional, especialmente al trabajar con grandes volúmenes de datos.\n\n**Tu Tarea:**\n1. Crea una función generadora llamada `cuenta_atras` que acepte un número `n` como argumento.\n2. La función debe usar un bucle y la palabra clave `yield` para producir los números desde `n` hasta 1, en orden descendente.\n3. Usa un bucle `for` para iterar sobre el generador `cuenta_atras(5)` e imprime cada número que produce.",
+    "starter_code": "def cuenta_atras(n):\n    # Escribe aquí tu bucle con yield\n    while n > 0:\n        yield n\n        n -= 1\n\n# Itera sobre el generador e imprime los números\nfor numero in cuenta_atras(5):\n    print(numero)\n",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Piensa en un dispensador de tickets donde vas tomando uno a la vez, y no todos a la vez."
+      "expected_exact_output": "5\n4\n3\n2\n1\n"
+    }
   },
   {
     "id": 39,
     "course_id": 3,
     "module_id": 10,
-    "lesson_id": 29,
-    "order_index": 29,
-    "title": "Ejercicio 2.3: Recorriendo una cadena con iter y next",
-    "description": "Vamos a recorrer una cadena letra por letra usando `iter()` y `next()`, manejando el final del recorrido con excepción.",
-    "instructions": "1. Crea una variable con un texto, por ejemplo: `mensaje = \"Hola\"`.\n2. Obtén un iterador con `iter(mensaje)`.\n3. Usa un ciclo `while` con `try/except` para imprimir cada letra usando `next()`.\n4. Cuando termine, imprime `Fin del texto.`\n\nEsto es como leer un libro página a página hasta que ya no quedan páginas.",
-    "starter_code": "# Escribe tu código aquí\n",
+    "lesson_id": 28,
+    "order_index": 3,
+    "title": "Ejercicio 2.3: Transformando y Filtrando con `map` y `filter`",
+    "description": "Utiliza `map` y `filter` junto con funciones `lambda` para procesar una colección de datos de forma concisa y funcional.",
+    "instructions": "Vamos a combinar las herramientas funcionales para realizar una tarea compleja en pocos pasos: obtener el cuadrado de los números impares de una lista.\n\n**Tu Tarea:**\n1. Se te da una lista `numeros = range(1, 11)`.\n2. Usa `filter` y una `lambda` para crear un iterador que contenga solo los números impares de `numeros`.\n3. Usa `map` y una `lambda` sobre el resultado del filtro para obtener el cuadrado de cada número impar.\n4. Convierte el resultado final de `map` a una lista y muéstrala con `print`.",
+    "starter_code": "numeros = range(1, 11)\n\n# Filtra los números impares\nimpares = filter(lambda x: x % 2 != 0, numeros)\n\n# Mapea los impares a su cuadrado\ncuadrados_de_impares = map(lambda x: x**2, impares)\n\n# Convierte a lista e imprime el resultado\nprint(list(cuadrados_de_impares))\n",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Como cuando vas leyendo letra por letra un cartel o mensaje y dices 'Ya terminé' cuando llegas al final."
+      "expected_exact_output": "[1, 9, 25, 49, 81]\n"
+    }
   },
   {
     "id": 40,
     "course_id": 3,
     "module_id": 11,
-    "lesson_id": 30,
-    "order_index": 30,
-    "title": "Ejercicio 3.1: Simulación de CSV en Python",
-    "description": "Vamos a crear una tabla de datos usando una lista de diccionarios, simulando un archivo CSV con personas y sus datos.",
-    "instructions": "1. Crea una lista `personas` con al menos 4 diccionarios.\n2. Cada diccionario debe tener: \"Nombre\", \"Edad\", \"Ciudad\".\n3. Usa un ciclo `for` para imprimir solo el nombre y la ciudad de cada persona.\n\nEsto es como una libreta donde tienes datos de tus amigos y quieres ver dónde viven sin ver toda la información.",
-    "starter_code": "# Escribe tu código aquí\n",
+    "lesson_id": 29,
+    "order_index": 1,
+    "title": "Ejercicio 3.1: Construyendo un Pipeline de Datos",
+    "description": "Encadena las funciones filter y map para crear un pipeline que procese una colección de datos en varios pasos.",
+    "instructions": "Practica el concepto de pipeline funcional para analizar una lista de ventas.\n\n**Tu Tarea:**\n1. Se te proporciona la lista de diccionarios `ventas`.\n2. **Paso 1 (Filtrar):** Usa `filter` para quedarte solo con las ventas de la categoría 'Electronica'.\n3. **Paso 2 (Mapear):** Usa `map` sobre el resultado anterior para extraer únicamente los nombres de los productos.\n4. Convierte el resultado final a una lista y muéstrala con `print`.",
+    "starter_code": "ventas = [\n    {'producto': 'Laptop', 'categoria': 'Electronica', 'precio': 1200},\n    {'producto': 'Libro', 'categoria': 'Libros', 'precio': 20},\n    {'producto': 'Monitor', 'categoria': 'Electronica', 'precio': 300},\n    {'producto': 'Teclado', 'categoria': 'Electronica', 'precio': 75}\n]\n\nventas_electronica = filter(lambda v: v['categoria'] == 'Electronica', ventas)\nnombres_productos = map(lambda v: v['producto'], ventas_electronica)\n\nprint(list(nombres_productos))",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Imagina una lista de contactos en tu celular donde ves solo nombres y ciudades para planear una reunión."
+      "expected_exact_output": "['Laptop', 'Monitor', 'Teclado']\n"
+    }
   },
   {
     "id": 41,
     "course_id": 3,
     "module_id": 11,
-    "lesson_id": 31,
-    "order_index": 31,
-    "title": "Ejercicio 3.2: Filtrar personas por ciudad",
-    "description": "Vamos a pedir una ciudad al usuario y mostrar solo las personas que viven ahí filtrando una lista de personas.",
-    "instructions": "1. Pide al usuario que ingrese una ciudad con `input()`.\n2. Crea una lista `personas_en_ciudad` con los que vivan en esa ciudad.\n3. Imprime cada persona encontrada.\n\nEs como cuando buscas en tu lista de amigos quiénes viven cerca para invitarlos a una fiesta.",
-    "starter_code": "# Escribe tu código aquí\n",
+    "lesson_id": 30,
+    "order_index": 2,
+    "title": "Ejercicio 3.2: Aplanando Datos Anidados",
+    "description": "Usa una list comprehension anidada para 'aplanar' una estructura de datos compleja y extraer todos los elementos en una sola lista.",
+    "instructions": "Las list comprehensions anidadas son una forma muy 'Pythónica' y funcional de manejar estructuras de datos complejas.\n\n**Tu Tarea:**\n1. Se te proporciona la lista de `usuarios`.\n2. Usa una única **list comprehension anidada** para crear una lista plana que contenga todos los correos de todos los usuarios.\n3. Imprime la lista de correos resultante.",
+    "starter_code": "usuarios = [\n    {\n        'id': 1, 'nombre': 'Ana', \n        'correos': ['ana.perez@email.com', 'aperez@work.com']\n    },\n    {\n        'id': 2, 'nombre': 'Luis', \n        'correos': ['luis.g@email.com']\n    },\n    {\n        'id': 3, 'nombre': 'Sofía', \n        'correos': []\n    }\n]\n\n# Escribe aquí tu list comprehension anidada\nlista_plana_correos = [correo for usuario in usuarios for correo in usuario['correos']]\n\nprint(lista_plana_correos)",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Como cuando decides hacer una lista para un evento y solo quieres llamar a quienes viven en la misma ciudad."
-  },
-  {
-    "id": 42,
-    "course_id": 3,
-    "module_id": 11,
-    "lesson_id": 32,
-    "order_index": 32,
-    "title": "Ejercicio 3.3: Mostrar información con tres métodos de formateo",
-    "description": "Aprende a mostrar mensajes personalizados combinando texto y variables usando diferentes técnicas para que puedas elegir la que te sea más cómoda.",
-    "instructions": "1. Crea estas variables:\n   - `nombre`: tu nombre.\n   - `producto`: un producto (ejemplo: 'laptop').\n   - `precio`: un número (ejemplo: 499.99).\n2. Muestra el mensaje:\n   `El producto [producto] de [nombre] cuesta $[precio].`\n3. Hazlo con:\n   - Concatenación con `+`\n   - El método `.format()`\n   - f-strings\n\nEsto es útil para cuando quieres enviar mensajes personalizados, como confirmar compras o dar información clara y bonita.",
-    "starter_code": "# Escribe tu código aquí\n",
-    "validation_type": "simple_print",
-    "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Como cuando envías un mensaje diciendo: “El celular que compraste cuesta $300.” y quieres mostrarlo de distintas maneras para que quede claro y bonito."
+      "expected_exact_output": "['ana.perez@email.com', 'aperez@work.com', 'luis.g@email.com']\n"
+    }
   },
   {
     "id": 43,
     "course_id": 3,
     "module_id": 11,
-    "lesson_id": 33,
-    "order_index": 33,
-    "title": "Ejercicio 3.4: Validación y manipulación de texto con expresiones regulares",
-    "description": "Practica con el módulo `re` para revisar que un correo esté bien escrito, sacar números de un texto, y cambiar comas por punto y coma en frases.",
-    "instructions": "1. Pide al usuario que escriba un correo y usa `re.match()` para validar si es correcto.\n2. Extrae todos los números de un texto como: “Compré 4 manzanas y 12 peras” con `re.findall()`.\n3. Cambia todas las comas por punto y coma en una frase como: “uno,dos,tres” con `re.sub()`.\n4. Imprime los resultados.\n\nAsí aprenderás a limpiar y validar datos, algo que se usa mucho cuando manejas información de clientes o datos en general.",
-    "starter_code": "# Escribe tu código aquí\n",
+    "lesson_id": 31,
+    "order_index": 3,
+    "title": "Ejercicio 3.3: Extrayendo Datos con Expresiones Regulares",
+    "description": "Usa la función re.findall para encontrar y extraer todas las subcadenas que coincidan con un patrón específico dentro de un texto.",
+    "instructions": "Las expresiones regulares son una herramienta esencial en la limpieza y extracción de datos.\n\n**Tu Tarea:**\n1. Importa el módulo `re`.\n2. Se te proporciona un texto con varias fechas.\n3. Define un patrón de regex que capture fechas con el formato `DD-MM-YYYY`.\n4. Usa `re.findall()` con tu patrón y el texto para extraer todas las fechas en una lista.\n5. Imprime la lista resultante.",
+    "starter_code": "import re\n\ntexto = \"La reunión es el 25-12-2024, no el 24-12-2024. La fecha límite es 31-01-2025.\"\n\n# Define tu patrón y usa re.findall aquí\npatron = r\"\\d{2}-\\d{2}-\\d{4}\"\nfechas_encontradas = re.findall(patron, texto)\n\nprint(fechas_encontradas)\n",
     "validation_type": "simple_print",
     "validation_rules": {
-      "expected_exact_output": "Su sintaxis es clara y legible\n",
-      "expected_print_count": 1,
-      "expected_types": [
-        "str"
-      ],
-      "strict_whitespace": true,
-      "case_sensitive": true,
-      "custom_feedback": {
-        "missing_newline": "Recuerda terminar tu print con un salto de línea.",
-        "wrong_case": "Revisa las mayúsculas y minúsculas.",
-        "extra_spaces": "No agregues espacios extra al final o inicio.",
-        "wrong_type": "Asegúrate de que estás imprimiendo un texto (string).",
-        "wrong_print_count": "Se esperaba una sola operación de print."
-      }
-    },
-    "explanation": "Es como cuando revisas que un correo esté bien antes de enviarlo, cuentas cuántas frutas compraste al leer el ticket, o cambias la forma de escribir una lista para que sea más fácil de leer."
+      "expected_exact_output": "['25-12-2024', '24-12-2024', '31-01-2025']\n"
+    }
   },
   {
     "id": 44,
