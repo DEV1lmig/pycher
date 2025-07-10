@@ -13,11 +13,15 @@
         "user_id": 101,
         "course_id": 1,
         "is_completed": false,
-        "progress_percentage": 25.0
+        "progress_percentage": 25.0,
+        "is_active": true,
+        "exam_unlocked": false
       }
     ],
     "module_progress": [
-      { "user_id": 101, "module_id": 1, "is_completed": true, "is_unlocked": true }
+      { "user_id": 101, "module_id": 1, "is_completed": true, "is_unlocked": true },
+      { "user_id": 101, "module_id": 2, "is_completed": false, "is_unlocked": true },
+      { "user_id": 101, "module_id": 3, "is_completed": false, "is_unlocked": false }
     ],
     "lesson_progress": [
       { "user_id": 101, "lesson_id": 1, "is_completed": true },
@@ -44,12 +48,15 @@
         "user_id": 102,
         "course_id": 1,
         "is_completed": false,
-        "progress_percentage": 50.0
+        "progress_percentage": 50.0,
+        "is_active": true,
+        "exam_unlocked": false
       }
     ],
     "module_progress": [
       { "user_id": 102, "module_id": 1, "is_completed": true, "is_unlocked": true },
-      { "user_id": 102, "module_id": 2, "is_completed": true, "is_unlocked": true }
+      { "user_id": 102, "module_id": 2, "is_completed": true, "is_unlocked": true },
+      { "user_id": 102, "module_id": 3, "is_completed": false, "is_unlocked": true }
     ],
     "lesson_progress": [
       { "user_id": 102, "lesson_id": 1, "is_completed": true },
@@ -85,7 +92,8 @@
         "course_id": 1,
         "is_completed": false,
         "progress_percentage": 90.0,
-        "exam_unlocked": true
+        "exam_unlocked": true,
+        "is_active": true
       }
     ],
     "module_progress": [

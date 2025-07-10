@@ -1080,7 +1080,7 @@
         "str"
       ],
       "required_variables_in_print": [
-        "dias[]"
+        "dias"
       ],
       "strict_whitespace": true,
       "case_sensitive": true,
