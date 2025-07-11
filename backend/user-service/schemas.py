@@ -340,6 +340,10 @@ class UserEnrollmentWithProgressResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class AllCoursesCompletedStatus(BaseModel):
+    """Response model for checking if all courses are completed."""
+    all_courses_completed: bool
+
 # Add this schema for user updates
 
 class UserUpdate(BaseModel):

@@ -38,6 +38,10 @@
     "validation_rules": {
       "expected_exact_output": "Madrid\n3300000\n",
       "expected_print_count": 2,
+      "required_variables_in_print": [
+        "ciudad",
+        "poblacion"
+      ],
       "strict_variable_names": [
         "ciudad",
         "poblacion"
@@ -1405,702 +1409,189 @@
       }
     }
   },
-  {
-    "id": 29,
-    "course_id": 2,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 1,
-    "title": "Examen Final: Python Intermedio",
-    "description": "Pon a prueba tu conocimiento sobre tuplas, sets y diccionarios en Python con situaciones prácticas.",
-    "instructions": "Completa cada sección con el código que resuelva los problemas propuestos. Usa estructuras de datos para organizar información como en la vida real.",
-    "starter_code": "# Sección 1: Tuplas\n# Imagina que tienes los días de la semana y necesitas acceder a ciertos días para planificar tu agenda.\n\n\n# Sección 2: Sets\n# Usa conjuntos para manejar listas de invitados a eventos, evitando duplicados y haciendo operaciones entre listas.\nset_a = {1, 3, 5, 7, 9}\nset_b = {2, 3, 5, 7, 11}\n\n\n# Sección 3: Diccionarios\n# Representa la información de una mascota usando un diccionario y accede a sus datos para cuidados diarios.\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
-            }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
+      {
+        "id": 29,
+        "course_id": 2,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 1,
+        "title": "Examen Final: Python Intermedio",
+        "description": "Pon a prueba tu conocimiento sobre tuplas, sets y diccionarios en Python con situaciones prácticas.",
+        "instructions": "Completa cada sección con el código que resuelva los problemas propuestos. Usa estructuras de datos para organizar información como en la vida real.",
+        "starter_code": "# Sección 1: Tuplas\n# Imagina que tienes los días de la semana y necesitas acceder a ciertos días para planificar tu agenda.\ndef obtener_dia_semana(dias, indice):\n    # Devuelve el día en el índice especificado\n    pass\n\n# Sección 2: Sets\n# Usa conjuntos para manejar listas de invitados a eventos, evitando duplicados y haciendo operaciones entre listas.\ndef invitados_comunes(set_a, set_b):\n    # Devuelve los elementos comunes entre ambos sets\n    pass\n\n# Sección 3: Diccionarios\n# Representa la información de una mascota usando un diccionario y accede a sus datos para cuidados diarios.\ndef obtener_info_mascota(mascota, clave):\n    # Devuelve el valor asociado a la clave en el diccionario\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "obtener_dia_semana",
+                    "scenarios": [
+                        { "args": [["Lunes", "Martes", "Miércoles"], 0], "expected_return_value": "Lunes" },
+                        { "args": [["Lunes", "Martes", "Miércoles"], -1], "expected_return_value": "Miércoles" }
+                    ]
+                },
+                {
+                    "function_name": "invitados_comunes",
+                    "scenarios": [
+                        { "args": [["a", "b", "c"], ["b", "c", "d"]], "expected_return_value": ["b", "c"] },
+                        { "args": [["a", "b"], ["c", "d"]], "expected_return_value": [] }
+                    ]
+                },
+                {
+                    "function_name": "obtener_info_mascota",
+                    "scenarios": [
+                        { "args": [{"nombre": "Fido", "edad": 5}, "nombre"], "expected_return_value": "Fido" },
+                        { "args": [{"nombre": "Fido", "edad": 5}, "edad"], "expected_return_value": 5 }
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  },
-  {
-    "id": 30,
-    "course_id": 2,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 2,
-    "title": "Examen Final: Python Intermedio",
-    "description": "Usa tu conocimiento de tuplas, sets y diccionarios para resolver problemas cotidianos con datos repetidos y manejo de errores.",
-    "instructions": "Sigue las indicaciones para cada estructura y maneja los errores que puedan surgir, tal como ocurre cuando trabajamos con información real.",
-    "starter_code": "# Sección 1: Tuplas\n# Piensa en las vocales como elementos fijos que necesitas manipular para entender cómo funcionan los índices.\n\n\n# Sección 2: Sets\n# Elimina duplicados en listas de compras y modifica la lista según necesites.\n\n\n# Sección 3: Diccionarios de listas\n# Gestiona equipos deportivos y agrega jugadores para organizar un torneo local.\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
-            }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
+    },
+    {
+        "id": 30,
+        "course_id": 2,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 2,
+        "title": "Examen Final: Python Intermedio",
+        "description": "Usa tu conocimiento de tuplas, sets y diccionarios para resolver problemas cotidianos con datos repetidos y manejo de errores.",
+        "instructions": "Sigue las indicaciones para cada estructura y maneja los errores que puedan surgir, tal como ocurre cuando trabajamos con información real.",
+        "starter_code": "# Sección 1: Tuplas\n# Piensa en las vocales como elementos fijos que necesitas manipular para entender cómo funcionan los índices.\ndef contar_vocales_en_tupla(tupla_letras):\n    # Cuenta cuántas vocales hay en la tupla\n    pass\n\n# Sección 2: Sets\n# Elimina duplicados en listas de compras y modifica la lista según necesites.\ndef lista_compra_unica(items):\n    # Devuelve un set con los items únicos\n    pass\n\n# Sección 3: Diccionarios de listas\n# Gestiona equipos deportivos y agrega jugadores para organizar un torneo local.\ndef agregar_jugador(equipos, equipo, jugador):\n    # Agrega un jugador a la lista de un equipo\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "contar_vocales_en_tupla",
+                    "scenarios": [
+                        { "args": [["a", "b", "c", "e"]], "expected_return_value": 2 },
+                        { "args": [["x", "y", "z"]], "expected_return_value": 0 }
+                    ]
+                },
+                {
+                    "function_name": "lista_compra_unica",
+                    "scenarios": [
+                        { "args": [["manzana", "pera", "manzana"]], "expected_return_value": ["manzana", "pera"] },
+                        { "args": [[1, 2, 3, 2, 1]], "expected_return_value": [1, 2, 3] }
+                    ]
+                },
+                {
+                    "function_name": "agregar_jugador",
+                    "scenarios": [
+                        { "args": [{"futbol": ["Messi"]}, "futbol", "Ronaldo"], "expected_return_value": {"futbol": ["Messi", "Ronaldo"]} },
+                        { "args": [{"basket": []}, "basket", "Jordan"], "expected_return_value": {"basket": ["Jordan"]} }
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  },
-  {
-    "id": 31,
-    "course_id": 2,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 3,
-    "title": "Examen Final: Python Intermedio",
-    "description": "Practica la manipulación de listas anidadas, transformaciones y el manejo de errores para simular situaciones reales.",
-    "instructions": "Completa cada sección pensando en cómo organizar matrices, filtrar listas y manejar posibles errores al solicitar información al usuario.",
-    "starter_code": "# Sección 1: Listas de listas\nmatriz = [\n  [\"a\", \"b\", \"c\"],\n  [\"d\", \"e\", \"f\"],\n  [\"g\", \"h\", \"i\"]\n]\n\n# Sección 2: Transformación de listas\nfrutas = [\"manzana\", \"pera\", \"banana\", \"kiwi\", \"sandía\"]\n\n# Sección 3: try/except\n# Simula la interacción con un usuario que ingresa números para una operación segura\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
-            }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
+    },
+    {
+        "id": 31,
+        "course_id": 2,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 3,
+        "title": "Examen Final: Python Intermedio",
+        "description": "Practica la manipulación de listas anidadas, transformaciones y el manejo de errores para simular situaciones reales.",
+        "instructions": "Completa cada sección pensando en cómo organizar matrices, filtrar listas y manejar posibles errores al solicitar información al usuario.",
+        "starter_code": "# Sección 1: Listas de listas\ndef obtener_elemento_matriz(matriz, fila, col):\n    # Devuelve el elemento en la posición [fila][col]\n    pass\n\n# Sección 2: Transformación de listas\ndef frutas_mayusculas(frutas):\n    # Devuelve una nueva lista con las frutas en mayúsculas\n    pass\n\n# Sección 3: try/except\ndef dividir_seguro(a, b):\n    # Devuelve el resultado de a/b o un mensaje de error\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "obtener_elemento_matriz",
+                    "scenarios": [
+                        { "args": [[["a", "b"], ["c", "d"]], 1, 0], "expected_return_value": "c" },
+                        { "args": [[[1, 2], [3, 4]], 0, 1], "expected_return_value": 2 }
+                    ]
+                },
+                {
+                    "function_name": "frutas_mayusculas",
+                    "scenarios": [
+                        { "args": [["manzana", "pera"]], "expected_return_value": ["MANZANA", "PERA"] },
+                        { "args": [[]], "expected_return_value": [] }
+                    ]
+                },
+                {
+                    "function_name": "dividir_seguro",
+                    "scenarios": [
+                        { "args": [10, 2], "expected_return_value": 5.0 },
+                        { "args": [10, 0], "expected_return_value": "Error: División por cero" }
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  },
-  {
-    "id": 32,
-    "course_id": 2,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 4,
-    "title": "Examen Final: Python Intermedio",
-    "description": "Aplica diccionarios, funciones lambda y manejo de archivos en Python con ejemplos cotidianos.",
-    "instructions": "Organiza información sobre libros, filtra listas y maneja archivos, pensando en tareas comunes como leer datos y ordenar listas sin importar mayúsculas.",
-    "starter_code": "# Sección 1: Diccionarios\nlibro = {\n  \"título\": \"Cien años de soledad\",\n  \"autor\": \"García Márquez\",\n  \"año\": 1967\n}\n\n# Sección 2: Funciones lambda\nnombres = [\"Ana\", \"luis\", \"Carlos\", \"maria\"]\n\n# Sección 3: finally y validación\n# Maneja la apertura de archivos con cuidado y asegura la finalización de la operación\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
-            }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
+    },
+    {
+        "id": 32,
+        "course_id": 2,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 4,
+        "title": "Examen Final: Python Intermedio",
+        "description": "Aplica diccionarios, funciones lambda y manejo de archivos en Python con ejemplos cotidianos.",
+        "instructions": "Organiza información sobre libros, filtra listas y maneja archivos, pensando en tareas comunes como leer datos y ordenar listas sin importar mayúsculas.",
+        "starter_code": "# Sección 1: Diccionarios\ndef actualizar_libro(libro, clave, valor):\n    # Actualiza un valor en el diccionario del libro\n    pass\n\n# Sección 2: Funciones lambda\ndef ordenar_nombres_sin_caso(nombres):\n    # Ordena la lista de nombres ignorando mayúsculas/minúsculas\n    pass\n\n# Sección 3: finally y validación\ndef leer_contenido_seguro(contenido):\n    # Simula la lectura de un archivo y siempre retorna un mensaje final\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "actualizar_libro",
+                    "scenarios": [
+                        { "args": [{"titulo": "El Quijote", "año": 1605}, "año", 1615], "expected_return_value": {"titulo": "El Quijote", "año": 1615} }
+                    ]
+                },
+                {
+                    "function_name": "ordenar_nombres_sin_caso",
+                    "scenarios": [
+                        { "args": [["Ana", "luis", "Carlos"]], "expected_return_value": ["Ana", "Carlos", "luis"] }
+                    ]
+                },
+                {
+                    "function_name": "leer_contenido_seguro",
+                    "scenarios": [
+                        { "args": ["Hola"], "expected_return_value": 4 },
+                        { "args": [""], "expected_return_value": "Contenido vacío" }
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  },
-  {
-    "id": 33,
-    "course_id": 2,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 5,
-    "title": "Examen Final: Python Intermedio",
-    "description": "Ejercita el uso de estructuras anidadas, list comprehensions y sets con ejemplos prácticos del día a día.",
-    "instructions": "Recorre diccionarios con listas, convierte temperaturas y trabaja con conjuntos para organizar información diversa.",
-    "starter_code": "# Sección 1: Estructuras anidadas\nproductos = {\n  \"frutas\": [\"manzana\", \"pera\"],\n  \"lácteos\": [\"leche\", \"queso\"],\n  \"verduras\": [\"zanahoria\", \"espinaca\"]\n}\n\n# Sección 2: List comprehensions\ntemperaturas = [25, 30, 15, 10, 35]\n\n# Sección 3: Sets y operaciones\nconjunto_x = {1, 2, 3, 4, 5}\nconjunto_y = {4, 5, 6, 7}\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
-            }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
+    },
+    {
+        "id": 33,
+        "course_id": 2,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 5,
+        "title": "Examen Final: Python Intermedio",
+        "description": "Ejercita el uso de estructuras anidadas, list comprehensions y sets con ejemplos prácticos del día a día.",
+        "instructions": "Recorre diccionarios con listas, convierte temperaturas y trabaja con conjuntos para organizar información diversa.",
+        "starter_code": "# Sección 1: Estructuras anidadas\ndef obtener_productos_categoria(productos, categoria):\n    # Devuelve la lista de productos de una categoría\n    pass\n\n# Sección 2: List comprehensions\ndef convertir_a_fahrenheit(temperaturas_celsius):\n    # Convierte una lista de Celsius a Fahrenheit\n    pass\n\n# Sección 3: Sets y operaciones\ndef elementos_no_comunes(conjunto_x, conjunto_y):\n    # Devuelve los elementos que no están en ambos sets\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "obtener_productos_categoria",
+                    "scenarios": [
+                        { "args": [{"frutas": ["manzana", "pera"], "lácteos": ["leche"]}, "frutas"], "expected_return_value": ["manzana", "pera"] },
+                        { "args": [{"frutas": ["manzana", "pera"]}, "verduras"], "expected_return_value": [] }
+                    ]
+                },
+                {
+                    "function_name": "convertir_a_fahrenheit",
+                    "scenarios": [
+                        { "args": [[0, 10, 100]], "expected_return_value": [32.0, 50.0, 212.0] }
+                    ]
+                },
+                {
+                    "function_name": "elementos_no_comunes",
+                    "scenarios": [
+                        { "args": [["a", "b", "c"], ["b", "c", "d"]], "expected_return_value": ["a"] },
+                        { "args": [["c", "d", "e"], ["b", "c", "d"]], "expected_return_value": ["e"] }
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  },
- {
+    },
+  {
     "id": 34,
     "course_id": 3,
     "module_id": 9,
@@ -2309,560 +1800,280 @@
       "expected_exact_output": "['25-12-2024', '24-12-2024', '31-01-2025']\n"
     }
   },
-  {
-    "id": 44,
-    "course_id": 3,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 1,
-    "title": "Examen Final: Python Avanzado",
-    "description": "Pon a prueba tu conocimiento creando clases, decoradores, generadores y manejando datos con listas y expresiones regulares.",
-    "instructions": "Vamos a trabajar paso a paso con varios ejercicios prácticos para aplicar conceptos clave de Python avanzado:\n\n1. Crea una clase llamada Persona con los atributos nombre y edad. Implementa el método especial __str__ para que, al imprimir una instancia, muestre: 'Persona: [nombre], Edad: [edad]'. Crea un objeto y muéstralo.\n\n2. Añade un método cumplir_años() que incremente la edad en 1 año. Llámalo y vuelve a imprimir el objeto para ver el cambio.\n\n3. Crea un decorador llamado log que muestre el mensaje \"Ejecutando...\" antes y \"Hecho.\" después de ejecutar cualquier función. Aplica este decorador a una función saludo() que imprima \"¡Hola!\".\n\n4. Define una función generadora pares(n) que produzca los primeros n números pares. Usa un ciclo para mostrar los números generados.\n\n5. Dada esta lista de personas:\n   personas = [\n       {\"Nombre\": \"Ana\", \"Edad\": 25, \"Ciudad\": \"Lima\"},\n       {\"Nombre\": \"Luis\", \"Edad\": 30, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"María\", \"Edad\": 22, \"Ciudad\": \"Quito\"}\n   ]\n   Imprime los nombres de quienes tengan 25 años o más.\n   Cuenta cuántas personas viven en \"Bogotá\".\n\n6. Usa la librería re para validar si el correo \"usuario@example.com\" es válido con re.match().",
-    "starter_code": "# Ejercicio 1.1\n# Clase Persona con __str__\n\n\n# Ejercicio 1.2\n# Método cumplir_años\n\n\n# Ejercicio 2.1\n# Decorador log y función saludo\n\n\n# Ejercicio 2.2\n# Función generadora pares\n\n\n# Ejercicio 3.1\n# Lista de personas y operaciones\n\n\n# Ejercicio 3.2\n# Validación de correo\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
+    {
+        "id": 44,
+        "course_id": 3,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 1,
+        "title": "Examen Final: Python Avanzado",
+        "description": "Pon a prueba tu conocimiento creando clases, decoradores, generadores y manejando datos con listas y expresiones regulares.",
+        "instructions": "Vamos a trabajar paso a paso con varios ejercicios prácticos para aplicar conceptos clave de Python avanzado:\n\n1. Crea una clase llamada Persona con los atributos nombre y edad. Implementa el método especial __str__ para que, al imprimir una instancia, muestre: 'Persona: [nombre], Edad: [edad]'. Crea un objeto y muéstralo.\n\n2. Añade un método cumplir_años() que incremente la edad en 1 año. Llámalo y vuelve a imprimir el objeto para ver el cambio.\n\n3. Crea un decorador llamado log que muestre el mensaje \"Ejecutando...\" antes y \"Hecho.\" después de ejecutar cualquier función. Aplica este decorador a una función saludo() que imprima \"¡Hola!\".\n\n4. Define una función generadora pares(n) que produzca los primeros n números pares. Usa un ciclo para mostrar los números generados.\n\n5. Dada esta lista de personas:\n    personas = [\n        {\"Nombre\": \"Ana\", \"Edad\": 25, \"Ciudad\": \"Lima\"},\n        {\"Nombre\": \"Luis\", \"Edad\": 30, \"Ciudad\": \"Bogotá\"},\n        {\"Nombre\": \"María\", \"Edad\": 22, \"Ciudad\": \"Quito\"}\n    ]\n    Imprime los nombres de quienes tengan 25 años o más.\n    Cuenta cuántas personas viven en \"Bogotá\".\n\n6. Usa la librería re para validar si el correo \"usuario@example.com\" es válido con re.match().",
+        "starter_code": "import re\n\n# 1. Clase Persona\nclass Persona:\n    # Tu código aquí\n    pass\n\n# 2. Decorador\ndef log(func):\n    # Tu código aquí\n    pass\n\n# 3. Generador\ndef generar_pares(n):\n    # Tu código aquí\n    pass\n\n# 4. Filtrado de lista\ndef filtrar_personas_por_edad(personas, edad_minima):\n    # Tu código aquí\n    pass\n\n# 5. Validación con Regex\ndef validar_email(email):\n    # Tu código aquí\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "Persona",
+                    "scenarios": [
+                        {
+                            "setup_code": "p = Persona('Ana', 25); p.cumplir_anos()",
+                            "validation_code": "str(p)",
+                            "expected_return_value": "Persona: Ana, Edad: 26"
+                        }
+                    ]
+                },
+                {
+                    "function_name": "generar_pares",
+                    "scenarios": [
+                        {
+                            "args": [3],
+                            "expected_return_value": [2, 4, 6]
+                        },
+                        {
+                            "args": [0],
+                            "expected_return_value": []
+                        }
+                    ]
+                },
+                {
+                    "function_name": "filtrar_personas_por_edad",
+                    "scenarios": [
+                        {
+                            "args": [
+                                [
+                                    {"Nombre": "Ana", "Edad": 25},
+                                    {"Nombre": "Luis", "Edad": 30},
+                                    {"Nombre": "María", "Edad": 22}
+                                ],
+                                25
+                            ],
+                            "expected_return_value": ["Ana", "Luis"]
+                        }
+                    ]
+                },
+                {
+                    "function_name": "validar_email",
+                    "scenarios": [
+                        {
+                            "args": ["usuario@example.com"],
+                            "expected_return_value": true
+                        },
+                        {
+                            "args": ["usuario.com"],
+                            "expected_return_value": false
+                        }
+                    ]
+                }
+            ],
+            "structural_requirements": {
+                "imports": ["re"],
+                "decorators": [
+                    { "function": "saludo", "decorator": "log" }
+                ]
             }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
         }
-      ]
-    }
-  },
-  {
-    "id": 45,
-    "course_id": 3,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 2,
-    "title": "Examen Final: Python Avanzado",
-    "description": "Evalúa tu habilidad para crear clases con métodos útiles, usar decoradores, generadores y manipular listas con expresiones regulares aplicadas a situaciones reales.",
-    "instructions": "Sigue las instrucciones para crear funciones y clases que reflejen ejemplos cotidianos:\n\n1. Define una clase Producto con atributos nombre y precio. Implementa el método __str__ para mostrar: 'Producto: [nombre], Precio: $[precio]'.\n\n2. Añade un método aplicar_descuento(porcentaje) para modificar el precio según un descuento dado. Prueba este método.\n\n3. Crea un decorador anuncio que imprima \"Inicio de función\" antes y \"Fin de función\" después de ejecutar cualquier función. Aplícalo a una función procesar() que imprima \"Procesando datos...\".\n\n4. Define una función generadora cuadrados(n) que genere los cuadrados de los primeros n números naturales.\n\n5. Dada la lista:\n   usuarios = [\n       {\"Nombre\": \"Carlos\", \"Edad\": 28, \"Ciudad\": \"Lima\"},\n       {\"Nombre\": \"Laura\", \"Edad\": 19, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"Pedro\", \"Edad\": 35, \"Ciudad\": \"Lima\"}\n   ]\n   Muestra los nombres de los usuarios que viven en \"Lima\".\n   Cuenta cuántos usuarios tienen más de 25 años.\n\n6. Utiliza re.sub para reemplazar todos los espacios en el texto \"Hola mundo Python\" por guiones bajos.",
-    "starter_code": "# Ejercicio 1.1\n# Clase Producto con __str__\n\n\n# Ejercicio 1.2\n# Método aplicar_descuento\n\n\n# Ejercicio 2.1\n# Decorador anuncio y función procesar\n\n\n# Ejercicio 2.2\n# Función generadora cuadrados\n\n\n# Ejercicio 3.1\n# Lista usuarios y operaciones\n\n\n# Ejercicio 3.2\n# Reemplazo con re.sub\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
+    },
+    {
+        "id": 45,
+        "course_id": 3,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 2,
+        "title": "Examen Final: Python Avanzado",
+        "description": "Evalúa tu habilidad para crear clases con métodos útiles, usar decoradores, generadores y manipular listas con expresiones regulares aplicadas a situaciones reales.",
+        "instructions": "Sigue las instrucciones para crear funciones y clases que reflejen ejemplos cotidianos:\n\n1. Define una clase Producto con atributos nombre y precio. Implementa el método __str__ para mostrar: 'Producto: [nombre], Precio: $[precio]'.\n\n2. Añade un método aplicar_descuento(porcentaje) para modificar el precio según un descuento dado. Prueba este método.\n\n3. Crea un decorador anuncio que imprima \"Inicio de función\" antes y \"Fin de función\" después de ejecutar cualquier función. Aplícalo a una función procesar() que imprima \"Procesando datos...\".\n\n4. Define una función generadora cuadrados(n) que genere los cuadrados de los primeros n números naturales.\n\n5. Dada la lista:\n    usuarios = [\n        {\"Nombre\": \"Carlos\", \"Edad\": 28, \"Ciudad\": \"Lima\"},\n        {\"Nombre\": \"Laura\", \"Edad\": 19, \"Ciudad\": \"Bogotá\"},\n        {\"Nombre\": \"Pedro\", \"Edad\": 35, \"Ciudad\": \"Lima\"}\n    ]\n    Muestra los nombres de los usuarios que viven en \"Lima\".\n    Cuenta cuántos usuarios tienen más de 25 años.\n\n6. Utiliza re.sub para reemplazar todos los espacios en el texto \"Hola mundo Python\" por guiones bajos.",
+        "starter_code": "import re\n\n# 1. Clase Producto\nclass Producto:\n    # Tu código aquí\n    pass\n\n# 2. Generador\ndef generar_cuadrados(n):\n    # Tu código aquí\n    pass\n\n# 3. Filtrado de lista\ndef filtrar_usuarios_por_ciudad(usuarios, ciudad):\n    # Tu código aquí\n    pass\n\n# 4. Reemplazo con Regex\ndef reemplazar_espacios(texto):\n    # Tu código aquí\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "Producto",
+                    "scenarios": [
+                        {
+                            "setup_code": "p = Producto('Laptop', 1000); p.aplicar_descuento(10)",
+                            "validation_code": "p.precio",
+                            "expected_return_value": 900
+                        }
+                    ]
+                },
+                {
+                    "function_name": "generar_cuadrados",
+                    "scenarios": [
+                        {
+                            "args": [4],
+                            "expected_return_value": [1, 4, 9, 16]
+                        }
+                    ]
+                },
+                {
+                    "function_name": "filtrar_usuarios_por_ciudad",
+                    "scenarios": [
+                        {
+                            "args": [
+                                [
+                                    {"Nombre": "Carlos", "Ciudad": "Lima"},
+                                    {"Nombre": "Laura", "Ciudad": "Bogotá"},
+                                    {"Nombre": "Pedro", "Ciudad": "Lima"}
+                                ],
+                                "Lima"
+                            ],
+                            "expected_return_value": ["Carlos", "Pedro"]
+                        }
+                    ]
+                },
+                {
+                    "function_name": "reemplazar_espacios",
+                    "scenarios": [
+                        {
+                            "args": ["Hola mundo Python"],
+                            "expected_return_value": "Hola_mundo_Python"
+                        }
+                    ]
+                }
+            ],
+            "structural_requirements": {
+                "imports": ["re"],
+                "decorators": [
+                    { "function": "procesar", "decorator": "anuncio" }
+                ]
             }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
         }
-      ]
-    }
-  },
-  {
-    "id": 46,
-    "course_id": 3,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 3,
-    "title": "Examen Final: Python Avanzado",
-    "description": "Pon en práctica tus conocimientos en clases, métodos, decoradores, generadores, y operaciones con listas y expresiones regulares aplicados a ejemplos reales.",
-    "instructions": "Completa cada ejercicio basándote en ejemplos del día a día:\n\n1. Crea la clase Cuenta con atributos titular y saldo. Define el método __str__ para mostrar: 'Cuenta de [titular], Saldo: $[saldo]'.\n\n2. Agrega un método depositar(cantidad) que sume la cantidad al saldo actual.\n\n3. Define un decorador rastro que imprima \"Llamando función...\" antes de ejecutar cualquier función. Úsalo en una función inicio().\n\n4. Crea una función generadora multiplos_de_tres(n) que genere los primeros n múltiplos de 3.\n\n5. Dada la lista:\n   personas = [\n       {\"Nombre\": \"Elena\", \"Edad\": 32, \"Ciudad\": \"Quito\"},\n       {\"Nombre\": \"Jorge\", \"Edad\": 21, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"Sara\", \"Edad\": 30, \"Ciudad\": \"Quito\"}\n   ]\n   Muestra los nombres de las personas que viven en \"Quito\".\n   Cuenta cuántas personas tienen edad impar.\n\n6. Extrae todos los números del texto \"Hay 10 perros, 5 gatos y 2 aves\" usando re.findall.",
-    "starter_code": "# Ejercicio 1.1\n# Clase Cuenta con __str__\n\n\n# Ejercicio 1.2\n# Método depositar\n\n\n# Ejercicio 2.1\n# Decorador rastro y función inicio\n\n\n# Ejercicio 2.2\n# Función generadora multiplos_de_tres\n\n\n# Ejercicio 3.1\n# Lista personas y operaciones\n\n\n# Ejercicio 3.2\n# Extraer números con re.findall\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
+    },
+    {
+        "id": 46,
+        "course_id": 3,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 3,
+        "title": "Examen Final: Python Avanzado",
+        "description": "Pon en práctica tus conocimientos en clases, métodos, decoradores, generadores, y operaciones con listas y expresiones regulares aplicados a ejemplos reales.",
+        "instructions": "Completa cada ejercicio basándote en ejemplos del día a día:\n\n1. Crea la clase Cuenta con atributos titular y saldo. Define el método __str__ para mostrar: 'Cuenta de [titular], Saldo: $[saldo]'.\n\n2. Agrega un método depositar(cantidad) que sume la cantidad al saldo actual.\n\n3. Crea un decorador rastro que imprima \"Llamando función...\" antes de ejecutar cualquier función. Úsalo en una función inicio().\n\n4. Define una función generadora multiplos_de_tres(n) que genere los primeros n múltiplos de 3.\n\n5. Dada la lista:\n    conductores = [\n        {\"Nombre\": \"Elena\", \"Edad\": 32, \"Ciudad\": \"Quito\"},\n        {\"Nombre\": \"Jorge\", \"Edad\": 21, \"Ciudad\": \"Bogotá\"},\n        {\"Nombre\": \"Sara\", \"Edad\": 30, \"Ciudad\": \"Quito\"}\n    ]\n    Muestra los nombres de conductores que tienen 30 años o más.\n    Cuenta cuántos viven en \"Lima\".\n\n6. Utiliza re.search para verificar si el texto \"La matrícula es ABC123\" contiene un patrón alfanumérico seguido de números.",
+        "starter_code": "import re\n\n# 1. Clase Cuenta\nclass Cuenta:\n    # Tu código aquí\n    pass\n\n# 2. Generador\ndef generar_multiplos_de_tres(n):\n    # Tu código aquí\n    pass\n\n# 3. Filtrado de lista\ndef contar_conductores_por_ciudad(conductores, ciudad):\n    # Tu código aquí\n    pass\n\n# 4. Búsqueda con Regex\ndef verificar_matricula(texto):\n    # Tu código aquí\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "Cuenta",
+                    "scenarios": [
+                        {
+                            "setup_code": "c = Cuenta('Juan', 100); c.depositar(50)",
+                            "validation_code": "c.saldo",
+                            "expected_return_value": 150
+                        }
+                    ]
+                },
+                {
+                    "function_name": "generar_multiplos_de_tres",
+                    "scenarios": [
+                        {
+                            "args": [4],
+                            "expected_return_value": [3, 6, 9, 12]
+                        }
+                    ]
+                },
+                {
+                    "function_name": "contar_conductores_por_ciudad",
+                    "scenarios": [
+                        {
+                            "args": [
+                                [
+                                    {"Nombre": "Elena", "Ciudad": "Quito"},
+                                    {"Nombre": "Jorge", "Ciudad": "Bogotá"},
+                                    {"Nombre": "Sara", "Ciudad": "Quito"}
+                                ],
+                                "Lima"
+                            ],
+                            "expected_return_value": 0
+                        }
+                    ]
+                },
+                {
+                    "function_name": "verificar_matricula",
+                    "scenarios": [
+                        {
+                            "args": ["La matrícula es ABC123"],
+                            "expected_return_value": true
+                        },
+                        {
+                            "args": ["No hay matrícula"],
+                            "expected_return_value": false
+                        }
+                    ]
+                }
+            ],
+            "structural_requirements": {
+                "imports": ["re"],
+                "decorators": [
+                    { "function": "inicio", "decorator": "rastro" }
+                ]
             }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
         }
-      ]
-    }
-  },
-  {
-    "id": 47,
-    "course_id": 3,
-    "module_id": null,
-    "lesson_id": null,
-    "order_index": 4,
-    "title": "Examen Final: Python Avanzado",
-    "description": "Aplicación práctica de Python avanzado: clases, métodos, decoradores, generadores, y manejo de listas y expresiones regulares en situaciones reales.",
-    "instructions": "Resuelve los siguientes ejercicios paso a paso:\n\n1. Define la clase Vehículo con atributos marca y modelo. Implementa __str__ para mostrar: 'Vehículo: [marca] [modelo]'.\n\n2. Agrega un método cambiar_modelo(nuevo_modelo) para actualizar el modelo.\n\n3. Crea un decorador temporizador que imprima \"Inicio\" antes y \"Fin\" después de la ejecución de cualquier función. Aplica este decorador a una función arrancar() que imprima \"Arrancando motor...\".\n\n4. Define una función generadora fibonacci(n) que genere los primeros n números de Fibonacci.\n\n5. Dada la lista:\n   conductores = [\n       {\"Nombre\": \"Ana\", \"Edad\": 40, \"Ciudad\": \"Lima\"},\n       {\"Nombre\": \"Luis\", \"Edad\": 22, \"Ciudad\": \"Bogotá\"},\n       {\"Nombre\": \"Marta\", \"Edad\": 28, \"Ciudad\": \"Lima\"}\n   ]\n   Muestra los nombres de conductores que tienen 30 años o más.\n   Cuenta cuántos viven en \"Lima\".\n\n6. Utiliza re.search para verificar si el texto \"La matrícula es ABC123\" contiene un patrón alfanumérico seguido de números.",
-    "starter_code": "# Ejercicio 1.1\n# Clase Vehículo con __str__\n\n\n# Ejercicio 1.2\n# Método cambiar_modelo\n\n\n# Ejercicio 2.1\n# Decorador temporizador y función arrancar\n\n\n# Ejercicio 2.2\n# Función generadora fibonacci\n\n\n# Ejercicio 3.1\n# Lista conductores y operaciones\n\n\n# Ejercicio 3.2\n# Verificación con re.search\n",
-    "validation_type": "exam",
-    "validation_rules": {
-      "functions": [
-        {
-          "function_name": "factorial",
-          "scenarios": [
-            {
-              "args": [
-                5
-              ],
-              "expected_return_value": 120
-            },
-            {
-              "args": [
-                0
-              ],
-              "expected_return_value": 1
-            },
-            {
-              "args": [
-                1
-              ],
-              "expected_return_value": 1
+    },
+    {
+        "id": 47,
+        "course_id": 3,
+        "module_id": null,
+        "lesson_id": null,
+        "order_index": 4,
+        "title": "Examen Final: Python Avanzado",
+        "description": "Aplicación práctica de Python avanzado: clases, métodos, decoradores, generadores, y manejo de listas y expresiones regulares en situaciones reales.",
+        "instructions": "Resuelve los siguientes ejercicios paso a paso:\n\n1. Define la clase Vehículo con atributos marca y modelo. Implementa __str__ para mostrar: 'Vehículo: [marca] [modelo]'.\n\n2. Agrega un método cambiar_modelo(nuevo_modelo) para actualizar el modelo.\n\n3. Crea un decorador temporizador que imprima \"Inicio\" antes y \"Fin\" después de la ejecución de cualquier función. Aplica este decorador a una función arrancar() que imprima \"Arrancando motor...\".\n\n4. Define una función generadora fibonacci(n) que genere los primeros n números de Fibonacci.\n\n5. Dada la lista:\n    conductores = [\n        {\"Nombre\": \"Elena\", \"Edad\": 32, \"Ciudad\": \"Quito\"},\n        {\"Nombre\": \"Jorge\", \"Edad\": 21, \"Ciudad\": \"Bogotá\"},\n        {\"Nombre\": \"Sara\", \"Edad\": 30, \"Ciudad\": \"Quito\"}\n    ]\n    Muestra los nombres de conductores que tienen 30 años o más.\n    Cuenta cuántos viven en \"Lima\".\n\n6. Utiliza re.search para verificar si el texto \"La matrícula es ABC123\" contiene un patrón alfanumérico seguido de números.",
+        "starter_code": "import re\n\n# 1. Clase Vehiculo\nclass Vehiculo:\n    # Tu código aquí\n    pass\n\n# 2. Generador\ndef generar_fibonacci(n):\n    # Tu código aquí\n    pass\n\n# 3. Filtrado de lista\ndef filtrar_conductores_por_edad(conductores, edad):\n    # Tu código aquí\n    pass\n\n# 4. Búsqueda con Regex\ndef verificar_patron_matricula(texto):\n    # Tu código aquí\n    pass\n",
+        "validation_type": "exam",
+        "validation_rules": {
+            "functions": [
+                {
+                    "function_name": "Vehiculo",
+                    "scenarios": [
+                        {
+                            "setup_code": "v = Vehiculo('Toyota', 'Corolla'); v.cambiar_modelo('Yaris')",
+                            "validation_code": "v.modelo",
+                            "expected_return_value": "Yaris"
+                        }
+                    ]
+                },
+                {
+                    "function_name": "generar_fibonacci",
+                    "scenarios": [
+                        {
+                            "args": [5],
+                            "expected_return_value": [0, 1, 1, 2, 3]
+                        }
+                    ]
+                },
+                {
+                    "function_name": "filtrar_conductores_por_edad",
+                    "scenarios": [
+                        {
+                            "args": [
+                                [
+                                    {"Nombre": "Elena", "Edad": 32},
+                                    {"Nombre": "Jorge", "Edad": 21},
+                                    {"Nombre": "Sara", "Edad": 30}
+                                ],
+                                30
+                            ],
+                            "expected_return_value": ["Elena", "Sara"]
+                        }
+                    ]
+                },
+                {
+                    "function_name": "verificar_patron_matricula",
+                    "scenarios": [
+                        {
+                            "args": ["La matrícula es ABC123"],
+                            "expected_return_value": true
+                        }
+                    ]
+                }
+            ],
+            "structural_requirements": {
+                "imports": ["re"],
+                "decorators": [
+                    { "function": "arrancar", "decorator": "temporizador" }
+                ]
             }
-          ]
-        },
-        {
-          "function_name": "encontrar_maximo",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  5,
-                  2,
-                  9,
-                  3
-                ]
-              ],
-              "expected_return_value": 9
-            },
-            {
-              "args": [
-                [
-                  -1,
-                  -5,
-                  -2
-                ]
-              ],
-              "expected_return_value": -1
-            },
-            {
-              "args": [
-                [
-                  10
-                ]
-              ],
-              "expected_return_value": 10
-            }
-          ]
-        },
-        {
-          "function_name": "filtrar_pares",
-          "scenarios": [
-            {
-              "args": [
-                [
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6
-                ]
-              ],
-              "expected_return_value": [
-                2,
-                4,
-                6
-              ]
-            },
-            {
-              "args": [
-                [
-                  1,
-                  3,
-                  5
-                ]
-              ],
-              "expected_return_value": []
-            },
-            {
-              "args": [
-                [
-                  -2,
-                  0,
-                  2
-                ]
-              ],
-              "expected_return_value": [
-                -2,
-                0,
-                2
-              ]
-            }
-          ]
-        },
-        {
-          "function_name": "generar_saludo",
-          "scenarios": [
-            {
-              "args": [
-                "Carlos",
-                30
-              ],
-              "expected_return_value": "Hola Carlos, tienes 30 años."
-            },
-            {
-              "args": [
-                "Maria",
-                22
-              ],
-              "expected_return_value": "Hola Maria, tienes 22 años."
-            }
-          ]
         }
-      ]
     }
-  }
 ]

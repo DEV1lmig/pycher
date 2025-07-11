@@ -15,12 +15,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useLessonDetail } from '@/hooks/useLessonDetail'; // #useLessonDetail.js
 import { getUserProfile } from "@/services/userService"; // 1. Import getUserProfile
+import { useCongratsModal } from "@/context/CongratsModalContext"; // <-- 1. IMPORTA EL HOOK
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
 
 export default function LessonWithCodePage() {
   const navigate = useNavigate();
+  const { openCongratsModal } = useCongratsModal(); // <-- 2. OBTÉN LA FUNCIÓN DEL HOOK
   const currentRouteMatch = useMatch({});
   const isExamMode = currentRouteMatch?.routeId === examInterfaceRoute.id;
 
@@ -189,9 +191,16 @@ export default function LessonWithCodePage() {
       try {
         const submissionResult = await progressService.submitExercise(currentExercise.id, codeToSubmit, userStdin);
 
-        // --- START: IMPROVED TOAST AND RESULT HANDLING ---
+        // --- 3. MODIFICA LA LÓGICA DE ÉXITO ---
         if (submissionResult.is_correct) {
-          toast.success(`Examen "${currentExercise.title}" enviado. ¡Resultado Correcto!`);
+          // Comprueba si la bandera especial viene en la respuesta
+          if (submissionResult.validation_result?.all_courses_completed) {
+            // Si es así, abre el modal de felicitación final
+            openCongratsModal();
+          } else {
+            // Si no, es solo un examen normal aprobado, muestra un toast
+            toast.success(`Examen "${currentExercise.title}" enviado. ¡Resultado Correcto!`);
+          }
         } else {
           // Show a detailed error toast
           toast.error(submissionResult.validation_result?.error || "Resultado: Incorrecto");

@@ -713,8 +713,11 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
         # 3. Course-level (final) exam
         elif exercise.course_id is not None and exercise.module_id is None and exercise.lesson_id is None:
             logger.info(f"Correct submission for final course exam {exercise.id}. Finalizing course completion for course {exercise.course_id}.")
-            _finalize_course_completion(db, user_id, exercise.course_id)
-            # Note: The logic to unlock the *next* course can be added here if needed.
+            # Capturamos el valor booleano devuelto
+            all_courses_now_completed = _finalize_course_completion(db, user_id, exercise.course_id)
+            # Añadimos el valor al diccionario de resultados que se enviará al frontend
+            if 'result_data' in locals() and isinstance(result_data, dict):
+                result_data['all_courses_completed'] = all_courses_now_completed
 
     db.commit()
     db.refresh(submission_record)
@@ -746,7 +749,8 @@ def _finalize_course_completion(db: Session, user_id: int, course_id: int):
         logger.info(f"Enrollment for User {user_id}, Course {course_id} marked as complete with 100% progress.")
     else:
         logger.warning(f"Attempted to finalize course {course_id} for user {user_id}, but it was already marked as complete.")
-
+    # After marking this course as complete, check if the user has now completed all of them.
+    return has_user_completed_all_courses(db, user_id)
 
 def get_batch_module_progress_details(db: Session, user_id: int, module_ids: list[int]) -> dict:
     """
@@ -1730,3 +1734,31 @@ def get_or_create_current_exam_exercise(db: Session, user_id: int, course_id: in
     except httpx.HTTPError as e:
         logger.error(f"Failed to re-fetch full exercise data for ID {new_exam_exercise_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve full exercise data from content service.")
+
+def has_user_completed_all_courses(db: Session, user_id: int) -> bool:
+    """
+    Checks if a user has completed every single available course in the system.
+    """
+    logger.info(f"Checking if User ID {user_id} has completed all available courses.")
+
+    # 1. Get the total number of courses available in the system.
+    total_courses_count = db.query(sql_func.count(Course.id)).scalar() or 0
+    logger.debug(f"Total available courses in system: {total_courses_count}")
+
+    # If there are no courses, the condition cannot be met.
+    if total_courses_count == 0:
+        return False
+
+    # 2. Get the number of *completed* courses for the user.
+    user_completed_courses_count = db.query(sql_func.count(UserCourseEnrollment.id)).filter(
+        UserCourseEnrollment.user_id == user_id,
+        UserCourseEnrollment.is_completed == True
+    ).scalar() or 0
+    logger.debug(f"User ID {user_id} has completed {user_completed_courses_count} courses.")
+
+    # 3. Compare the counts.
+    all_completed = user_completed_courses_count >= total_courses_count
+    if all_completed:
+        logger.info(f"🎉 CONGRATULATIONS: User ID {user_id} has completed all {total_courses_count} courses!")
+
+    return all_completed

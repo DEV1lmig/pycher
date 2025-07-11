@@ -204,6 +204,30 @@ class CodeAnalyzer:
                     return True
         return False
 
+    def is_function_decorated(self, function_name: str, decorator_name: str) -> bool:
+        """Verifica si una función específica está decorada por un decorador específico."""
+        func_node = self.analysis.get("defined_functions", {}).get(function_name)
+        if not func_node:
+            return False
+        
+        for decorator in func_node.decorator_list:
+            if isinstance(decorator, ast.Name) and decorator.id == decorator_name:
+                return True
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name) and decorator.func.id == decorator_name:
+                return True
+        return False
+
+    def is_generator(self, function_name: str) -> bool:
+        """Verifica si una función es un generador buscando la palabra clave 'yield'."""
+        func_node = self.analysis.get("defined_functions", {}).get(function_name)
+        if not func_node:
+            return False
+        
+        for node in ast.walk(func_node):
+            if isinstance(node, (ast.Yield, ast.YieldFrom)):
+                return True
+        return False
+
     def analyze(self):
         if not self.tree: return
         logger.info("Starting code analysis...")
@@ -637,52 +661,179 @@ def validate_function_exercise(user_code: str, rules: Dict[str, Any], scenario_c
             try: os.unlink(temp_module_path)
             except Exception: pass
 
+def _validate_class_unit(user_code: str, class_name: str, scenarios: List[Dict], analyzer: CodeAnalyzer) -> DynamicValidationResult:
+    """Valida una clase basada en escenarios de configuración y validación."""
+    if class_name not in analyzer.analysis["defined_classes"]:
+        return DynamicValidationResult(False, f"Clase '{class_name}' no está definida.")
+
+    temp_module_path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding='utf-8') as tmp_file:
+            temp_module_path = tmp_file.name
+            tmp_file.write(user_code)
+        
+        spec = importlib.util.spec_from_file_location(f"usermodule_{random.randint(1000,9999)}", temp_module_path)
+        user_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(user_module)
+        UserClass = getattr(user_module, class_name)
+
+        for i, scenario in enumerate(scenarios):
+            setup_code = scenario.get("setup_code", "")
+            validation_code = scenario.get("validation_code", "")
+            expected = scenario.get("expected_return_value")
+            try:
+                exec_globals = {"__builtins__": __builtins__, class_name: UserClass}
+                exec(setup_code, exec_globals)
+                actual = eval(validation_code, exec_globals)
+                if actual != expected:
+                    return DynamicValidationResult(False, f"Escenario {i+1} falló. Se esperaba '{expected}', pero se obtuvo '{actual}'.")
+            except Exception as e:
+                return DynamicValidationResult(False, f"Escenario {i+1} produjo un error: {type(e).__name__}: {e}")
+    except Exception as e:
+        return DynamicValidationResult(False, f"Error al cargar la clase: {e}")
+    finally:
+        if temp_module_path and os.path.exists(temp_module_path):
+            os.unlink(temp_module_path)
+    return DynamicValidationResult(True, "Todos los escenarios pasaron.")
+
+def _validate_function_unit(user_code: str, func_name: str, scenarios: List[Dict], analyzer: CodeAnalyzer) -> DynamicValidationResult:
+    """Valida una función estándar o generadora."""
+    if func_name not in analyzer.analysis["defined_functions"]:
+        return DynamicValidationResult(False, f"Función '{func_name}' no está definida.")
+
+    temp_module_path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding='utf-8') as tmp_file:
+            temp_module_path = tmp_file.name
+            tmp_file.write(user_code)
+        
+        spec = importlib.util.spec_from_file_location(f"usermodule_{random.randint(1000,9999)}", temp_module_path)
+        user_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(user_module)
+        actual_func = getattr(user_module, func_name)
+        is_gen = analyzer.is_generator(func_name)
+
+        for i, scenario in enumerate(scenarios):
+            args = scenario.get("args", [])
+            expected = scenario.get("expected_return_value")
+            try:
+                actual = actual_func(*args)
+                # Manejo especial para generadores y sets
+                if is_gen:
+                    actual = list(actual)
+                
+                # Si el valor esperado es una lista, y el actual es un set, comparar sin orden
+                if isinstance(expected, list) and isinstance(actual, set):
+                    if set(expected) != actual:
+                         return DynamicValidationResult(False, f"Escenario {i+1} con args {args} falló. Se esperaba un set equivalente a '{expected}', pero se obtuvo '{actual}'.")
+                elif actual != expected:
+                    return DynamicValidationResult(False, f"Escenario {i+1} con args {args} falló. Se esperaba '{expected}', pero se obtuvo '{actual}'.")
+            except Exception as e:
+                return DynamicValidationResult(False, f"Escenario {i+1} produjo un error: {type(e).__name__}: {e}")
+    except Exception as e:
+        return DynamicValidationResult(False, f"Error al cargar la función: {e}")
+    finally:
+        if temp_module_path and os.path.exists(temp_module_path):
+            os.unlink(temp_module_path)
+    return DynamicValidationResult(True, "Todos los escenarios pasaron.")
+
 def validate_exam_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> DynamicValidationResult:
+    """Validador principal para exámenes que orquesta múltiples pruebas."""
+    logger.info("--- Iniciando validación de examen ---")
     analyzer = CodeAnalyzer(user_code)
+    if analyzer.syntax_error:
+        return DynamicValidationResult(False, f"Tu código tiene un error de sintaxis: {analyzer.syntax_error}")
+
+    # Check for security issues first
     static_failures = analyzer.check_static_requirements({}) # Basic security check
     if static_failures:
         return DynamicValidationResult(False, "Static analysis failed: " + " ".join(static_failures))
 
-    function_rules_list = rules.get("functions", [])
-    if not function_rules_list:
-        return DynamicValidationResult(False, "Config error: 'functions' list is missing for exam.")
+    feedback = {"Unidades de Código": [], "Requisitos Estructurales": [], "Salida del Script": []}
+    passed_checks = 0
+    total_checks = 0
 
-    passed_count = 0
-    feedback = []
-    for func_rules in function_rules_list:
-        func_name = func_rules.get("function_name")
-        scenarios = func_rules.get("scenarios", [])
-        if not func_name or not scenarios:
-            feedback.append(f"Config error for a function in the exam.")
+    # --- 1. Validar Unidades de Código (Clases y Funciones) ---
+    test_units = rules.get("functions", [])
+    total_checks += len(test_units)
+    for unit in test_units:
+        unit_name = unit.get("function_name")
+        scenarios = unit.get("scenarios", [])
+        is_class_test = scenarios and "setup_code" in scenarios[0]
+
+        result = _validate_class_unit(user_code, unit_name, scenarios, analyzer) if is_class_test else _validate_function_unit(user_code, unit_name, scenarios, analyzer)
+        feedback["Unidades de Código"].append(f"Unidad '{unit_name}': {'PASSED' if result.passed else 'FAILED'}. {result.message}")
+        if result.passed: passed_checks += 1
+
+    # --- 2. Validar Clases Definidas Separadamente (backward compatibility) ---
+    class_rules_list = rules.get("classes", [])
+    total_checks += len(class_rules_list)
+
+    for class_rules in class_rules_list:
+        class_name = class_rules.get("class_name")
+        scenarios = class_rules.get("scenarios", [])
+        
+        if not class_name:
+            feedback["Unidades de Código"].append(f"Config error for a class in the exam.")
             continue
+            
+        result = _validate_class_unit(user_code, class_name, scenarios, analyzer)
+        feedback["Unidades de Código"].append(f"Clase '{class_name}': {'PASSED' if result.passed else 'FAILED'}. {result.message}")
+        if result.passed: passed_checks += 1
 
-        func_node = analyzer.analysis.get("defined_functions", {}).get(func_name)
-        if not func_node:
-            feedback.append(f"Function '{func_name}': FAILED - Not defined.")
-            continue
+    # --- 3. Validar Requisitos Estructurales Dinámicos desde JSON ---
+    struct_rules = rules.get("structural_requirements", {})
+    
+    required_imports = struct_rules.get("imports", [])
+    total_checks += len(required_imports)
+    for imp in required_imports:
+        if imp in analyzer.analysis["imports"]:
+            passed_checks += 1
+            feedback["Requisitos Estructurales"].append(f"Import '{imp}': PASSED.")
+        else:
+            feedback["Requisitos Estructurales"].append(f"Import '{imp}': FAILED. No se encontró la importación requerida.")
 
-        static_failures = analyzer.check_static_requirements(func_rules, scope_node=func_node)
-        if static_failures:
-            feedback.append(f"Function '{func_name}': FAILED - " + " ".join(static_failures))
-            continue
+    decorator_rules = struct_rules.get("decorators", [])
+    total_checks += len(decorator_rules)
+    for dec_rule in decorator_rules:
+        func = dec_rule.get("function")
+        deco = dec_rule.get("decorator")
+        if func and deco:
+            if analyzer.is_function_decorated(func, deco):
+                passed_checks += 1
+                feedback["Requisitos Estructurales"].append(f"Decorador '@{deco}' en '{func}': PASSED.")
+            else:
+                feedback["Requisitos Estructurales"].append(f"Decorador '@{deco}' en '{func}': FAILED. El decorador no fue aplicado a la función correcta.")
+        
+    # --- 4. Validar Salida Completa del Script ---
+    expected_output = rules.get("expected_script_output")
+    if expected_output:
+        total_checks += 1
+        stdout, stderr, timed_out, exit_code, _ = run_user_code_sandboxed(user_code)
+        if exit_code == 0 and not timed_out:
+            normalized_stdout = "\n".join(line.strip() for line in stdout.strip().splitlines())
+            normalized_expected = "\n".join(line.strip() for line in expected_output.strip().splitlines())
+            if normalized_stdout == normalized_expected:
+                passed_checks += 1
+                feedback["Salida del Script"].append("Salida del Script: PASSED.")
+            else:
+                feedback["Salida del Script"].append(f"Salida del Script: FAILED. La salida no coincide.\nSe esperaba:\n---\n{normalized_expected}\n---\nSe obtuvo:\n---\n{normalized_stdout}\n---")
+        else:
+            feedback["Salida del Script"].append(f"Salida del Script: FAILED. El código produjo un error: {stderr}")
 
-        all_scenarios_passed = True
-        for scenario in scenarios:
-            result = validate_function_exercise(user_code, func_rules, scenario, **kwargs)
-            if not result.passed:
-                feedback.append(f"Function '{func_name}': FAILED on args {scenario.get('args', [])} - {result.message}")
-                all_scenarios_passed = False
-                break
-
-        if all_scenarios_passed:
-            passed_count += 1
-            feedback.append(f"Function '{func_name}': PASSED.")
-
-    if passed_count == len(function_rules_list):
-        return DynamicValidationResult(True, f"¡Examen completado con éxito! Todas las {passed_count} funciones pasaron.")
-    else:
-        summary = f"Examen parcialmente completado. {passed_count}/{len(function_rules_list)} funciones pasaron."
-        return DynamicValidationResult(False, summary + "\n" + "\n".join(feedback))
+    # --- 5. Generar Reporte Final ---
+    if total_checks == 0:
+        return DynamicValidationResult(False, "No se encontraron pruebas para validar en la configuración del examen.")
+        
+    summary = f"Resultado: {passed_checks}/{total_checks} pruebas pasadas."
+    final_message_parts = [summary]
+    for category, messages in feedback.items():
+        if messages:
+            final_message_parts.append(f"\n--- {category} ---")
+            final_message_parts.extend(f"- {msg}" for msg in messages)
+    
+    final_message = "\n".join(final_message_parts)
+    return DynamicValidationResult(passed_checks == total_checks, final_message)
 
 # --- Validator Dispatcher Map ---
 def validate_flexible_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> DynamicValidationResult:
