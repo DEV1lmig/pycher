@@ -192,11 +192,11 @@ export default function LessonWithCodePage() {
         const submissionResult = await progressService.submitExercise(currentExercise.id, codeToSubmit, userStdin);
 
         // --- 3. MODIFICA LA LÓGICA DE ÉXITO ---
-        if (submissionResult.is_correct) {
+        if (submissionResult?.is_correct) {
           // Comprueba si la bandera especial viene en la respuesta
-          if (submissionResult.validation_result?.all_courses_completed) {
+          if (submissionResult?.validation_result?.all_courses_completed) {
             // Si es así, abre el modal de felicitación final
-            openCongratsModal();
+            openCongratsModal(); // Open the modal
           } else {
             // Si no, es solo un examen normal aprobado, muestra un toast
             toast.success(`Examen "${currentExercise.title}" enviado. ¡Resultado Correcto!`);
@@ -491,7 +491,7 @@ export default function LessonWithCodePage() {
           )}
         </div>
       </FadeContent>
-      {courseProgress?.is_course_completed && (
+      {courseProgress?.is_course_completed && !isExamMode && (
   <>
     {console.log("Rendering 'Curso completado' message. courseProgress:", courseProgress)} {/* <--- LOG HERE */}
     <div className="p-3 bg-green-50 border border-green-200 rounded-lg shadow-md text-center text-green-700 mt-2">

@@ -714,7 +714,9 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
         elif exercise.course_id is not None and exercise.module_id is None and exercise.lesson_id is None:
             logger.info(f"Correct submission for final course exam {exercise.id}. Finalizing course completion for course {exercise.course_id}.")
             # Capturamos el valor booleano devuelto
-            all_courses_now_completed = _finalize_course_completion(db, user_id, exercise.course_id)
+            _finalize_course_completion(db, user_id, exercise.course_id)
+            db.flush()  # Ensure the course completion is finalized before checking if all courses are completed
+            all_courses_now_completed = has_user_completed_all_courses(db, user_id)
             # Añadimos el valor al diccionario de resultados que se enviará al frontend
             if 'result_data' in locals() and isinstance(result_data, dict):
                 result_data['all_courses_completed'] = all_courses_now_completed
@@ -722,6 +724,7 @@ def complete_exercise(db: Session, user_id: int, exercise_id: int, code_submitte
     db.commit()
     db.refresh(submission_record)
 
+    logger.info(f"resultado de la submission: {submission_record} con resultado: {result_data}")
     return submission_record, result_data
 
 
@@ -750,7 +753,6 @@ def _finalize_course_completion(db: Session, user_id: int, course_id: int):
     else:
         logger.warning(f"Attempted to finalize course {course_id} for user {user_id}, but it was already marked as complete.")
     # After marking this course as complete, check if the user has now completed all of them.
-    return has_user_completed_all_courses(db, user_id)
 
 def get_batch_module_progress_details(db: Session, user_id: int, module_ids: list[int]) -> dict:
     """
@@ -1737,28 +1739,33 @@ def get_or_create_current_exam_exercise(db: Session, user_id: int, course_id: in
 
 def has_user_completed_all_courses(db: Session, user_id: int) -> bool:
     """
-    Checks if a user has completed every single available course in the system.
+    Checks if a user has completed every single *active* course in the system.
+    Only considers published/active courses and active enrollments.
     """
     logger.info(f"Checking if User ID {user_id} has completed all available courses.")
 
-    # 1. Get the total number of courses available in the system.
-    total_courses_count = db.query(sql_func.count(Course.id)).scalar() or 0
-    logger.debug(f"Total available courses in system: {total_courses_count}")
+    # 1. Get the total number of published/active courses
+    total_courses_count = db.query(Course.id).filter(Course.is_active == True).count()
+    logger.debug(f"Total active courses in system: {total_courses_count}")
 
-    # If there are no courses, the condition cannot be met.
     if total_courses_count == 0:
+        logger.warning("No active courses found in the system.")
         return False
 
-    # 2. Get the number of *completed* courses for the user.
-    user_completed_courses_count = db.query(sql_func.count(UserCourseEnrollment.id)).filter(
+    # 2. Get the number of completed active enrollments for the user
+    user_completed_courses_count = db.query(UserCourseEnrollment.id).join(Course).filter(
         UserCourseEnrollment.user_id == user_id,
-        UserCourseEnrollment.is_completed == True
-    ).scalar() or 0
-    logger.debug(f"User ID {user_id} has completed {user_completed_courses_count} courses.")
+        UserCourseEnrollment.is_completed == True,
+        UserCourseEnrollment.is_active == True,
+        Course.is_active == True
+    ).count()
+    logger.debug(f"User ID {user_id} has completed {user_completed_courses_count} active courses.")
 
-    # 3. Compare the counts.
+    # 3. Compare the counts
     all_completed = user_completed_courses_count >= total_courses_count
     if all_completed:
-        logger.info(f"🎉 CONGRATULATIONS: User ID {user_id} has completed all {total_courses_count} courses!")
+        logger.info(f"User {user_id} has completed ALL active courses!")
+    else:
+        logger.info(f"User {user_id} has NOT completed all courses.")
 
     return all_completed

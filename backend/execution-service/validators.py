@@ -209,7 +209,7 @@ class CodeAnalyzer:
         func_node = self.analysis.get("defined_functions", {}).get(function_name)
         if not func_node:
             return False
-        
+
         for decorator in func_node.decorator_list:
             if isinstance(decorator, ast.Name) and decorator.id == decorator_name:
                 return True
@@ -222,7 +222,7 @@ class CodeAnalyzer:
         func_node = self.analysis.get("defined_functions", {}).get(function_name)
         if not func_node:
             return False
-        
+
         for node in ast.walk(func_node):
             if isinstance(node, (ast.Yield, ast.YieldFrom)):
                 return True
@@ -671,8 +671,8 @@ def _validate_class_unit(user_code: str, class_name: str, scenarios: List[Dict],
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding='utf-8') as tmp_file:
             temp_module_path = tmp_file.name
             tmp_file.write(user_code)
-        
-        spec = importlib.util.spec_from_file_location(f"usermodule_{random.randint(1000,9999)}", temp_module_path)
+
+        spec = importlib.util.spec_from_file_location(f"usermodule_{os.path.basename(temp_module_path)}", temp_module_path)
         user_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(user_module)
         UserClass = getattr(user_module, class_name)
@@ -706,7 +706,7 @@ def _validate_function_unit(user_code: str, func_name: str, scenarios: List[Dict
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding='utf-8') as tmp_file:
             temp_module_path = tmp_file.name
             tmp_file.write(user_code)
-        
+
         spec = importlib.util.spec_from_file_location(f"usermodule_{random.randint(1000,9999)}", temp_module_path)
         user_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(user_module)
@@ -721,7 +721,7 @@ def _validate_function_unit(user_code: str, func_name: str, scenarios: List[Dict
                 # Manejo especial para generadores y sets
                 if is_gen:
                     actual = list(actual)
-                
+
                 # Si el valor esperado es una lista, y el actual es un set, comparar sin orden
                 if isinstance(expected, list) and isinstance(actual, set):
                     if set(expected) != actual:
@@ -772,18 +772,18 @@ def validate_exam_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> D
     for class_rules in class_rules_list:
         class_name = class_rules.get("class_name")
         scenarios = class_rules.get("scenarios", [])
-        
+
         if not class_name:
             feedback["Unidades de Código"].append(f"Config error for a class in the exam.")
             continue
-            
+
         result = _validate_class_unit(user_code, class_name, scenarios, analyzer)
         feedback["Unidades de Código"].append(f"Clase '{class_name}': {'PASSED' if result.passed else 'FAILED'}. {result.message}")
         if result.passed: passed_checks += 1
 
     # --- 3. Validar Requisitos Estructurales Dinámicos desde JSON ---
     struct_rules = rules.get("structural_requirements", {})
-    
+
     required_imports = struct_rules.get("imports", [])
     total_checks += len(required_imports)
     for imp in required_imports:
@@ -804,7 +804,7 @@ def validate_exam_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> D
                 feedback["Requisitos Estructurales"].append(f"Decorador '@{deco}' en '{func}': PASSED.")
             else:
                 feedback["Requisitos Estructurales"].append(f"Decorador '@{deco}' en '{func}': FAILED. El decorador no fue aplicado a la función correcta.")
-        
+
     # --- 4. Validar Salida Completa del Script ---
     expected_output = rules.get("expected_script_output")
     if expected_output:
@@ -824,14 +824,14 @@ def validate_exam_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> D
     # --- 5. Generar Reporte Final ---
     if total_checks == 0:
         return DynamicValidationResult(False, "No se encontraron pruebas para validar en la configuración del examen.")
-        
+
     summary = f"Resultado: {passed_checks}/{total_checks} pruebas pasadas."
     final_message_parts = [summary]
     for category, messages in feedback.items():
         if messages:
             final_message_parts.append(f"\n--- {category} ---")
             final_message_parts.extend(f"- {msg}" for msg in messages)
-    
+
     final_message = "\n".join(final_message_parts)
     return DynamicValidationResult(passed_checks == total_checks, final_message)
 
@@ -965,7 +965,7 @@ def validate_class_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> 
         return DynamicValidationResult(False, f"The class '{class_name}' must be a dataclass. Did you use the '@dataclass' decorator?")
 
     if rules.get("require_frozen") and not analyzer.check_is_dataclass(class_node, frozen=True):
-         return DynamicValidationResult(False, f"The dataclass '{class_name}' must be immutable. Use '@dataclass(frozen=True)'.")
+        return DynamicValidationResult(False, f"The dataclass '{class_name}' must be immutable. Use '@dataclass(frozen=True)'.")
 
     # 2. Dynamic Import and Execution of Checks
     temp_module_path = None

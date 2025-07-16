@@ -1800,7 +1800,7 @@
       "expected_exact_output": "['25-12-2024', '24-12-2024', '31-01-2025']\n"
     }
   },
-    {
+ {
         "id": 44,
         "course_id": 3,
         "module_id": null,
@@ -2018,8 +2018,8 @@
         "order_index": 4,
         "title": "Examen Final: Python Avanzado",
         "description": "Aplicación práctica de Python avanzado: clases, métodos, decoradores, generadores, y manejo de listas y expresiones regulares en situaciones reales.",
-        "instructions": "Resuelve los siguientes ejercicios paso a paso:\n\n1. Define la clase Vehículo con atributos marca y modelo. Implementa __str__ para mostrar: 'Vehículo: [marca] [modelo]'.\n\n2. Agrega un método cambiar_modelo(nuevo_modelo) para actualizar el modelo.\n\n3. Crea un decorador temporizador que imprima \"Inicio\" antes y \"Fin\" después de la ejecución de cualquier función. Aplica este decorador a una función arrancar() que imprima \"Arrancando motor...\".\n\n4. Define una función generadora fibonacci(n) que genere los primeros n números de Fibonacci.\n\n5. Dada la lista:\n    conductores = [\n        {\"Nombre\": \"Elena\", \"Edad\": 32, \"Ciudad\": \"Quito\"},\n        {\"Nombre\": \"Jorge\", \"Edad\": 21, \"Ciudad\": \"Bogotá\"},\n        {\"Nombre\": \"Sara\", \"Edad\": 30, \"Ciudad\": \"Quito\"}\n    ]\n    Muestra los nombres de conductores que tienen 30 años o más.\n    Cuenta cuántos viven en \"Lima\".\n\n6. Utiliza re.search para verificar si el texto \"La matrícula es ABC123\" contiene un patrón alfanumérico seguido de números.",
-        "starter_code": "import re\n\n# 1. Clase Vehiculo\nclass Vehiculo:\n    # Tu código aquí\n    pass\n\n# 2. Generador\ndef generar_fibonacci(n):\n    # Tu código aquí\n    pass\n\n# 3. Filtrado de lista\ndef filtrar_conductores_por_edad(conductores, edad):\n    # Tu código aquí\n    pass\n\n# 4. Búsqueda con Regex\ndef verificar_patron_matricula(texto):\n    # Tu código aquí\n    pass\n",
+        "instructions": "Resuelve los siguientes ejercicios paso a paso:\n\n1. Define la clase Vehículo con atributos marca y modelo. Implementa __str__ para mostrar: 'Vehículo: [marca] [modelo]'.\n\n2. Agrega un método cambiar_modelo(nuevo_modelo) para actualizar el modelo.\n\n3. Crea un decorador `temporizador` que mida y muestre el tiempo de ejecución de una función. **Aplica este decorador al método `arrancar()` de la clase `Vehiculo` para medir su rendimiento**.\n\n4. Define una función generadora fibonacci(n) que genere los primeros n números de Fibonacci.\n\n5. Dada la lista:\n    conductores = [\n        {\"Nombre\": \"Elena\", \"Edad\": 32, \"Ciudad\": \"Quito\"},\n        {\"Nombre\": \"Jorge\", \"Edad\": 21, \"Ciudad\": \"Bogotá\"},\n        {\"Nombre\": \"Sara\", \"Edad\": 30, \"Ciudad\": \"Quito\"}\n    ]\n    Muestra los nombres de conductores que tienen 30 años o más.\n    Cuenta cuántos viven en \"Lima\".\n\n6. Utiliza re.search para verificar si el texto \"La matrícula es ABC123\" contiene un patrón alfanumérico seguido de números.",
+        "starter_code": "import re\nimport time\n\n# 1. Clase Vehiculo\nclass Vehiculo:\n    # Tu código aquí\n    pass\n\n# 2. Generador\ndef generar_fibonacci(n):\n    # Tu código aquí\n    pass\n\n# 3. Filtrado de lista\ndef filtrar_conductores_por_edad(conductores, edad):\n    # Tu código aquí\n    pass\n\n# 4. Búsqueda con Regex\ndef verificar_patron_matricula(texto):\n    # Tu código aquí\n    pass\n",
         "validation_type": "exam",
         "validation_rules": {
             "functions": [
@@ -2030,6 +2030,11 @@
                             "setup_code": "v = Vehiculo('Toyota', 'Corolla'); v.cambiar_modelo('Yaris')",
                             "validation_code": "v.modelo",
                             "expected_return_value": "Yaris"
+                        },
+                        {
+                            "setup_code": "import io, sys; from contextlib import redirect_stdout; v = Vehiculo('Ford', 'Raptor'); f = io.StringIO();\nwith redirect_stdout(f):\n    v.arrancar()\ncaptured_output = f.getvalue()",
+                            "validation_code": "'Tiempo de ejecución' in captured_output",
+                            "expected_return_value": true
                         }
                     ]
                 },
@@ -2069,9 +2074,9 @@
                 }
             ],
             "structural_requirements": {
-                "imports": ["re"],
+                "imports": ["re", "time"],
                 "decorators": [
-                    { "function": "arrancar", "decorator": "temporizador" }
+                    { "class": "Vehiculo", "method": "arrancar", "decorator": "temporizador" }
                 ]
             }
         }

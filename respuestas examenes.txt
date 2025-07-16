@@ -1,0 +1,222 @@
+--- examen 1 ---
+import re
+import time # Necesitamos importar 'time' para medir el tiempo
+
+# 1. El decorador ahora tiene una función práctica
+def temporizador(funcion):
+    """
+    Decorador que mide y muestra el tiempo de ejecución de una función.
+    """
+    def wrapper(*args, **kwargs):
+        inicio = time.time() # Registra el tiempo de inicio
+        resultado = funcion(*args, **kwargs) # Ejecuta la función
+        fin = time.time() # Registra el tiempo de finalización
+        print(f"✅ Tiempo de ejecución de '{funcion.__name__}': {fin - inicio:.4f} segundos.")
+        return resultado
+    return wrapper
+
+
+# 2. La clase Vehiculo APLICA el decorador en su método
+class Vehiculo:
+    """Define un vehículo con marca y modelo."""
+    def __init__(self, marca, modelo):
+        self.marca = marca
+        self.modelo = modelo
+
+    @temporizador # <-- El decorador se integra directamente en la clase
+    def arrancar(self):
+        """Simula un proceso de arranque que toma tiempo."""
+        print(f"Arrancando el motor del {self.marca} {self.modelo}...")
+        # Simulamos una tarea que dura 1.5 segundos
+        time.sleep(1.5)
+        print("Motor arrancado.")
+
+    def cambiar_modelo(self, nuevo_modelo):
+        """Actualiza el modelo del vehículo."""
+        self.modelo = nuevo_modelo
+
+# Demostración
+mi_vehiculo = Vehiculo("Ford", "Raptor")
+mi_vehiculo.arrancar() # Al llamar este método, el decorador se activará
+--- examen 2 ---
+import re
+import time # Necesitamos importar 'time' para medir el tiempo
+
+# 1. El decorador ahora tiene una función práctica
+def temporizador(funcion):
+    """
+    Decorador que mide y muestra el tiempo de ejecución de una función.
+    """
+    def wrapper(*args, **kwargs):
+        inicio = time.time() # Registra el tiempo de inicio
+        resultado = funcion(*args, **kwargs) # Ejecuta la función
+        fin = time.time() # Registra el tiempo de finalización
+        print(f"✅ Tiempo de ejecución de '{funcion.__name__}': {fin - inicio:.4f} segundos.")
+        return resultado
+    return wrapper
+
+
+# 2. La clase Vehiculo APLICA el decorador en su método
+class Vehiculo:
+    """Define un vehículo con marca y modelo."""
+    def __init__(self, marca, modelo):
+        self.marca = marca
+        self.modelo = modelo
+
+    @temporizador # <-- El decorador se integra directamente en la clase
+    def arrancar(self):
+        """Simula un proceso de arranque que toma tiempo."""
+        print(f"Arrancando el motor del {self.marca} {self.modelo}...")
+        # Simulamos una tarea que dura 1.5 segundos
+        time.sleep(1.5)
+        print("Motor arrancado.")
+
+    def cambiar_modelo(self, nuevo_modelo):
+        """Actualiza el modelo del vehículo."""
+        self.modelo = nuevo_modelo
+
+# Demostración
+mi_vehiculo = Vehiculo("Ford", "Raptor")
+mi_vehiculo.arrancar() # Al llamar este método, el decorador se activará
+
+# 2. Generador
+def generar_fibonacci(n):
+    """
+    Generador que produce los primeros n números de la secuencia de Fibonacci.
+    """
+    a, b = 0, 1
+    for _ in range(n):
+        yield a
+        a, b = b, a + b
+
+# Demostración
+print("\nPrimeros 8 números de Fibonacci:")
+fib_sequence = list(generar_fibonacci(8))
+print(fib_sequence)
+
+# 3. Filtrado de lista
+def filtrar_conductores_por_edad(conductores, edad):
+    """
+    Filtra una lista de conductores y devuelve aquellos que tienen una edad mínima.
+    """
+    return [c["Nombre"] for c in conductores if c.get("Edad", 0) >= edad]
+
+# Demostración
+conductores_lista = [
+    {"Nombre": "Carlos", "Edad": 45},
+    {"Nombre": "Diana", "Edad": 28},
+    {"Nombre": "Pedro", "Edad": 31}
+]
+
+conductores_mayores = filtrar_conductores_por_edad(conductores_lista, 30)
+print("\nConductores con 30 años o más:")
+print(conductores_mayores)
+
+# 4. Búsqueda con Regex
+def verificar_patron_matricula(texto):
+    """
+    Verifica si el texto contiene un patrón de matrícula (3 letras y 3 números).
+    """
+    # El patrón r'[A-Z]{3}\d{3}' busca 3 letras mayúsculas seguidas de 3 dígitos.
+    patron = r'[A-Z]{3}\d{3}'
+    if re.search(patron, texto):
+        print(f"✔️ Patrón de matrícula encontrado en: '{texto}'")
+        return True
+    else:
+        print(f"❌ No se encontró patrón en: '{texto}'")
+        return False
+
+# Demostración
+print("\nVerificación de matrículas:")
+verificar_patron_matricula("El auto con placa LPR789 cruzó la calle.")
+verificar_patron_matricula("No hay ninguna matrícula aquí.")
+
+--examen 3 ---
+import re
+
+# --- Ejercicio 3: Decorador y función 'inicio' ---
+def rastro(funcion):
+    """Decorador que imprime un mensaje antes de la ejecución."""
+    def wrapper(*args, **kwargs):
+        print("Llamando función...")
+        return funcion(*args, **kwargs)
+    return wrapper
+
+@rastro
+def inicio():
+    """Función de ejemplo a la que se le aplica el decorador."""
+    print("Función 'inicio' ejecutada.")
+
+
+# --- Definiciones de Clases y Funciones del Examen ---
+
+# 1. Clase Cuenta
+class Cuenta:
+    """Representa una cuenta bancaria con titular y saldo."""
+    def __init__(self, titular, saldo=0.0):
+        self.titular = titular
+        self.saldo = saldo
+
+    def __str__(self):
+        """Devuelve una representación en texto de la cuenta."""
+        return f"Cuenta de {self.titular}, Saldo: ${self.saldo:,.2f}"
+
+    def depositar(self, cantidad):
+        """Añade una cantidad positiva al saldo de la cuenta."""
+        if cantidad > 0:
+            self.saldo += cantidad
+
+# 2. Generador (Renombrado para coincidir con el starter_code)
+def generar_multiplos_de_tres(n):
+    """Generador que produce los primeros n múltiplos de 3."""
+    for i in range(1, n + 1):
+        yield i * 3
+
+# 3. Filtrado de lista
+def contar_conductores_por_ciudad(conductores, ciudad):
+    """Cuenta cuántos conductores hay en una ciudad específica."""
+    return sum(1 for conductor in conductores if conductor.get("Ciudad") == ciudad)
+
+# 4. Búsqueda con Regex
+def verificar_matricula(texto):
+    """Verifica si el texto contiene un patrón de matrícula (ej: ABC123)."""
+    # Patrón para 3 letras mayúsculas seguidas de 3 números.
+    patron = r'[A-Z]{3}\d{3}'
+    if re.search(patron, texto):
+        return True
+    return False
+
+
+# --- Demostración de las Operaciones Solicitadas ---
+
+print("## Demostración de Clase Cuenta ##")
+mi_cuenta = Cuenta("Carlos Rivas", 500)
+print(mi_cuenta)
+mi_cuenta.depositar(150)
+print(f"Saldo después del depósito: {mi_cuenta.saldo}")
+# ---
+print("\n## Demostración de Decorador ##")
+inicio()
+# ---
+print("\n## Demostración de Generador ##")
+print(f"Primeros 5 múltiplos de 3: {list(generar_multiplos_de_tres(5))}")
+# ---
+print("\n## Operaciones con la lista de conductores ##")
+conductores = [
+    {"Nombre": "Elena", "Edad": 32, "Ciudad": "Quito"},
+    {"Nombre": "Jorge", "Edad": 21, "Ciudad": "Bogotá"},
+    {"Nombre": "Sara", "Edad": 30, "Ciudad": "Quito"}
+]
+# Muestra nombres de quienes tienen 30 años o más
+nombres_mayores = [c["Nombre"] for c in conductores if c["Edad"] >= 30]
+print(f"Conductores con 30 años o más: {nombres_mayores}")
+
+# Cuenta cuántos viven en "Lima" usando la función creada.
+conteo_lima = contar_conductores_por_ciudad(conductores, "Lima")
+print(f"Cantidad de conductores en Lima: {conteo_lima}")
+# ---
+print("\n## Demostración de Búsqueda con Regex ##")
+texto_con_matricula = "El auto con la matrícula LPR789 fue visto ayer."
+texto_sin_matricula = "Este es un texto normal."
+print(f"¿'{texto_con_matricula}' contiene matrícula? -> {verificar_matricula(texto_con_matricula)}")
+print(f"¿'{texto_sin_matricula}' contiene matrícula? -> {verificar_matricula(texto_sin_matricula)}")

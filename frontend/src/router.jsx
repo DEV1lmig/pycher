@@ -1,4 +1,7 @@
-import { createRootRoute, createRouter, createRoute } from '@tanstack/react-router';
+import { createRootRoute, createRouter, createRoute, Outlet } from '@tanstack/react-router';
+import { CongratsModalProvider, useCongratsModal } from './context/CongratsModalContext';
+import { Toaster } from 'react-hot-toast';
+import AllCoursesCompletedModal from './components/modals/AllCoursesCompletedModal';
 import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import LandingPage from '@/pages/LandingPage';
@@ -11,7 +14,37 @@ import ModuleLessonsPage from "./pages/courses/modules/ModuleLessonsPage";
 import LessonWithCodePage from "./pages/courses/lessons/LessonWithCodePage";
 import { ProtectedLayout } from '@/components/auth/ProtectedLayout'; // Ensure this is correctly imported
 
-const rootRoute = createRootRoute();
+function RootLayout() {
+  const { isCongratsModalOpen } = useCongratsModal();
+
+  return (
+    <>
+      <Outlet />
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          className: 'bg-[#1a1433] text-white border-[#312a56]',
+          duration: 3000,
+          style: {
+            background: '#1a1433',
+            color: '#fff',
+            border: '1px solid #312a56',
+          },
+        }}
+      />
+      {isCongratsModalOpen && <AllCoursesCompletedModal />}
+    </>
+  );
+}
+
+const rootRoute = createRootRoute({
+  component: () => (
+    <CongratsModalProvider>
+      <RootLayout />
+    </CongratsModalProvider>
+  ),
+});
 
 const landingRoute = createRoute({
   getParentRoute: () => rootRoute,

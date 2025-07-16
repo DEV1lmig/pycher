@@ -242,9 +242,10 @@ def get_exercise(db: Session, exercise_id: str):
         "description": exercise.description,
         "instructions": exercise.instructions,
         "starter_code": exercise.starter_code,
-        "solution_code": exercise.solution_code,
-        "test_code": exercise.test_code,
-        "hints": exercise.hints
+        "hints": getattr(exercise, 'hints', None),
+        "validation_type": getattr(exercise, 'validation_type', None),
+        "validation_rules": getattr(exercise, 'validation_rules', {}),
+        "explanation": getattr(exercise, 'explanation', None)
     }
 
     redis_client.setex(f"exercise:{exercise_id}", CACHE_TTL, json.dumps(exercise_data))
