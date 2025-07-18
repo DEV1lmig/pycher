@@ -1,7 +1,10 @@
 import { createRootRoute, createRouter, createRoute, Outlet } from '@tanstack/react-router';
 import { CongratsModalProvider, useCongratsModal } from './context/CongratsModalContext';
+import { DownloadNotificationProvider, useDownloadNotificationContext } from './context/DownloadNotificationContext';
 import { Toaster } from 'react-hot-toast';
 import AllCoursesCompletedModal from './components/modals/AllCoursesCompletedModal';
+import DownloadModal from './components/modals/DownloadModal';
+import ResponsiveDownloadModalTest from './components/test/ResponsiveDownloadModalTest';
 import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import LandingPage from '@/pages/LandingPage';
@@ -16,6 +19,7 @@ import { ProtectedLayout } from '@/components/auth/ProtectedLayout'; // Ensure t
 
 function RootLayout() {
   const { isCongratsModalOpen } = useCongratsModal();
+  const { isVisible, type, filename, message, hideDownloadNotification } = useDownloadNotificationContext();
 
   return (
     <>
@@ -34,6 +38,13 @@ function RootLayout() {
         }}
       />
       {isCongratsModalOpen && <AllCoursesCompletedModal />}
+      <DownloadModal
+        isOpen={isVisible}
+        onClose={hideDownloadNotification}
+        type={type}
+        filename={filename}
+        message={message}
+      />
     </>
   );
 }
@@ -41,7 +52,9 @@ function RootLayout() {
 const rootRoute = createRootRoute({
   component: () => (
     <CongratsModalProvider>
-      <RootLayout />
+      <DownloadNotificationProvider>
+        <RootLayout />
+      </DownloadNotificationProvider>
     </CongratsModalProvider>
   ),
 });
@@ -122,11 +135,18 @@ const ProfileRoute = createRoute({
   component: () => <ProfilePage />,
 })
 
+const testResponsiveModalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/test/responsive-modal',
+  component: ResponsiveDownloadModalTest,
+})
+
 const routeTree = rootRoute.addChildren([
   landingRoute,
   loginRoute,
   registerRoute,
   helpRoute,
+  testResponsiveModalRoute,
   protectedRoute.addChildren([
     homeRoute,
     ProfileRoute,

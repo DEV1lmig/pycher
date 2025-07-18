@@ -73,7 +73,6 @@ retry_decorator = retry(
 @retry_decorator
 async def generate_ai_response(prompt: str, model_name: str = MODEL_NAME) -> Dict[str, Any]: # Added model_name parameter
     try:
-        logger.info(f"Sending prompt to GitHub Models {model_name}...")
         response = client.complete( # Pass model_name here
             model=model_name,
             messages=[
@@ -88,12 +87,9 @@ async def generate_ai_response(prompt: str, model_name: str = MODEL_NAME) -> Dic
             content = response.choices[0].message.content.strip()
             return {"content": content}
         else:
-            logger.warning(f"Received no choices from model {model_name} for prompt.")
             return {"content": ""} # Return empty content or handle as an error
     except Exception as e:
-        logger.exception(f"GitHub Models API Error with {model_name}: {e}", exc_info=True)
         if hasattr(e, 'response') and e.response is not None:
-            logger.error(f"API response: {e.response.text}")
         raise HTTPException(status_code=502, detail=f"GitHub Models API Error with {model_name}: {str(e)}")
 
 # --- FastAPI Application ---
@@ -317,6 +313,5 @@ async def chat_stream(request: ChatStreamRequest):
                         yield delta.content
                         await asyncio.sleep(0)
         except Exception as e:
-            logger.error(f"Error during streaming: {e}", exc_info=True)
 
     return StreamingResponse(streamer_wrapper(), media_type="text/event-stream")

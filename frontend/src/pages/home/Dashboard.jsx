@@ -38,7 +38,6 @@ export default function DashboardPage() {
           </p>
           </FadeContent>
           <CourseCards courses={courses} />
-
         </section>
       </div>
     </DashboardLayout>

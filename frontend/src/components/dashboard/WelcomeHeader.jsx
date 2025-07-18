@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { getUserProfile, downloadProgressReport } from "@/services/userService"; // Import downloadProgressReport
 import AnimatedContent from '../ui/animated-content';
 import Particles from "../ui/particles";
-// Consider adding a toast notification library for better UX, e.g., react-hot-toast
-// import toast from 'react-hot-toast';
+import { useDownloadNotification } from "@/hooks/useDownloadNotification";
 
 export function WelcomeHeader() {
   const [user, setUser] = useState(null);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
-  const [reportError, setReportError] = useState(null);
+  const { showSuccess, showError } = useDownloadNotification();
 
   useEffect(() => {
     getUserProfile().then(setUser).catch(err => {
@@ -19,19 +18,15 @@ export function WelcomeHeader() {
 
   const handleDownloadReport = async () => {
     setIsDownloadingReport(true);
-    setReportError(null);
     try {
       const result = await downloadProgressReport();
       if (result.success) {
-        // Optionally, show a success message
-        // For example, using react-hot-toast: toast.success(`Report "${result.filename}" downloaded!`);
-        alert(`Report "${result.filename}" download initiated!`);
+        showSuccess(result.filename, `Reporte "${result.filename}" descargado exitosamente`);
       }
     } catch (error) {
       console.error("Download failed:", error);
-      setReportError(error.message || "An unknown error occurred while downloading the report.");
-      // For example, using react-hot-toast: toast.error(error.message || "Failed to download report.");
-      alert(`Failed to download report: ${error.message}`);
+      const errorMessage = error.message || "Ocurrió un error desconocido al descargar el reporte.";
+      showError("reporte-progreso.pdf", `Error al descargar el reporte: ${errorMessage}`);
     } finally {
       setIsDownloadingReport(false);
     }
@@ -81,9 +76,6 @@ export function WelcomeHeader() {
             {isDownloadingReport ? 'Generando PDF...' : 'Ver mi progreso'}
           </button>
         </div>
-        {reportError && (
-          <p className="text-red-500 mt-2 relative z-10 text-sm">{reportError}</p>
-        )}
       </div>
     </AnimatedContent>
   );

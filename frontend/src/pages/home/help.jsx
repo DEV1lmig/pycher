@@ -6,19 +6,21 @@ import AnimatedContent from "../../components/ui/animated-content.jsx";
 import Waves from "@/components/ui/waves";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { downloadUserManual } from "@/services/contentService";
-import { toast } from "react-hot-toast";
+import { downloadUserManualWithNotification } from "@/services/contentService";
+import { useDownloadNotification } from "@/hooks/useDownloadNotification";
 
 export default function HelpPage() {
   const [isDownloading, setIsDownloading] = useState(false);
+  const downloadNotification = useDownloadNotification();
 
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      await downloadUserManual("manual_de_usuario_pycher.pdf");
-      toast.success("La descarga del manual ha comenzado.");
+      await downloadUserManualWithNotification("manual_de_usuario_pycher.pdf", downloadNotification);
     } catch (error) {
-      toast.error(error.message);
+      // Error handling is now managed by the downloadUserManualWithNotification function
+      // through the notification system, so we don't need to handle it here
+      console.error("Download error:", error);
     } finally {
       setIsDownloading(false);
     }

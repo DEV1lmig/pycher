@@ -38,7 +38,6 @@ SERVICE_URLS = {
     # Add other services as they're implemented
 }
 
-logger.info(f"API Gateway configured with service URLs: {SERVICE_URLS}") # Now this will work
 
 @app.get("/health")
 async def health_check():

@@ -1,10 +1,15 @@
 .env.development
 .env.production
 .python-version
+.gemini
+.kiro
 /backend/.env
 /node_modules
 /frontend/node_modules
 /frontend/.pnpm-store
+/backend/api-gateway/__pycache__
 /backend/user-service/__pycache__
 /backend/content-service/__pycache__
+/backend/execution-service/__pycache__
 /backend/shared/alembic/__pycache__
+/backend/ai-service/__pycache__
