@@ -1439,7 +1439,6 @@ def get_user_progress_report_data(db: Session, user_id: int) -> UserProgressRepo
 
             report_exams_data.append(ReportExamAttemptSchema(
                 title=exam_title,
-                score=attempt.score if attempt else None,
                 passed=attempt.passed if attempt else None,
                 completed_at=attempt.completed_at if attempt else None
             ))

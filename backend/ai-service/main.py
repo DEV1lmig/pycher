@@ -18,9 +18,15 @@ logger = logging.getLogger(__name__)
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 if not GITHUB_TOKEN:
+    logger.error("GITHUB_TOKEN environment variable not set. Please set it.")
     raise ValueError("GITHUB_TOKEN environment variable not set. Please set it.")
+else:
+    # Log solo los primeros 5 caracteres del token por seguridad
+    token_preview = GITHUB_TOKEN[:5] + "..." if len(GITHUB_TOKEN) > 5 else "***"
+    logger.info(f"GITHUB_TOKEN configurado: {token_preview}")
 
-SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT") # Added a default for SYSTEM_PROMPT
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "Eres un asistente de programación útil y educativo.") # Added a default for SYSTEM_PROMPT
+logger.info(f"SYSTEM_PROMPT configurado: {SYSTEM_PROMPT[:50]}..." if len(SYSTEM_PROMPT) > 50 else SYSTEM_PROMPT)
 
 # Endpoint for GitHub Models API (see docs)
 GITHUB_MODELS_ENDPOINT = os.getenv("GITHUB_MODELS_ENDPOINT", "https://models.github.ai/inference") # Added default
@@ -90,7 +96,7 @@ async def generate_ai_response(prompt: str, model_name: str = MODEL_NAME) -> Dic
             return {"content": ""} # Return empty content or handle as an error
     except Exception as e:
         if hasattr(e, 'response') and e.response is not None:
-        raise HTTPException(status_code=502, detail=f"GitHub Models API Error with {model_name}: {str(e)}")
+            raise HTTPException(status_code=502, detail=f"GitHub Models API Error with {model_name}: {str(e)}")
 
 # --- FastAPI Application ---
 
@@ -256,62 +262,91 @@ async def chat_stream(request: ChatStreamRequest):
     Streams AI chat responses. It intelligently handles natural language
     questions and code help requests based on the provided input.
     """
+    logger.info(f"Recibida solicitud de chat: query={request.query}, tiene código={bool(request.code)}")
+    
     # --- Lógica de construcción de prompt mejorada ---
     message_parts = []
 
     # El 'query' es el mensaje o pregunta directa del usuario.
     # Es la parte más importante de la interacción.
     if request.query:
+        logger.info(f"Procesando query del usuario: '{request.query}'")
         # Etiquetamos el mensaje del usuario para que la IA entienda que es una comunicación directa.
         message_parts.append(f"El mensaje del alumno es: '{request.query}'")
 
     # El 'code' es el contexto del editor del usuario.
     if request.code:
+        logger.info(f"Procesando código del usuario (primeros 50 caracteres): '{request.code[:50]}...'")
         # Se añade una condición para evitar tratar saludos simples como código.
         # Si el 'query' y el 'code' son idénticos y cortos, probablemente es un saludo.
         is_simple_greeting = (request.query and request.query.lower().strip() == request.code.lower().strip() and len(request.code.split()) < 3)
-
+        
+        if is_simple_greeting:
+            logger.info("Detectado saludo simple, no se incluirá el código en el mensaje")
+        
         if not is_simple_greeting:
             message_parts.append(f"Actualmente, su editor de código contiene lo siguiente:\n```python\n{request.code}\n```")
 
     # Si no hay ni query ni código, no se puede continuar.
     if not message_parts:
+        logger.warning("Solicitud rechazada: No se proporcionó ni query ni código")
         raise HTTPException(status_code=422, detail="Se requiere un 'query' o 'code' para iniciar la conversación.")
 
     # Une todas las partes del mensaje en un solo prompt coherente.
     user_message = "\n\n".join(message_parts)
+    logger.info(f"Mensaje del usuario construido con {len(message_parts)} partes")
 
     # La instrucción general (si existe) se antepone para guiar a la IA.
     if request.instruction:
+        logger.info(f"Añadiendo instrucción: '{request.instruction}'")
         user_message = f"{request.instruction}\n\n{user_message}"
 
     # Añadir el contexto de la lección y el código de inicio, como antes.
     if request.lesson_context:
+        logger.info("Añadiendo contexto de lección")
         user_message += f"\n\nAquí está el contexto de la lección actual para que lo tengas en cuenta:\n---CONTEXTO---\n{request.lesson_context}\n---FIN DE CONTEXTO---"
     if request.starter_code:
+        logger.info("Añadiendo código de inicio")
         user_message += f"\n\nEste es el código de inicio del ejercicio:\n---CÓDIGO DE INICIO---\n{request.starter_code}\n---FIN DE CÓDIGO DE INICIO---"
 
 
     # Call the AI with the structured messages
-    response_stream = client.complete(
-        model=MODEL_NAME,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_message}
-        ],
-        stream=True,
-        max_tokens=1024,
-        temperature=0.7,
-    )
+    logger.info(f"Enviando solicitud al modelo {MODEL_NAME}")
+    try:
+        response_stream = client.complete(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message}
+            ],
+            stream=True,
+            max_tokens=1024,
+            temperature=0.7,
+        )
+        logger.info("Solicitud enviada correctamente, iniciando streaming")
+    except Exception as e:
+        logger.error(f"Error al iniciar la solicitud al modelo: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al conectar con el modelo de IA: {str(e)}")
 
     async def streamer_wrapper():
+        chunk_count = 0
         try:
+            logger.info("Iniciando streaming de respuesta")
             for chunk in response_stream:
+                chunk_count += 1
+                if chunk_count % 10 == 0:  # Log cada 10 chunks para no saturar los logs
+                    logger.info(f"Procesando chunk #{chunk_count}")
+                
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
                     if delta and delta.content:
                         yield delta.content
                         await asyncio.sleep(0)
+            
+            logger.info(f"Streaming completado. Total de chunks procesados: {chunk_count}")
         except Exception as e:
-
+            logger.error(f"Error durante el streaming de la respuesta: {str(e)}")
+            yield f"Error: {str(e)}"
+    
+    logger.info("Devolviendo StreamingResponse")        
     return StreamingResponse(streamer_wrapper(), media_type="text/event-stream")

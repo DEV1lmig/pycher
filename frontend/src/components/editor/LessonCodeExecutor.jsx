@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CodeEditor } from "./CodeEditor";
 import { Button } from "../ui/button";
 import { OutputDisplay } from "@/components/editor/OutputDisplay";
 import { getCodeHint } from "@/services/aiService";
+import { setEditorContent } from "@/utils/editorContext";
 
 export default function LessonCodeExecutor({
   initialCode = "",
@@ -12,6 +13,16 @@ export default function LessonCodeExecutor({
 }) {
   const [tab, setTab] = useState("editor");
   const [code, setCode] = useState(initialCode);
+  
+  // Set initial code in editor context when component mounts
+  useEffect(() => {
+    setEditorContent(initialCode);
+  }, []);
+  
+  // Update the editor content in the global context whenever code changes
+  useEffect(() => {
+    setEditorContent(code);
+  }, [code]);
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [passed, setPassed] = useState(null);

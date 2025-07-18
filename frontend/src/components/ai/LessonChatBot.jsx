@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, X } from "lucide-react";
 import { streamChat } from "@/services/aiService";
+import { getEditorContent } from "@/utils/editorContext";
 
 const CHAT_STORAGE_KEY_PREFIX = "pycher_lesson_chat";
 
@@ -67,7 +68,9 @@ export default function LessonChatBot({ onClose, lessonContext, starterCode, use
       let fullAiResponse = "";
       // 3. Stream the AI response, updating only the UI state
       for await (const chunk of streamChat({
+        query: userInput,
         code: userInput,
+        editorCode: getEditorContent(), // Get current editor content from our utility
         lessonContext,
         starterCode
       })) {

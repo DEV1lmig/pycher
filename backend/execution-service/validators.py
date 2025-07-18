@@ -268,7 +268,7 @@ class CodeAnalyzer:
 
                 # SPECIAL HANDLING FOR PRINT CALLS - This was missing!
                 if func_name == 'print':
-                    print_call = {"args": [], "is_fstring": False}
+                    print_call = {"args": [], "is_fstring": False, "arg_types": []}
                     logger.debug(f"Found print call with {len(node.args)} arguments")
 
                     # Check if any argument is an f-string (ast.JoinedStr)
@@ -303,8 +303,69 @@ class CodeAnalyzer:
                                 self.variables_used_in_prints.add(var_name)
                                 print_call["args"].append({"type": "variable", "variable_name": var_name})
                                 logger.debug(f"Found variable in regular print: {var_name}")
+                            # Track the type of argument being printed
+                            arg_type = None
+                            if isinstance(arg, ast.Constant):
+                                arg_type = type(arg.value).__name__
+                            elif isinstance(arg, ast.List):
+                                arg_type = "list"
+                            elif isinstance(arg, ast.Dict):
+                                arg_type = "dict"
+                            elif isinstance(arg, ast.Set):
+                                arg_type = "set"
+                            elif isinstance(arg, ast.Tuple):
+                                arg_type = "tuple"
+                            elif isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
+                                if arg.func.id == 'int':
+                                    arg_type = "int"
+                                elif arg.func.id == 'str':
+                                    arg_type = "str"
+                                elif arg.func.id == 'bool':
+                                    arg_type = "bool"
+                                elif arg.func.id == 'float':
+                                    arg_type = "float"
+                                elif arg.func.id == 'complex':
+                                    arg_type = "complex"
+                                elif arg.func.id == 'frozenset':
+                                    arg_type = "frozenset"
+                            print_call["arg_types"].append(arg_type)
 
                     self.analysis["print_calls"].append(print_call)
+
+            # Track return statements and their types
+            elif isinstance(node, ast.Return) and node.value:
+                if not "return_types" in self.analysis:
+                    self.analysis["return_types"] = []
+                
+                return_type = None
+                if isinstance(node.value, ast.Constant):
+                    return_type = type(node.value.value).__name__
+                elif isinstance(node.value, ast.Name):
+                    var_name = node.value.id
+                    return_type = {"variable": var_name}
+                elif isinstance(node.value, ast.List):
+                    return_type = "list"
+                elif isinstance(node.value, ast.Dict):
+                    return_type = "dict"
+                elif isinstance(node.value, ast.Set):
+                    return_type = "set"
+                elif isinstance(node.value, ast.Tuple):
+                    return_type = "tuple"
+                elif isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
+                    if node.value.func.id == 'int':
+                        return_type = "int"
+                    elif node.value.func.id == 'str':
+                        return_type = "str"
+                    elif node.value.func.id == 'bool':
+                        return_type = "bool"
+                    elif node.value.func.id == 'float':
+                        return_type = "float"
+                    elif node.value.func.id == 'complex':
+                        return_type = "complex"
+                    elif node.value.func.id == 'frozenset':
+                        return_type = "frozenset"
+                
+                self.analysis["return_types"].append(return_type)
 
             # Track variable assignments
             elif isinstance(node, ast.Assign):
@@ -344,6 +405,8 @@ class CodeAnalyzer:
         logger.info(f"Analysis complete. Variables defined: {self.variables_defined}")
         logger.info(f"Variables used in prints: {self.variables_used_in_prints}")
         logger.info(f"Print calls: {self.analysis['print_calls']}")
+        if "return_types" in self.analysis:
+            logger.info(f"Return types: {self.analysis['return_types']}")
 
     def check_static_requirements(self, rules: Dict[str, Any], scope_node: Optional[ast.AST] = None) -> List[str]:
         if self.syntax_error: return [f"Syntax error: {self.syntax_error}"]
@@ -413,6 +476,7 @@ def validate_saludo_personalizado(
       "target_variable_names": ["nombre", "name"] (list of allowed var names for AST check)
       "output_format_template": "¡Hola, {var}!" ({var} is placeholder for the name)
       "requires_input_function": true/false (Optional, to guide AST checks and feedback)
+      "expected_input_type": "str"/"int"/"float"/"bool" (Optional, to validate input type conversion)
     """
     security_res = general_security_check(user_code)
     if not security_res.passed:
@@ -420,6 +484,8 @@ def validate_saludo_personalizado(
 
     format_template = rules.get("output_format_template")
     requires_input_func = rules.get("requires_input_function", True)
+    custom_feedback = rules.get("custom_feedback", {})
+    expected_input_type = rules.get("expected_input_type", "str")  # Default to string if not specified
 
     if not format_template:
         return DynamicValidationResult(False, "Validation config error: 'output_format_template' missing.")
@@ -433,17 +499,120 @@ def validate_saludo_personalizado(
     # This is crucial for the `input()` function to work correctly in the sandbox.
     sandbox_input = f"{input_data}\n" if requires_input_func and input_data is not None else None
 
+    # --- Static Analysis for Input Type Validation ---
+    analyzer = CodeAnalyzer(user_code)
+    
+    # Check for input type conversion based on expected_input_type
+    if requires_input_func and expected_input_type != "str":
+        # Look for type conversion in the code
+        type_conversion_found = False
+        
+        # Check for direct type conversion of input() - patterns like: int(input()), float(input()), etc.
+        for node in ast.walk(analyzer.tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                # Check if the function call is the expected type conversion
+                if node.func.id == expected_input_type:
+                    # Check if any argument is input()
+                    for arg in node.args:
+                        if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name) and arg.func.id == "input":
+                            type_conversion_found = True
+                            break
+                    if type_conversion_found:
+                        break
+        
+        # Also check for assignment patterns like: variable = int(input())
+        if not type_conversion_found:
+            for node in ast.walk(analyzer.tree):
+                if isinstance(node, ast.Assign):
+                    if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
+                        if node.value.func.id == expected_input_type:
+                            for arg in node.value.args:
+                                if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name) and arg.func.id == "input":
+                                    type_conversion_found = True
+                                    break
+                    if type_conversion_found:
+                        break
+        
+        if not type_conversion_found:
+            feedback_key = "wrong_input_type"
+            message = custom_feedback.get(feedback_key, f"Este ejercicio requiere convertir la entrada al tipo {expected_input_type}. Usa {expected_input_type}(input()).")
+            return DynamicValidationResult(False, message)
+
+    # --- Runtime validation for input type ---
+    if requires_input_func and expected_input_type != "str" and input_data is not None:
+        # Validate that the input can be converted to the expected type
+        try:
+            if expected_input_type == "int":
+                int(input_data)
+            elif expected_input_type == "float":
+                float(input_data)
+            elif expected_input_type == "bool":
+                # For bool, we accept various representations
+                if input_data.lower() not in ('true', 'false', 'yes', 'no', '1', '0', 't', 'f', 'y', 'n'):
+                    raise ValueError("Invalid boolean representation")
+        except (ValueError, TypeError):
+            feedback_key = "invalid_input_value"
+            message = custom_feedback.get(feedback_key, f"El valor de entrada '{input_data}' no es válido para el tipo {expected_input_type}.")
+            return DynamicValidationResult(False, message)
+    
+    # --- Validation for string input that should NOT be numeric ---
+    if requires_input_func and expected_input_type == "str" and rules.get("reject_numeric_input", False) and input_data is not None:
+        # Check if the input looks like a number (int or float)
+        try:
+            # Try to convert to int first
+            int(input_data)
+            feedback_key = "numeric_input_rejected"
+            message = custom_feedback.get(feedback_key, "Este ejercicio requiere que ingreses un nombre (texto), no un número.")
+            return DynamicValidationResult(False, message, actual_output=None)
+        except ValueError:
+            # If int conversion fails, try float
+            try:
+                float(input_data)
+                feedback_key = "numeric_input_rejected"
+                message = custom_feedback.get(feedback_key, "Este ejercicio requiere que ingreses un nombre (texto), no un número.")
+                return DynamicValidationResult(False, message, actual_output=None)
+            except ValueError:
+                # If both conversions fail, it's a valid string
+                pass
+        
+        # Additional validation: check if it's only digits or looks too much like a number
+        if input_data.strip().isdigit():
+            feedback_key = "numeric_input_rejected"
+            message = custom_feedback.get(feedback_key, "Este ejercicio requiere que ingreses un nombre (texto), no un número.")
+            return DynamicValidationResult(False, message, actual_output=None)
+
     # Pass the prepared input to the sandboxed execution
-    stdout, stderr, timed_out, exit_code, _ = run_user_code_sandboxed(
+    stdout, stderr, timed_out, exit_code, captured_prints = run_user_code_sandboxed(
         user_code,
         input_data=sandbox_input, # Use the variable with the newline
-        timeout=timeout
+        timeout=timeout,
+        capture_print_types=True
     )
 
     if timed_out:
         return DynamicValidationResult(False, "Execution timed out.", actual_output=stdout)
     if exit_code != 0:
         return DynamicValidationResult(False, f"Runtime error: {stderr.strip()}", actual_output=stdout)
+
+    # Check if a string type was printed
+    if captured_prints and not any(print_info.get("type") == "str" for print_info in captured_prints):
+        feedback_key = "wrong_variable"
+        message = custom_feedback.get(feedback_key, "You must print a string variable, not just a literal or other type.")
+        return DynamicValidationResult(False, message, actual_output=stdout)
+
+    # Check print count if specified
+    expected_print_count = rules.get("expected_print_count")
+    if expected_print_count is not None and len(captured_prints) != expected_print_count:
+        feedback_key = "wrong_print_count"
+        message = custom_feedback.get(feedback_key, f"Expected {expected_print_count} print operations, found {len(captured_prints)}.")
+        return DynamicValidationResult(False, message, actual_output=stdout)
+
+    # Check for f-string requirement - analyze the code directly instead of relying on captured_prints
+    if rules.get("require_fstring"):
+        if not analyzer.analysis.get("print_calls") or not any(print_call.get("is_fstring", False) for print_call in analyzer.analysis.get("print_calls", [])):
+            feedback_key = "not_fstring"
+            message = custom_feedback.get(feedback_key, "This exercise requires using an f-string.")
+            return DynamicValidationResult(False, message, actual_output=stdout)
 
     # Normalize both outputs by stripping whitespace to handle newlines from print()
     normalized_stdout = stdout.strip()
@@ -452,8 +621,10 @@ def validate_saludo_personalizado(
     if normalized_stdout == normalized_expected:
         return DynamicValidationResult(True, "Exercise passed!", actual_output=stdout)
     else:
-        msg = f"Output mismatch. Expected: '{normalized_expected}' but got: '{normalized_stdout}'"
-        return DynamicValidationResult(False, msg, actual_output=stdout)
+        feedback_key = "wrong_output"
+        default_msg = f"Output mismatch. Expected: '{normalized_expected}' but got: '{normalized_stdout}'"
+        message = custom_feedback.get(feedback_key, default_msg)
+        return DynamicValidationResult(False, message, actual_output=stdout)
 
 
 def validate_simple_print_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> DynamicValidationResult:
@@ -508,6 +679,18 @@ def validate_simple_print_exercise(user_code: str, rules: Dict[str, Any], **kwar
         message = rules.get("custom_feedback", {}).get(feedback_key, f"Expected {expected_print_count} print operations, found {len(captured_prints)}.")
         feedback.append(message)
 
+    # Check expected types of printed variables
+    expected_types = rules.get("expected_types")
+    if expected_types is not None and captured_prints:
+        for i, (expected_type, actual_print) in enumerate(zip(expected_types, captured_prints)):
+            actual_type = actual_print.get("type")
+            if actual_type != expected_type:
+                passed = False
+                feedback_key = "wrong_type"
+                message = rules.get("custom_feedback", {}).get(feedback_key, f"Expected type {expected_type} for print #{i+1}, but got {actual_type}.")
+                feedback.append(message)
+                
+
     # Check exact output content
     expected_output = rules.get("expected_exact_output")
     if expected_output is not None:
@@ -524,7 +707,6 @@ def validate_simple_print_exercise(user_code: str, rules: Dict[str, Any], **kwar
 
     return DynamicValidationResult(True, "Exercise passed!", actual_output=stdout)
 
-
 def validate_dynamic_output_exercise(user_code: str, rules: Dict[str, Any], **kwargs) -> DynamicValidationResult:
     analyzer = CodeAnalyzer(user_code)
 
@@ -539,10 +721,20 @@ def validate_dynamic_output_exercise(user_code: str, rules: Dict[str, Any], **kw
             return DynamicValidationResult(False, "Variable definition error: " + "; ".join(def_errors))
 
     # Check for variable usage in print statements if required
-    if "require_variables_in_print" in rules:
-        print_errors = analyzer.check_variables_in_print(rules["require_variables_in_print"])
+    if "required_variables_in_print" in rules:
+        print_errors = analyzer.check_variables_in_print(rules["required_variables_in_print"])
         if print_errors:
-            return DynamicValidationResult(False, "Variable usage error: " + "; ".join(print_errors))
+            feedback_key = "wrong_variable"  # Match the exercise config
+            default_msg = "You defined the correct variables, but didn't use them in your print statement."
+            message = rules.get("custom_feedback", {}).get(feedback_key, default_msg)
+            return DynamicValidationResult(False, message)
+
+    # Check for f-string requirement
+    if rules.get("require_fstring"):
+        if not analyzer.analysis.get("print_calls") or not any(print_call.get("is_fstring", False) for print_call in analyzer.analysis.get("print_calls", [])):
+            feedback_key = "not_fstring"
+            message = rules.get("custom_feedback", {}).get(feedback_key, "This exercise requires using an f-string.")
+            return DynamicValidationResult(False, message)
 
     static_failures = analyzer.check_static_requirements(rules)
     if static_failures:
@@ -579,10 +771,29 @@ def validate_dynamic_output_exercise(user_code: str, rules: Dict[str, Any], **kw
         # The input() function reads a line, so we must append a newline
         # character to simulate the user pressing Enter. This is the crucial step.
         input_with_newline = f"{case_input}\n"
-        stdout, stderr, timed_out, exit_code, _ = run_user_code_sandboxed(user_code, input_with_newline, kwargs.get("timeout", 5))
+        stdout, stderr, timed_out, exit_code, captured_prints = run_user_code_sandboxed(
+            user_code, input_with_newline, kwargs.get("timeout", 5), capture_print_types=True
+        )
         # --- END: FIX for input handling ---
 
         last_stdout = stdout # Always update with the latest output
+
+        # Check print count if specified
+        expected_print_count = rules.get("expected_print_count_per_case", rules.get("expected_print_count"))
+        if expected_print_count is not None and len(captured_prints) != expected_print_count:
+            feedback_key = "wrong_print_count"
+            message = rules.get("custom_feedback", {}).get(feedback_key, f"Expected {expected_print_count} print operations, found {len(captured_prints)}.")
+            return DynamicValidationResult(False, message, actual_output=stdout)
+
+        # Check expected types of printed variables
+        expected_types = rules.get("expected_types_per_case", rules.get("expected_types"))
+        if expected_types is not None and captured_prints:
+            for i, (expected_type, actual_print) in enumerate(zip(expected_types, captured_prints)):
+                actual_type = actual_print.get("type")
+                if actual_type != expected_type:
+                    feedback_key = "wrong_type"
+                    message = rules.get("custom_feedback", {}).get(feedback_key, f"Expected type {expected_type} for print #{i+1}, but got {actual_type}.")
+                    return DynamicValidationResult(False, message, actual_output=stdout)
 
         # --- START: IMPROVED VALIDATION LOGIC ---
         # Normalize both outputs by replacing Windows newlines and stripping whitespace.
@@ -604,7 +815,6 @@ def validate_dynamic_output_exercise(user_code: str, rules: Dict[str, Any], **kw
     else:
         # --- FIX: Pass the actual_output on failure ---
         return DynamicValidationResult(False, "One or more dynamic test cases failed. " + " ".join(feedback), actual_output=last_stdout)
-
 def generate_dynamic_test_cases(constraints: Dict[str, Any], num_cases: int) -> List[str]:
     t = constraints.get("type", "int")
     if t == "int":

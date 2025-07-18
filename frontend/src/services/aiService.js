@@ -28,31 +28,6 @@ export const getCodeHint = async ({ code, error, instruction }) => {
 };
 
 /**
- * Get AI evaluation of user code against expected output
- *
- * @param {Object} params - The evaluation request parameters
- * @param {string} params.code - The user's submitted code
- * @param {string} params.expected_output - The expected output
- * @param {string} params.actual_output - The actual output from execution
- * @param {string} params.description - The exercise description
- * @returns {Promise<Object>} - The evaluation results
- */
-export const evaluateCode = async ({ code, expected_output, actual_output, description }) => {
-  try {
-    const fullDescription = (description ? description + " " : "") + "Responde en español.";
-    const response = await apiClient.post('api/v1/ai/evaluate', {
-      code,
-      expected_output,
-      actual_output,
-      description: fullDescription
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error('Unable to evaluate your code at this time');
-  }
-};
-
-/**
  * Get detailed feedback on user's code solution
  *
  * @param {Object} params - The feedback request parameters
@@ -63,7 +38,7 @@ export const evaluateCode = async ({ code, expected_output, actual_output, descr
  */
 export const getCodeFeedback = async ({ code, challenge_description, level = 'beginner' }) => {
   try {
-    const response = await apiClient.post('api/v1/ai/feedback', {
+    const response = await apiClient.post('/api/v1/ai/feedback', {
       code,
       challenge_description,
       level
@@ -94,33 +69,18 @@ export const explainCode = async ({ code, level = 'beginner' }) => {
   }
 };
 
-/**
- * Get AI-generated next step suggestion for learning path
- *
- * @param {Object} params - The learning path parameters
- * @param {Object} params.user_progress - User's current progress data
- * @param {string} params.current_topic - User's current topic
- * @returns {Promise<Object>} - The next step recommendation
- */
-export const getNextLearningStep = async ({ user_progress, current_topic }) => {
-  try {
-    const response = await apiClient.post('api/v1/ai/learning-path', {
-      user_progress,
-      current_topic
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error('Unable to generate learning recommendations at this time');
-  }
-}
+//Stream chat with the AI (returns an async generator)
+export async function* streamChat({ query, code, editorCode, lessonContext, starterCode, instruction = "" }) {
+  // If editorCode is provided and different from starterCode, use it as the code
+  // Otherwise, use the provided code parameter (which might be the same as query)
+  const codeToSend = editorCode && editorCode !== starterCode ? editorCode : code;
 
-// Stream chat with the AI (returns an async generator)
-export async function* streamChat({ code, lessonContext, starterCode, instruction = "" }) {
-  const response = await fetch(`${API_URL}api/v1/ai/chat/stream`, {
+  const response = await fetch(`${API_URL}/api/v1/ai/chat/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      code,
+      query,
+      code: codeToSend,
       lesson_context: lessonContext,
       starter_code: starterCode,
       instruction: instruction + " Responde en español."

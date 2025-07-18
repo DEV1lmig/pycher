@@ -189,7 +189,7 @@ async def ai_service(endpoint: str, request: Request):
         except httpx.HTTPStatusError as e:
              # AI service returned an error status code (e.g., 4xx, 5xx)
             # Log the error and forward a generic or specific error
-            # logger.error(f"AI service returned error: {e.response.status_code} - {e.response.text}")
+            logger.error(f"AI service returned error: {e.response.status_code} - {e.response.text}")
             raise HTTPException(status_code=e.response.status_code, detail=e.response.json() if e.response.content else "AI service error")
 
 @app.api_route("/api/v1/users/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
