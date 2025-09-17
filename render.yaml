@@ -1,13 +1,3 @@
-
-# render.yaml
-# This file is used by Render to deploy the services for the pycher project.
-# It defines the services, databases, and environment variables needed to run the application.
-# The services are deployed from a monorepo, so the rootDir property is used to specify the location of each service.
-# The services are a mix of web services, private services, and a static site.
-# The backend services are Dockerized Python applications, and the frontend is a React application built with pnpm.
-# The databases are a PostgreSQL database and a Redis instance, both managed by Render.
-# The environment variables are managed using an environment group.
-
 databases:
   - name: pycher-db
     databaseName: pycher
@@ -16,8 +6,29 @@ databases:
   - name: pycher-redis
     plan: free
 
-envVarGroups:
-  - name: pycher-env
+services:
+  - type: web
+    name: frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: "pnpm install && pnpm build"
+    publishDirectory: "dist"
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: api-gateway
+          property: url
+
+  - type: web
+    name: api-gateway
+    runtime: docker
+    rootDir: backend/api-gateway
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -51,62 +62,75 @@ envVarGroups:
           type: pserv
           name: ai-service
           property: hostport
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: api-gateway
-          property: hostport
-
-
-services:
-  - type: web
-    name: frontend
-    runtime: static
-    rootDir: frontend
-    buildCommand: "pnpm install && pnpm build"
-    staticPublishPath: "dist"
-    routes:
-      - type: rewrite
-        source: "/*"
-        destination: "/index.html"
-
-  - type: web
-    name: api-gateway
-    rootDir: backend/api-gateway
-    plan: free
-    dockerfilePath: ./Dockerfile
-    envVars:
-      - fromGroup: pycher-env
 
   - type: pserv
     name: content-service
+    runtime: docker
     rootDir: backend/content-service
-    plan: free
     dockerfilePath: ./Dockerfile
-    preDeployCommand: "alembic -c /app/shared/alembic.ini upgrade head && python /app/shared/seed_db.py"
+    # The preDeployCommand is not supported on the free plan.
+    # You will need to run the migrations manually or upgrade to a paid plan.
+    # preDeployCommand: "alembic -c /app/shared/alembic.ini upgrade head && python /app/shared/seed_db.py"
     envVars:
-      - fromGroup: pycher-env
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pycher-db
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: pycher-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: api-gateway
+          envVarKey: SECRET_KEY
+      - key: GITHUB_TOKEN
+        fromService:
+          type: web
+          name: api-gateway
+          envVarKey: GITHUB_TOKEN
 
   - type: pserv
     name: user-service
+    runtime: docker
     rootDir: backend/user-service
-    plan: free
     dockerfilePath: ./Dockerfile
     envVars:
-      - fromGroup: pycher-env
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pycher-db
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: pycher-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: api-gateway
+          envVarKey: SECRET_KEY
 
   - type: pserv
     name: execution-service
+    runtime: docker
     rootDir: backend/execution-service
-    plan: free
     dockerfilePath: ./Dockerfile
     envVars:
-      - fromGroup: pycher-env
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: api-gateway
+          envVarKey: SECRET_KEY
 
   - type: pserv
     name: ai-service
+    runtime: docker
     rootDir: backend/ai-service
-    plan: free
     dockerfilePath: ./Dockerfile
     envVars:
-      - fromGroup: pycher-env
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: api-gateway
+          envVarKey: SECRET_KEY
