@@ -22,7 +22,7 @@ services:
         fromService:
           type: web
           name: api-gateway
-          property: url
+          property: host
 
   - type: web
     name: api-gateway
