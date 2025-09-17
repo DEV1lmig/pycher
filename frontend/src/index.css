@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Screen reader only utility class for accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .custom-scroll {
   scrollbar-width: thin;
   scrollbar-color: #9980f2 rgb(26, 20, 51,0.1);

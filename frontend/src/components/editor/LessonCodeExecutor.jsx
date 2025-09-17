@@ -1,60 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CodeEditor } from "./CodeEditor";
 import { Button } from "../ui/button";
 import { OutputDisplay } from "@/components/editor/OutputDisplay";
-import { executeCode } from "@/services/executionService";
 import { getCodeHint } from "@/services/aiService";
+import { setEditorContent } from "@/utils/editorContext";
 
 export default function LessonCodeExecutor({
   initialCode = "",
-  exerciseId,
   onSubmitCode,
-  isSubmitting,
   isCorrect,
-  onRunResult,
-  currentUserStdin, // <--- ACCEPT THE PROP
+  // The 'currentUserStdin' prop is no longer used and has been removed.
 }) {
   const [tab, setTab] = useState("editor");
   const [code, setCode] = useState(initialCode);
+  
+  // Set initial code in editor context when component mounts
+  useEffect(() => {
+    setEditorContent(initialCode);
+  }, []);
+  
+  // Update the editor content in the global context whenever code changes
+  useEffect(() => {
+    setEditorContent(code);
+  }, [code]);
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [aiHint, setAiHint] = useState("");
-  const [isLoadingHint, setIsLoadingHint] = useState(false);
   const [passed, setPassed] = useState(null);
-
-  const handleExecute = async () => {
-    setIsExecuting(true);
-    setOutput("");
-    setError("");
-    setAiHint("");
-    setPassed(null);
-    try {
-      const result = await executeCode({
-        exerciseId,
-        code,
-        inputData: currentUserStdin, // <--- USE THE PROP HERE
-      });
-      setOutput(result.output || "");
-      setError(result.error || "");
-      setPassed(result.passed ?? null);
-      setTab("output");
-      if (onRunResult) onRunResult(result);
-    } catch (err) {
-      setOutput("");
-      setError("Network error: " + (err.detail || err.message));
-      setPassed(false);
-      setTab("output");
-    }
-    setIsExecuting(false);
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingHint, setIsLoadingHint] = useState(false);
+  const [aiHint, setAiHint] = useState("");
 
   const handleSubmitSolution = async () => {
-    if (onSubmitCode) {
-      // For formal submission, onSubmitCode (which calls submitExerciseFromHook)
-      // already gets userStdin from LessonWithCodePage's state.
-      // So, no change needed here for handleSubmitSolution regarding stdin.
-      await onSubmitCode(code);
+    if (!onSubmitCode) return;
+
+    setIsSubmitting(true);
+    setTab("output"); // Immediately switch to the output tab
+
+    try {
+      // Call the parent function and wait for the result
+      const result = await onSubmitCode(code);
+
+      // Directly update state with the validation result
+      const validationResult = result.validation_result || {};
+      setOutput(validationResult.output || "");
+      setError(validationResult.error || "");
+      setPassed(validationResult.passed);
+    } catch (err) {
+      // This will catch errors from the submission process itself
+      setError(err.message || "Error al enviar la solución.");
+      setPassed(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -93,17 +89,11 @@ export default function LessonCodeExecutor({
           </button>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={handleExecute}
-            disabled={isExecuting || isSubmitting}
-            className="bg-primary hover:bg-primary/80 text-white"
-          >
-            {isExecuting ? "Ejecutando..." : "Ejecutar Código"}
-          </Button>
+          {/* MODIFIED: Conditional rendering for Submit Solution button */}
           {onSubmitCode && !isCorrect && (
             <Button
               onClick={handleSubmitSolution}
-              disabled={isSubmitting || isExecuting}
+              disabled={isSubmitting} // Disable if already submitting
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               {isSubmitting ? "Enviando..." : "Enviar Solución"}
@@ -118,7 +108,7 @@ export default function LessonCodeExecutor({
             <CodeEditor
               initialCode={code}
               onChange={setCode}
-              onExecute={handleExecute}
+              // The onExecute prop has been removed as there is no "Run Code" button.
             />
           </div>
         )}

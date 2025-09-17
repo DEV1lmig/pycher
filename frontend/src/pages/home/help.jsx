@@ -1,10 +1,31 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout"
 import Accordion from "../../components/ui/accordion";
 import FadeContent from "../../components/ui/fade-content.jsx";
 import AnimatedContent from "../../components/ui/animated-content.jsx";
 import Waves from "@/components/ui/waves";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { downloadUserManualWithNotification } from "@/services/contentService";
+import { useDownloadNotification } from "@/hooks/useDownloadNotification";
 
 export default function HelpPage() {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const downloadNotification = useDownloadNotification();
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadUserManualWithNotification("manual_de_usuario_pycher.pdf", downloadNotification);
+    } catch (error) {
+      // Error handling is now managed by the downloadUserManualWithNotification function
+      // through the notification system, so we don't need to handle it here
+      console.error("Download error:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const faqItems = [
     {
       title: "¿Cómo me registro?",
@@ -60,9 +81,18 @@ export default function HelpPage() {
               yGap={36}
             />
             </div>
-            <div className="relative z-20">
-            <h2 className="relative z-10 text-4xl font-bold text-center px-2 mix-blend-lighten"
-            >Preguntas Frecuentes</h2>
+            <div className="relative z-20 flex flex-col items-center">
+              <h2 className="relative z-10 text-4xl font-bold text-center px-2 mix-blend-lighten">
+                Preguntas Frecuentes
+              </h2>
+              <Button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="mt-4 bg-primary hover:bg-primary/80 text-white font-semibold"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {isDownloading ? "Descargando..." : "Descargar Manual de Usuario"}
+              </Button>
             </div>
         </div>
         </FadeContent>

@@ -35,6 +35,7 @@ class ModuleSchema(BaseModel): # Renamed from Module for clarity
     # image_url: Optional[str] = None # From your get_modules example
     lessons: List[LessonSchema] = [] # ADDED: To nest lessons with their lock status
     is_locked: bool = False # ADDED
+    is_exam: Optional[bool] = None # ADDED: If modules can be exams
 
     class Config:
         from_attributes = True
@@ -64,6 +65,7 @@ class ExerciseBase(BaseModel):
     title: str
     description: str
     instructions: Optional[str] = None
+    expleanation: Optional[str] = None
     starter_code: Optional[str] = None
     solution_code: Optional[str] = None
     test_cases: Optional[str] = None
@@ -92,8 +94,15 @@ class LessonBase(BaseModel):
 class LessonCreate(LessonBase):
     pass
 
+# Add a simple schema for the next lesson information
+class NextLessonInfo(BaseModel):
+    id: int
+    title: str
+
 class Lesson(LessonBase):
     id: int
+    # Add this field to the response model
+    next_lesson: Optional[NextLessonInfo] = None
 
     class Config:
         from_attributes = True
@@ -105,14 +114,17 @@ class ModuleBase(BaseModel):
     title: str
     description: str
     order_index: int
+    is_exam: Optional[bool] = None
     duration_minutes: Optional[int] = None
 
 class ModuleCreate(ModuleBase):
+    is_exam: bool = False
     pass
 
 class Module(ModuleBase):
     lesson_count: Optional[int] = 0
-
+    is_exam: bool
+    lessons: List[LessonSchema] = []
     class Config:
         from_attributes = True
 
@@ -156,7 +168,8 @@ class UserCourseEnrollment(BaseModel):
     is_completed: bool
     progress_percentage: float
     total_time_spent_minutes: int
-
+    is_active_enrollment: bool
+    is_active: bool# Indicates if the enrollment is currently active
     class Config:
         from_attributes = True
 

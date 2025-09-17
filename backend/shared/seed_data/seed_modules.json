@@ -22,5 +22,80 @@
     "description": "Aprende a tomar decisiones en tu código con sentencias condicionales, a repetir tareas con bucles, y a organizar datos con listas. También tendrás una introducción a la creación de tus propias funciones.",
     "order_index": 3,
     "duration_minutes": 75
+  },
+  {
+    "id": 4,
+    "course_id": 1,
+    "title": "Examen Final: Fundamentos de Python",
+    "description": "Evaluación final de los conceptos básicos de Python. Demuestra tus conocimientos de variables, tipos, condicionales, bucles, listas y funciones.",
+    "order_index": 4,
+    "duration_minutes": 60,
+    "is_exam": true
+  },
+  {
+    "id": 5,
+    "course_id": 2,
+    "title": "Módulo 1: Domina las colecciones esenciales de Python",
+    "description": "¿Sabías que los datos no siempre vienen en forma de listas? En este módulo descubrirás las tuplas, sets y diccionarios, tres estructuras clave que te permitirán trabajar con datos de forma más flexible, segura y organizada. Aprenderás cuándo usar cada una, cómo acceder a su contenido y cómo transformarlas según tus necesidades. Prepárate para mejorar tus habilidades creando tus propios calendarios, registros y colecciones inteligentes.",
+    "order_index": 1,
+    "duration_minutes": 75
+  },
+  {
+    "id": 6,
+    "course_id": 2,
+    "title": "Módulo 2: Estructuras anidadas: el arte de organizar datos",
+    "description": "¿Listas dentro de listas? ¿Diccionarios con listas como valores? ¡Sí! En este módulo aprenderás a manejar estructuras de datos anidadas como un verdadero profesional. Verás cómo modelar información en forma de tablas, listas de alumnos por materia, o catálogos de productos por categoría. Además, aprenderás a recorrer estas estructuras con ciclos anidados para mostrar y analizar datos de manera ordenada y eficiente. Ideal para representar datos reales de forma estructurada.",
+    "order_index": 2,
+    "duration_minutes": 75
+  },
+  {
+    "id": 7,
+    "course_id": 2,
+    "title": "Módulo 3: Errores inteligentes y programación funcional",
+    "description": "Los errores no tienen que ser enemigos, ¡pueden ser tus aliados! Aprende a manejar errores con bloques try, except y finally para que tus programas nunca se detengan de forma inesperada. Además, te introducirás en el fascinante mundo de la programación funcional, donde dominarás herramientas como list comprehensions y funciones lambda para escribir código más elegante, compacto y poderoso. Este módulo te dará superpoderes para escribir código más limpio, profesional y resistente a fallos.",
+    "order_index": 3,
+    "duration_minutes": 75
+  },
+  {
+    "id": 8,
+    "course_id": 2,
+    "title": "Examen Final: Python Intermedio",
+    "description": "¡Es momento de demostrar todo lo que has aprendido! En este examen final pondrás en práctica tus habilidades con estructuras de datos esenciales, colecciones anidadas y técnicas de programación funcional y manejo de errores. Resolverás ejercicios que simulan situaciones reales donde deberás aplicar tu lógica, ordenar datos, procesarlos eficientemente y asegurar que tu código sea robusto frente a errores.",
+    "order_index": 4,
+    "duration_minutes": 60,
+    "is_exam": true
+  },
+  {
+    "id": 9,
+    "course_id": 3,
+    "title": "Módulo 1: Modelado de Datos Funcional con Clases",
+    "description": "Aprende a estructurar datos de forma moderna y segura. En este módulo, usarás decoradores como `@dataclass` para crear clases concisas y robustas. Adoptarás un enfoque funcional, priorizando la inmutabilidad (`frozen=True`) y creando métodos que devuelven nuevas instancias en lugar de modificar el estado. Dominarás el uso de `@property` para exponer datos computados de manera elegante.",
+    "order_index": 1,
+    "duration_minutes": 75
+  },
+  {
+    "id": 10,
+    "course_id": 3,
+    "title": "Módulo 2: Herramientas del Paradigma Funcional",
+    "description": "Sumérgete en las herramientas clave de la programación funcional en Python. Aprenderás a extender comportamientos con decoradores, a procesar secuencias de datos de forma eficiente y 'perezosa' (lazy) con generadores (`yield`), y a realizar transformaciones de datos declarativas y elegantes utilizando funciones de orden superior como `map` y `filter`.",
+    "order_index": 2,
+    "duration_minutes": 75
+  },
+  {
+    "id": 11,
+    "course_id": 3,
+    "title": "Módulo 3: Pipelines de Datos y Procesamiento Funcional",
+    "description": "Aplica tus habilidades funcionales para resolver problemas de procesamiento de datos del mundo real. Aprenderás a construir 'pipelines' de datos limpios y legibles componiendo funciones. Utilizarás list comprehensions anidadas para aplanar estructuras complejas y usarás expresiones regulares (`regex`) como una herramienta potente para la limpieza y validación de datos dentro de tus flujos de trabajo.",
+    "order_index": 3,
+    "duration_minutes": 75
+  },
+  {
+    "id": 12,
+    "course_id": 3,
+    "title": "Examen Final: Python Avanzado y Funcional",
+    "description": "Demuestra tu dominio de los conceptos avanzados de Python con un enfoque funcional. Este examen evaluará tu capacidad para modelar datos inmutables con `dataclasses`, implementar decoradores y generadores personalizados, y construir `pipelines` de datos para procesar colecciones complejas usando `map`, `filter` y expresiones regulares.",
+    "order_index": 4,
+    "duration_minutes": 60,
+    "is_exam": true
   }
 ]

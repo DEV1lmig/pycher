@@ -16,7 +16,6 @@ export default function DashboardPage() {
         coursesData.sort((a, b) => a.id - b.id);
         setCourses(coursesData);
     getCompletedExercisesCount().then(async (count) => {
-        console.log("Completed Exercises Count:", count);
         if (count !== undefined && count !== null) {
           setCompletedExercisesCount(count);
         }
@@ -26,7 +25,6 @@ export default function DashboardPage() {
     })
     });
   }, []);
-  console.log(courses);
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6 p-6">
@@ -40,7 +38,6 @@ export default function DashboardPage() {
           </p>
           </FadeContent>
           <CourseCards courses={courses} />
-
         </section>
       </div>
     </DashboardLayout>

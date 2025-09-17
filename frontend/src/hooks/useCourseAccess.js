@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getUserEnrollments } from '@/services/userService'; // Assuming this is where it is
+import { getMyEnrollments } from '@/services/progressService'; // Assuming this is where it is
 
 export function useCourseAccess() {
   const [enrollments, setEnrollments] = useState([]);
@@ -10,10 +10,9 @@ export function useCourseAccess() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getUserEnrollments();
+      const data = await getMyEnrollments();
       setEnrollments(data || []);
     } catch (err) {
-      console.error("Failed to fetch enrollments:", err);
       setError(err);
       setEnrollments([]); // Clear enrollments on error
     } finally {

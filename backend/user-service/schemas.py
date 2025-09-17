@@ -149,6 +149,26 @@ class UserModuleProgressResponse(UserModuleProgressBase):
     class Config:
         from_attributes = True
 
+class ExerciseSchema(BaseModel):
+    id: int
+    course_id: Optional[int] = None
+    module_id: Optional[int] = None
+    lesson_id: Optional[int] = None
+    order_index: int
+    title: str
+    description: str
+    instructions: Optional[str] = None
+    starter_code: Optional[str] = None
+    validation_type: Optional[str] = None
+    validation_rules: Optional[Dict[str, Any]] = None
+    hints: Optional[str] = None
+    difficulty: Optional[str] = None
+    estimated_time_minutes: Optional[int] = None
+    tags: Optional[List[str]] = None
+
+    class Config:
+        from_attributes = True
+
 class UserCourseProgressBase(BaseModel):
     course_id: int
     is_started: bool = False
@@ -167,18 +187,36 @@ class UserCourseProgressResponse(UserCourseProgressBase):
     class Config:
         from_attributes = True
 
+# Add a basic schema for the nested exercise object
+class ExerciseBasicInfo(BaseModel):
+    id: int
+    title: str
+    class Config:
+        from_attributes = True
+
 class UserExerciseSubmissionResponse(BaseModel):
     id: int
     user_id: int
     exercise_id: int
-    lesson_id: int
-    submitted_code: Optional[str] = None
-    is_correct: bool
-    output: Optional[str] = None
-    attempt_number: int
+    lesson_id: Optional[int]
     submitted_at: datetime
-    score: Optional[int] = None
-    execution_time_ms: Optional[int] = None
+    is_correct: bool
+    output: Optional[str]
+    attempt_number: int
+    # --- START: ADD THIS FIELD ---
+    # This field will hold the detailed validation result from the execution service
+    # and will be populated manually in the route.
+    validation_result: Optional[Dict[str, Any]] = None
+    # --- END: ADD THIS FIELD ---
+
+    # This will be populated from the eager-loaded relationship in the service
+    exercise: ExerciseBasicInfo
+
+    # This computed field makes the title directly accessible as `exercise_title`
+    @computed_field
+    @property
+    def exercise_title(self) -> str:
+        return self.exercise.title
 
     class Config:
         from_attributes = True
@@ -231,12 +269,10 @@ class CourseExamSchema(BaseModel):
 class UserExamAttemptBase(BaseModel):
     exam_id: int
     course_id: int
-    score: Optional[int] = Field(default=0)
     is_passed: bool = False
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
-    time_spent_minutes: Optional[int] = Field(default=0)
-    # answers: Optional[dict] = None # Or a more structured schema
+    # answers: Optional[dict] = None
 
 class UserExamAttemptResponse(UserExamAttemptBase):
     id: int
@@ -280,9 +316,11 @@ class UserEnrollmentWithProgressResponse(BaseModel):
     last_accessed: Optional[datetime] = None
     is_completed: bool = False
     progress_percentage: float = 0.0
+    is_active_enrollment: bool
     total_time_spent_minutes: int = 0
     last_accessed_module_id: Optional[int] = None
     last_accessed_lesson_id: Optional[int] = None
+    exam_unlocked: bool
 
     # This assumes UserCourseEnrollment instance passed to it has 'course' eager loaded
     @computed_field
@@ -301,6 +339,10 @@ class UserEnrollmentWithProgressResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class AllCoursesCompletedStatus(BaseModel):
+    """Response model for checking if all courses are completed."""
+    all_courses_completed: bool
 
 # Add this schema for user updates
 
@@ -323,6 +365,7 @@ class ExerciseProgressInfo(BaseModel):
     is_correct: Optional[bool] = None
     attempts: int = 0
     last_submitted_at: Optional[datetime] = None
+    passed: Optional[bool] = None
     # score: Optional[int] = None # Uncomment if you track score per exercise submission and want to show it here
 
     class Config:
@@ -333,7 +376,9 @@ class LessonProgressDetailResponse(BaseModel):
     is_completed: bool
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
-    exercises_progress: List[ExerciseProgressInfo] # Expects a list of ExerciseProgressInfo
+    exercises_progress: List[ExerciseProgressInfo]
+    next_lesson_info: Optional[Dict[str, Any]] = None  # Optional: to include next lesson info if available
+    # Expects a list of ExerciseProgressInfo
 
     class Config:
         from_attributes = True

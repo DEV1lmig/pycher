@@ -4,12 +4,24 @@ from pydantic import BaseModel
 import os
 import time
 import logging
+import sys
 from typing import Dict, Optional, List, Any
 import json
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
 # Import from the new validators module
 # Assuming validators.py is in the same directory as main.py
-from validators import VALIDATOR_MAP, DynamicValidationResult
+from validators import VALIDATOR_MAP, DynamicValidationResult, general_security_check, run_user_code_sandboxed
 
 app = FastAPI(title="Python Code Execution and Validation Service")
 
@@ -74,11 +86,11 @@ async def health_check():
 @app.post("/execute", response_model=ValidationResultModel)
 async def execute_and_validate_code(request: CodeRequest):
     start_time = time.time()
+    logger.info(f"Starting execution for exercise ID: {request.exercise_id}")
 
     exercise_config = EXERCISES_DATA.get(request.exercise_id)
     if not exercise_config:
-        # Log the error and return a structured error response
-        logging.error(f"Exercise ID {request.exercise_id} not found in EXERCISES_DATA.")
+        logger.error(f"Exercise ID {request.exercise_id} not found in EXERCISES_DATA.")
         return ValidationResultModel(
             output=None,
             error=f"Exercise with ID {request.exercise_id} not found.",
@@ -87,11 +99,12 @@ async def execute_and_validate_code(request: CodeRequest):
         )
 
     validation_type = exercise_config.get("validation_type")
-    # These are the overall rules for the exercise, including any predefined scenarios
     exercise_rules_from_config = exercise_config.get("validation_rules", {})
 
+    logger.info(f"Exercise {request.exercise_id}: validation_type='{validation_type}', rules={exercise_rules_from_config}")
+
     if not validation_type or validation_type not in VALIDATOR_MAP:
-        logging.error(f"No validator defined for exercise type: '{validation_type}' (Exercise ID: {request.exercise_id}).")
+        logger.error(f"No validator defined for exercise type: '{validation_type}' (Exercise ID: {request.exercise_id}).")
         return ValidationResultModel(
             output=None,
             error=f"No validator defined for exercise type: '{validation_type}'.",
@@ -111,7 +124,7 @@ async def execute_and_validate_code(request: CodeRequest):
         logging.info(f"EID {request.exercise_id}: {run_description_for_log}")
 
         # Ensure dynamic_output is handled here for single input run
-        if validation_type in ["simple_print", "saludo_personalizado", "variable_output", "dynamic_output", "function_and_output"]:
+        if validation_type in ["simple_print", "saludo_personalizado", "variable_output", "dynamic_output", "function_and_output", "conditional_print"]:
             final_run_result = validator_func(
                 user_code=request.code,
                 rules=exercise_rules_from_config,
@@ -128,6 +141,16 @@ async def execute_and_validate_code(request: CodeRequest):
             )
             # If your function_check validator *cannot* work this way, this should be an error:
             # final_run_result = DynamicValidationResult(passed=False, message="Direct input not directly applicable to function_check without a specific scenario context.", actual_output=None) #execution_time=0.0)
+
+        elif validation_type == "exam":
+            # Allow direct input run for exam type
+            final_run_result = validator_func(
+                user_code=request.code,
+                rules=exercise_rules_from_config,
+                input_data=request.input_data,
+                timeout=request.timeout,
+                direct_input_run=True  # <-- This enables the "run as script" mode in your validator
+            )
 
         else:
             final_run_result = DynamicValidationResult(passed=False, message=f"Unsupported validation type '{validation_type}' for direct input run.", actual_output=None)
@@ -160,7 +183,7 @@ async def execute_and_validate_code(request: CodeRequest):
             logging.info(f"EID {request.exercise_id}: Running {len(scenarios_in_config)} predefined scenarios.")
             overall_passed_scenarios = True
             accumulated_message = "All predefined scenarios passed."
-            # For overall output, we might take the first scenario's output or first failing.
+            # --- FIX: Ensure we always have the output of the last run scenario ---
             representative_output: Optional[str] = None
 
             for i, scenario_item_config in enumerate(scenarios_in_config):
@@ -169,7 +192,7 @@ async def execute_and_validate_code(request: CodeRequest):
                 logging.debug(f"  Running predefined scenario: {current_scenario_desc} with its input: '{scenario_specific_input}'")
 
                 scenario_run_result_item: DynamicValidationResult
-                if validation_type in ["simple_print", "saludo_personalizado", "variable_output", "dynamic_output", "function_and_output"]:
+                if validation_type in ["simple_print", "saludo_personalizado", "variable_output", "dynamic_output", "function_and_output", "conditional_print"]:
                     scenario_run_result_item = validator_func(
                         user_code=request.code,
                         rules=exercise_rules_from_config, # Overall exercise rules
@@ -184,15 +207,14 @@ async def execute_and_validate_code(request: CodeRequest):
                         timeout=request.timeout
                     )
                 else:
-                    scenario_run_result_item = DynamicValidationResult(passed=False, message=f"Unsupported type '{validation_type}' for scenario.", actual_output=None) # Removed execution_time=0.0
+                    scenario_run_result_item = DynamicValidationResult(passed=False, message=f"Unsupported type '{validation_type}' for scenario.", actual_output=None)
 
-                if i == 0: # Capture first scenario's output as representative if all pass
-                    representative_output = scenario_run_result_item.actual_output
+                # --- FIX: Always update representative_output with the latest run ---
+                representative_output = scenario_run_result_item.actual_output
 
                 if not scenario_run_result_item.passed:
                     overall_passed_scenarios = False
                     accumulated_message = f"{current_scenario_desc} failed: {scenario_run_result_item.message}"
-                    representative_output = scenario_run_result_item.actual_output # Output of the failing scenario
                     logging.info(f"  Predefined Scenario {current_scenario_desc} FAILED: {scenario_run_result_item.message}")
                     break # Stop on first failed predefined scenario
                 else:
@@ -222,4 +244,4 @@ if __name__ == "__main__":
     # Ensure exercises are loaded for local run if app isn't fully started via uvicorn command
     if not EXERCISES_DATA:
         load_exercises_on_startup()
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8001, reload=True, log_level="info")

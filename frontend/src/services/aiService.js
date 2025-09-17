@@ -16,41 +16,14 @@ export const getCodeHint = async ({ code, error, instruction }) => {
   try {
     // Ensure instruction is always in Spanish
     const fullInstruction = (instruction ? instruction + " " : "") + "Responde en español.";
-    const response = await apiClient.post('/api/v1/ai/hint', {
+    const response = await apiClient.post('api/v1/ai/hint', {
       code,
       error,
       instruction: fullInstruction
     });
     return response.data;
   } catch (error) {
-    console.error('Error getting AI hint:', error);
     throw new Error('Unable to get AI assistance at this time');
-  }
-};
-
-/**
- * Get AI evaluation of user code against expected output
- *
- * @param {Object} params - The evaluation request parameters
- * @param {string} params.code - The user's submitted code
- * @param {string} params.expected_output - The expected output
- * @param {string} params.actual_output - The actual output from execution
- * @param {string} params.description - The exercise description
- * @returns {Promise<Object>} - The evaluation results
- */
-export const evaluateCode = async ({ code, expected_output, actual_output, description }) => {
-  try {
-    const fullDescription = (description ? description + " " : "") + "Responde en español.";
-    const response = await apiClient.post('/api/v1/ai/evaluate', {
-      code,
-      expected_output,
-      actual_output,
-      description: fullDescription
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error evaluating code:', error);
-    throw new Error('Unable to evaluate your code at this time');
   }
 };
 
@@ -72,7 +45,6 @@ export const getCodeFeedback = async ({ code, challenge_description, level = 'be
     });
     return response.data;
   } catch (error) {
-    console.error('Error getting code feedback:', error);
     throw new Error('Unable to get feedback on your code at this time');
   }
 };
@@ -87,45 +59,30 @@ export const getCodeFeedback = async ({ code, challenge_description, level = 'be
  */
 export const explainCode = async ({ code, level = 'beginner' }) => {
   try {
-    const response = await apiClient.post('/api/v1/ai/explain', {
+    const response = await apiClient.post('api/v1/ai/explain', {
       code,
       level
     });
     return response.data;
   } catch (error) {
-    console.error('Error getting code explanation:', error);
     throw new Error('Unable to explain the code at this time');
   }
 };
 
-/**
- * Get AI-generated next step suggestion for learning path
- *
- * @param {Object} params - The learning path parameters
- * @param {Object} params.user_progress - User's current progress data
- * @param {string} params.current_topic - User's current topic
- * @returns {Promise<Object>} - The next step recommendation
- */
-export const getNextLearningStep = async ({ user_progress, current_topic }) => {
-  try {
-    const response = await apiClient.post('/api/v1/ai/learning-path', {
-      user_progress,
-      current_topic
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error getting learning path recommendation:', error);
-    throw new Error('Unable to generate learning recommendations at this time');
-  }
-}
+//Stream chat with the AI (returns an async generator)
+export async function* streamChat({ query, code, editorCode, lessonContext, starterCode, instruction = "" }) {
+  // If editorCode is provided and different from starterCode, use it as the code
+  // Otherwise, use the provided code parameter (which might be the same as query)
+  const codeToSend = editorCode && editorCode !== starterCode ? editorCode : code;
 
-// Stream chat with the AI (returns an async generator)
-export async function* streamChat({ code, instruction = "" }) {
   const response = await fetch(`${API_URL}/api/v1/ai/chat/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      code,
+      query,
+      code: codeToSend,
+      lesson_context: lessonContext,
+      starter_code: starterCode,
       instruction: instruction + " Responde en español."
     }),
   });

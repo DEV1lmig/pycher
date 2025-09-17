@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import io
+import httpx
 import os # For path manipulation
 from datetime import datetime as dt # Alias for clari
 
@@ -14,10 +15,11 @@ from database import get_db
 from jose import jwt, JWTError
 
 # Import models from your proxy
-from models import User, UserCourseEnrollment, UserModuleProgress, UserLessonProgress, UserExerciseSubmission, CourseExam, UserExamAttempt
+from models import User, UserCourseEnrollment, UserModuleProgress, UserLessonProgress, UserExerciseSubmission, CourseExam, UserExamAttempt, Exercise
 
 from schemas import (
-    UserCreate, UserResponse, Token, UserLogin,
+    UserCreate, UserExamAttemptBase, UserResponse, Token, UserLogin,
+    ExerciseSchema,
     UserCourseProgressResponse,
     UserModuleProgressResponse,
     UserLessonProgressResponse, # Ensure this is imported
@@ -35,27 +37,26 @@ from schemas import (
 )
 
 from services import (
-    get_user, get_user_by_username, get_user_by_email, create_user, authenticate_user,
+    create_user_exam_attempt, get_user, get_user_by_username, get_user_by_email, create_user, authenticate_user,
     enroll_user_in_course, start_lesson, complete_exercise, get_last_accessed_progress,
     get_course_progress_summary, get_user_enrollments_with_progress, unenroll_user_from_course,
     get_user_lesson_progress_detail, get_user_progress_report_data,
     get_batch_module_progress_details, change_user_password, change_user_username,
     get_batch_lesson_progress_details,
-    # --- ADDED MISSING SERVICE FUNCTION IMPORTS ---
     update_last_accessed,
     start_module,
-    complete_module,
     get_user_module_progress,
-    complete_lesson,
     get_course_exam,
     start_exam_attempt,
     submit_exam_attempt,
+    get_or_create_current_exam_exercise,
     get_user_exam_attempts
     # --- END ADDED IMPORTS ---
 )
 
+from auth import get_current_user # Ensure this is correctly imported from your auth module
+
 from utils import create_access_token, redis_client, SECRET_KEY, ALGORITHM
-from auth import get_current_user
 
 router = APIRouter()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -241,7 +242,7 @@ def enroll_in_course_route(
     enrollment = enroll_user_in_course(db, current_user.id, course_id)
     return enrollment
 
-@router.get("/users/me/enrollments", response_model=List[UserEnrollmentWithProgressResponse])
+@router.get("/me/enrollments", response_model=List[UserEnrollmentWithProgressResponse])
 def get_my_enrollments_route(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -277,13 +278,10 @@ def start_module_route(
 ):
     return start_module(db, current_user.id, module_id)
 
-@router.post("/modules/{module_id}/complete", response_model=UserModuleProgressResponse)
-def complete_module_route(
-    module_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    return complete_module(db, current_user.id, module_id)
+# --- REMOVED ENDPOINT ---
+# The POST /modules/{module_id}/complete endpoint has been removed because its
+# underlying service function was deprecated. Module completion is now an automatic
+# process handled by the backend when the last lesson is completed.
 
 @router.get("/modules/{module_id}/progress", response_model=UserModuleProgressResponse)
 def get_module_progress_route(
@@ -334,14 +332,6 @@ def start_lesson_route(
     """
     return start_lesson(db, current_user.id, lesson_id)
 
-@router.post("/lessons/{lesson_id}/complete", response_model=UserLessonProgressResponse)
-def complete_lesson_route(
-    lesson_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    return complete_lesson(db, current_user.id, lesson_id)
-
 @router.get("/lessons/{lesson_id}/progress", response_model=LessonProgressDetailResponse)
 def get_lesson_progress_route(
     lesson_id: int,
@@ -360,7 +350,7 @@ def get_lesson_progress_route(
         )
     return progress_detail
 
-@router.post("/exercises/{exercise_id}/submit", response_model=UserExerciseSubmissionResponse)
+@router.post("/exercises/{exercise_id}/submit", response_model=Union[UserExerciseSubmissionResponse, Dict])
 def submit_exercise_route(
     exercise_id: int,
     submission_data: ExerciseCompletionRequest, # Uses the updated schema
@@ -368,13 +358,25 @@ def submit_exercise_route(
     db: Session = Depends(get_db)
 ):
     # Call the updated service function.
-    # `is_correct` and `output` are no longer passed from here.
     # The service function `complete_exercise` now handles execution and evaluation.
-    return complete_exercise(
+    # --- FIX: The service now returns a tuple (submission_record, validation_result_dict) ---
+    submission_record, validation_result = complete_exercise(
         db, current_user.id, exercise_id,
         submission_data.submitted_code,
-        submission_data.input_data # This is now being passed
+        submission_data.input_data
     )
+
+    # If the result is a dict, it's an exam result. Return it directly.
+    if isinstance(submission_record, dict):
+        return submission_record
+
+    # --- FIX: Manually attach the validation result to the response object ---
+    # Convert the submission_record (ORM model) to a Pydantic model instance
+    response_data = UserExerciseSubmissionResponse.from_orm(submission_record)
+    # Attach the raw validation dictionary
+    response_data.validation_result = validation_result
+
+    return response_data
 
 @router.get("/courses/{course_id}/progress-summary", response_model=CourseProgressSummaryResponse)
 def get_course_progress_summary_route(
@@ -608,6 +610,122 @@ def change_password(request: ChangePasswordRequest, current_user: User = Depends
 @router.post("/change-username")
 def change_username(request: ChangeUsernameRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return change_user_username(db, current_user, request.new_username)
+
+@router.post("/exam-attempts", response_model=UserExamAttemptResponse)
+def submit_exam_attempt(attempt: UserExamAttemptBase, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return create_user_exam_attempt(db, current_user.id, attempt.exam_id, attempt.answers)
+
+@router.get(
+    "/me/courses/{course_id}/current-exam",
+    response_model=ExerciseSchema, # Use the Pydantic schema for the response
+    summary="Get the user's current persistent exam for a course",
+    tags=["users", "exams"]
+)
+def get_current_exam_route(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieves the currently assigned exam exercise for the user for a specific course.
+    - If an active attempt exists and has less than 5 failures, it returns the same exercise.
+    - Otherwise, it deactivates the old attempt, assigns a new random exercise, and returns it.
+    """
+    if not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    exam_exercise = get_or_create_current_exam_exercise(
+        db=db, user_id=current_user.id, course_id=course_id
+    )
+    if not exam_exercise:
+        raise HTTPException(status_code=404, detail="Could not retrieve or assign an exam for this course.")
+    return exam_exercise
+
+@router.post("/exercises/submit", status_code=200)
+async def submit_exercise(
+    submission: UserExerciseSubmissionResponse,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Receives an exercise submission, validates it via the execution-service,
+    and records the result.
+    """
+    execution_service_url = os.getenv("EXECUTION_SERVICE_URL")
+    if not execution_service_url:
+        raise HTTPException(status_code=500, detail="Execution service URL not configured")
+
+    # --- FIX: Ensure input_data is None for a validation run ---
+    # When submitting for validation, we want the execution service to use its
+    # own predefined test cases, not any direct input from a user's text area.
+    # Setting input_data to None is the trigger for this behavior.
+    payload = {
+        "exercise_id": submission.exercise_id,
+        "code": submission.code,
+        "input_data": None, # Explicitly set to None
+        "timeout": 15 # A reasonable timeout for validation
+    }
+
+    validation_result_data = {}
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{execution_service_url}/execute", json=payload, timeout=30.0)
+            response.raise_for_status()
+            validation_result_data = response.json()
+    except Exception as e:
+        logger.error(f"Error calling execution service: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error validating exercise submission")
+
+    # Log the raw validation result for debugging
+    logger.debug(f"Raw validation result: {validation_result_data}")
+
+    # --- PROCESSING OF validation_result_data ---
+    # This section processes the validation result from the execution service.
+    # It expects a specific structure in validation_result_data and maps it to
+    # the UserExerciseSubmission model.
+
+    # Extract relevant fields from the validation result
+    is_correct = validation_result_data.get("is_correct", False)
+    output = validation_result_data.get("output", "")
+    error_message = validation_result_data.get("error", "")
+    execution_time = validation_result_data.get("execution_time", 0)
+
+    # For testing, let's log the extracted values
+    logger.info(f"Validation result - is_correct: {is_correct}, output: {output}, error: {error_message}, execution_time: {execution_time}")
+
+    # Create or update the UserExerciseSubmission record
+    submission_record = db.query(UserExerciseSubmission).filter(
+        UserExerciseSubmission.user_id == current_user.id,
+        UserExerciseSubmission.exercise_id == submission.exercise_id
+    ).first()
+
+    if submission_record:
+        # Update existing record
+        submission_record.is_correct = is_correct
+        submission_record.output = output
+        submission_record.error_message = error_message
+        submission_record.execution_time = execution_time
+        submission_record.submitted_at = dt.utcnow() # Update submission time
+        db.commit()
+        db.refresh(submission_record)
+        logger.info(f"Updated submission record for user {current_user.id}, exercise {submission.exercise_id}")
+    else:
+        # Create new record
+        submission_record = UserExerciseSubmission(
+            user_id=current_user.id,
+            exercise_id=submission.exercise_id,
+            is_correct=is_correct,
+            output=output,
+            error_message=error_message,
+            execution_time=execution_time,
+            submitted_at=dt.utcnow() # Set submission time
+        )
+        db.add(submission_record)
+        db.commit()
+        db.refresh(submission_record)
+        logger.info(f"Created new submission record for user {current_user.id}, exercise {submission.exercise_id}")
+
+    return submission_record
 
 # Ensure your router is included in your main FastAPI app
 # e.g., app.include_router(router)

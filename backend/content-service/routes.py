@@ -1,18 +1,36 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
+import os
 from sqlalchemy.orm import Session
-import models
-from typing import List, Optional, Dict
-import services
-import schemas
-from database import get_db
-from models import Lesson
+import models # Ensure models is imported (e.g., from ..shared import models or similar)
+from typing import List, Optional, Dict # Ensure List and Optional are imported
+import services, schemas # Ensure services and schemas are imported
+from database import get_db # Ensure get_db is imported
 import logging
-
 from services import get_user_context
 
 logger = logging.getLogger("content-service")
 
 router = APIRouter()
+
+PDF_DIRECTORY = "pdfs"  # Directory where your PDFs are stored
+
+@router.get("/pdf/{pdf_name}")
+async def get_pdf(pdf_name: str):
+    """
+    Endpoint to download an existing PDF file.
+    """
+    # Basic security check to prevent path traversal
+    if ".." in pdf_name or pdf_name.startswith("/"):
+        raise HTTPException(status_code=400, detail="Invalid PDF name")
+
+    pdf_path = os.path.join(PDF_DIRECTORY, pdf_name)
+
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=404, detail="PDF not found")
+
+    return FileResponse(pdf_path, media_type="application/pdf", filename=pdf_name)
+
 
 @router.get("/modules", response_model=List[schemas.Module])
 def get_modules(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -78,19 +96,26 @@ async def read_lessons_for_module_with_lock_status_standalone_route( # Renamed
     return lessons
 
 @router.get("/lessons/{lesson_id}", response_model=schemas.Lesson)
-def get_lesson(lesson_id: int, db: Session = Depends(get_db)):
+def get_lesson_route(lesson_id: int, db: Session = Depends(get_db)):
     lesson = services.get_lesson(db, lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
+
+    # Calculate and attach the next lesson info before returning
+    next_lesson_info = services.get_next_lesson_info(db, lesson_id)
+
+    # Pydantic will automatically pick up this attribute when creating the response
+    lesson.next_lesson = next_lesson_info
+
     return lesson
 
 @router.get("/lessons/{lesson_id}/exercises", response_model=List[schemas.Exercise])
-def get_exercises(lesson_id: str, db: Session = Depends(get_db)):
+def get_exercises_for_lesson_route(lesson_id: int, db: Session = Depends(get_db)):
     lesson = services.get_lesson(db, lesson_id=lesson_id)
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
-    exercises = services.get_exercises(db, lesson_id=lesson_id)
+    exercises = services.get_exercises(db, lesson_id=lesson.id)
     return exercises
 
 @router.get("/exercises/{exercise_id}", response_model=schemas.Exercise)
@@ -168,12 +193,79 @@ def get_module_final_exercise(module_id: int, db: Session = Depends(get_db)):
     if not exercise:
         raise HTTPException(status_code=404, detail="Final exercise not found")
     return exercise
-@router.get("/courses/{course_id}/exam-exercise")
+
+@router.get(
+    "/courses/{course_id}/exam-exercises",
+    response_model=List[schemas.Exercise], # Frontend expects an array
+    summary="Get all exam exercises for a specific course (direct from exercise table)",
+    tags=["courses", "exercises", "exams"]
+)
+def read_course_exam_exercises( # Renamed for clarity if needed, but name is fine
+    course_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Fetches exercises for a given course_id that are marked as exams
+    by having module_id and lesson_id as NULL.
+    Optionally, could also filter by validation_type == 'exam'.
+    """
+    exam_exercises = db.query(models.Exercise).filter(
+        models.Exercise.course_id == course_id,
+        models.Exercise.module_id == None,  # Check for NULL module_id
+        models.Exercise.lesson_id == None,  # Check for NULL lesson_id
+        # models.Exercise.validation_type == "exam" # Optional: for more specificity
+    ).order_by(models.Exercise.order_index).all() # Use order_index if that's the column name
+
+    # The frontend already handles the case where exam_exercises is an empty list.
+    # if not exam_exercises:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail=f"No direct exam exercises found for course ID {course_id} with null module/lesson IDs."
+    #     )
+
+    return exam_exercises
+
+@router.get(
+    "/courses/{course_id}/exam-random",
+    response_model=schemas.Exercise,
+    summary="Get a single random exam exercise for a course",
+    tags=["courses", "exercises", "exams"]
+)
+def get_random_course_exam_route(
+    course_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Provides a single, randomly selected exam exercise for the given course.
+    """
+    # This now calls your modified, randomized service function
+    exam_exercise = services.get_course_exam_exercise(db, course_id=course_id)
+    if not exam_exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No exam exercises found for this course."
+        )
+    logger.info(f"Random exam exercise retrieved for course {course_id}: {exam_exercise.id}")
+    return exam_exercise
+
+@router.get("/courses/{course_id}/exam/exercise", summary="Get random exam exercise for course")
 def get_course_exam_exercise_route(course_id: int, db: Session = Depends(get_db)):
     """
-    Get the exam exercise for a course.
+    Returns a random exam exercise for the specified course.
+    This is used by user-service for exam assignment.
     """
-    exam_ex = services.get_course_exam_exercise(db, course_id)
-    if not exam_ex:
-        raise HTTPException(status_code=404, detail="Exam exercise not found")
-    return exam_ex
+    exercise = services.get_course_exam_exercise(db, course_id)
+    if not exercise:
+        raise HTTPException(status_code=404, detail="No exam exercises found for this course")
+
+    return {
+        "id": exercise.id,
+        "title": exercise.title,
+        "description": exercise.description,
+        "instructions": exercise.instructions,
+        "starter_code": exercise.starter_code,
+        "validation_type": exercise.validation_type,
+        "validation_rules": exercise.validation_rules,
+        "hints": exercise.hints,
+        "course_id": exercise.course_id
+    }

@@ -14,8 +14,8 @@
   },
   {
     "id": 2,
-    "title": "Python Intermedio",
-    "description": "Curso intermedio de Python",
+    "title": "Python Intermedio: De Scripts a Programas Robustos",
+    "description": "Lleva tus habilidades al siguiente nivel. En este curso, dejarás de escribir scripts simples para construir programas más complejos y estructurados. Profundizarás en estructuras de datos como tuplas, diccionarios y conjuntos, aprenderás a manejar archivos, y te introducirás en el Paradigma Orientado a Objetos (POO), una habilidad clave para cualquier desarrollador profesional.",
     "level": "Intermedio",
     "duration_minutes": 180,
     "students_count": 0,
@@ -27,8 +27,8 @@
   },
   {
     "id": 3,
-    "title": "Python Avanzado",
-    "description": "Curso avanzado de Python",
+    "title": "Python Avanzado: Dominando Herramientas Profesionales",
+    "description": "Conviértete en un experto en Python. Este curso te sumerge en los conceptos más avanzados y poderosos del lenguaje. Explorarás temas como decoradores, generadores, manejo de contextos, y concurrencia para escribir código más eficiente y elegante. Aprenderás a interactuar con APIs y a utilizar herramientas que son estándar en el desarrollo de software profesional.",
     "level": "Avanzado",
     "duration_minutes": 240,
     "students_count": 0,

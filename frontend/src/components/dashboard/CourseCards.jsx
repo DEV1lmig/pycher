@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"; // Assuming you use these
 import { ArrowRight, Star, Lock, CheckCircle, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import FadeContent from "@/components/ui/fade-content.jsx";
 import { useCourseAccess } from "@/hooks/useCourseAccess";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +21,7 @@ function CourseCard({ course, isLocked, isCompleted, isEnrolled, progress_percen
 
       <Link
         to={isLocked ? "#" : `/courses/${course.id}`}
+        params={{ courseId: course.id.toString() }}
         className={`block bg-primary-opaque/10 rounded-lg border shadow-lg transition-all ease-out duration-300 ${
           isLocked
             ? "border-gray-600 cursor-not-allowed"
@@ -121,6 +124,10 @@ export function CourseCards({ courses, progressMap = {} }) {
         </div>
       </FadeContent>
     );
+  }
+
+  if (!courses || courses.length === 0) {
+    return <p className="text-gray-400">No hay cursos disponibles en este momento.</p>;
   }
 
   return (

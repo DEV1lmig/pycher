@@ -8,6 +8,15 @@ import { apiClient}  from "./api"; // Assuming apiClient is your configured Axio
  * @param {string} [params.inputData] - Optional input data for the code execution (for specific scenarios).
  * @param {number} [params.timeout] - Optional timeout for the execution.
  * @returns {Promise<Object>} The result from the execution service.
+ *
+/**
+ * Executes Python code without validation, just to see the output.
+ * Used by the "Run Code" button for immediate feedback.
+ * @param {Object} params - The parameters for code execution.
+ * @param {string} params.code - The Python code to execute.
+ * @param {string} [params.inputData] - Optional input data for stdin.
+ * @param {number} [params.timeout] - Optional timeout for the execution.
+ * @returns {Promise<Object>} The result with the code's output.
  */
 export const executeCode = async ({ exerciseId, code, inputData, timeout }) => {
   try {
@@ -21,7 +30,6 @@ export const executeCode = async ({ exerciseId, code, inputData, timeout }) => {
     });
     return response.data;
   } catch (error) {
-    console.error("Error executing code:", error.response ? error.response.data : error.message);
     // Rethrow or return a structured error object for the component to handle
     throw error.response ? error.response.data : new Error("Network error or server issue during code execution.");
   }

@@ -1,264 +1,406 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <title>Progress Report for {{ report_data.username }}</title>
+    <title>Reporte de Progreso para {{ report_data.username }}</title>
     <style>
         @page {
             size: A4;
-            margin: 1.5cm;
-            @bottom-center {
-                content: "Page " counter(page) " of " counter(pages);
-                font-size: 0.8em;
-                color: #666;
-            }
+            margin: 1cm;
+            /* Margen reducido */
         }
+
+        /* Numeración de páginas simplificada */
+        .footer {
+            text-align: center;
+            font-size: 0.8em;
+            color: #666;
+            position: fixed;
+            bottom: 1cm;
+            left: 0;
+            right: 0;
+        }
+
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 10pt;
+            font-size: 9pt;
+            /* Tamaño de fuente base reducido */
             color: #333;
-            line-height: 1.4;
+            line-height: 1.3;
+            /* Altura de línea reducida */
         }
+
         .header {
             text-align: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
+            /* Margen reducido */
+            border-bottom: 1.5px solid #007bff;
+            padding-bottom: 8px;
         }
+
         .header h1 {
-            font-size: 24pt;
+            font-size: 20pt;
+            /* Tamaño de fuente reducido */
             color: #0056b3;
             margin: 0;
         }
+
         .header h2 {
-            font-size: 16pt;
+            font-size: 14pt;
+            /* Tamaño de fuente reducido */
             color: #007bff;
-            margin: 5px 0 0 0;
+            margin: 4px 0 0 0;
             font-weight: normal;
         }
+
         .report-meta {
-            font-size: 9pt;
+            font-size: 8.5pt;
             color: #555;
-            margin-bottom: 20px;
-            padding: 10px;
+            margin-bottom: 15px;
+            padding: 8px;
             background-color: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 4px;
         }
-        .report-meta p {
-            margin: 3px 0;
+
+        .report-meta p,
+        p {
+            margin: 2px 0;
+            /* Márgenes de párrafo reducidos */
         }
+
+        .enrollments-wrapper {
+            page-break-inside: avoid;
+        }
+
         .section-title {
-            font-size: 14pt;
+            font-size: 13pt;
+            /* Tamaño de fuente reducido */
             color: #0056b3;
             border-bottom: 1px solid #007bff;
-            padding-bottom: 5px;
-            margin-top: 25px;
-            margin-bottom: 15px;
+            padding-bottom: 4px;
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
+
         .course-section {
             border: 1px solid #dee2e6;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 10px;
+            /* Relleno reducido */
+            margin-bottom: 15px;
             border-radius: 5px;
             background-color: #fff;
             page-break-inside: avoid;
         }
+
         .course-title {
-            font-size: 16pt;
-            margin-bottom: 8px;
+            font-size: 14pt;
+            /* Tamaño de fuente reducido */
+            margin-top: 0;
+            margin-bottom: 5px;
             color: #17a2b8;
         }
+
         .course-summary {
-            margin-bottom: 12px;
-            font-size: 9.5pt;
+            margin-bottom: 8px;
+            font-size: 9pt;
             color: #495057;
         }
-        .module-section {
-            border-left: 3px solid #17a2b8;
-            padding-left: 12px;
-            margin-left: 5px;
-            margin-top: 12px;
-            margin-bottom: 12px;
-            page-break-inside: avoid;
-        }
-        .module-title {
-            font-size: 12pt;
-            color: #138496;
+
+        h5 {
+            /* Estilo para títulos de Módulos/Exámenes */
+            font-size: 11pt;
+            margin-top: 10px;
             margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
         }
-        .lesson-section {
-            border-left: 2px solid #28a745;
+
+        .module-section {
+            border-left: 2px solid #17a2b8;
             padding-left: 10px;
-            margin-left: 10px;
+            margin-left: 5px;
             margin-top: 8px;
             margin-bottom: 8px;
             page-break-inside: avoid;
         }
-        .lesson-title {
-            font-size: 10.5pt;
-            color: #1e7e34;
-            margin-bottom: 4px;
+
+        .module-title {
+            font-size: 11pt;
+            color: #138496;
+            margin: 0 0 4px 0;
         }
+
+        .lesson-section {
+            border-left: 1px solid #28a745;
+            padding-left: 8px;
+            margin-left: 10px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            page-break-inside: avoid;
+        }
+
+        .lesson-title {
+            font-size: 10pt;
+            color: #1e7e34;
+            margin: 0 0 4px 0;
+        }
+
         .exercise-list {
             list-style-type: none;
-            padding-left: 15px;
-            font-size: 9pt;
-        }
-        .exercise-item {
-            margin-bottom: 4px;
             padding-left: 10px;
-            border-left: 1px dashed #ced4da;
+            margin: 2px 0;
+            font-size: 8.5pt;
         }
+
+        .exercise-item {
+            margin-bottom: 2px;
+        }
+
         .exam-section {
-            border-left: 3px solid #ffc107;
-            padding-left: 12px;
+            border-left: 2px solid #ffc107;
+            padding-left: 10px;
             margin-left: 5px;
-            margin-top: 12px;
-            margin-bottom: 12px;
-            page-break-inside: avoid;
-        }
-        .exam-title {
-            font-size: 12pt;
-            color: #d39e00;
-            margin-bottom: 5px;
-        }
-        .status { font-weight: bold; }
-        .status-completed, .status-passed { color: #28a745; } /* Green */
-        .status-inprogress, .status-incomplete { color: #fd7e14; } /* Orange */
-        .status-failed { color: #dc3545; } /* Red */
-        .no-data { color: #6c757d; font-style: italic; font-size: 9pt; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
             margin-top: 8px;
-            font-size: 9pt;
-            page-break-inside: auto;
-        }
-        th, td {
-            border: 1px solid #ced4da;
-            padding: 5px 8px;
-            text-align: left;
-            vertical-align: top;
-        }
-        th {
-            background-color: #e9ecef;
-            font-weight: bold;
-            color: #495057;
-        }
-        tr {
+            margin-bottom: 8px;
             page-break-inside: avoid;
-            page-break-after: auto;
         }
-        small { font-size: 8.5pt; color: #495057; }
+
+        .exam-title {
+            font-size: 11pt;
+            color: #d39e00;
+            margin: 0 0 4px 0;
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .status-completed,
+        .status-passed {
+            color: #28a745;
+        }
+
+        .status-inprogress,
+        .status-incomplete {
+            color: #fd7e14;
+        }
+
+        .status-failed {
+            color: #dc3545;
+        }
+
+        .no-data {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 8.5pt;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            height: 14px;
+            /* Altura reducida */
+            margin-top: 5px;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            border-radius: 4px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 8pt;
+            line-height: 14px;
+            /* Coincide con la altura */
+        }
+
+        .course-level {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8pt;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .level-basico {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .level-intermedio {
+            background-color: #fd7e14;
+            color: white;
+        }
+
+        .level-avanzado {
+            background-color: #dc3545;
+            color: white;
+        }
     </style>
 </head>
+
 <body>
     <div class="header">
-        <h1>Pycher Learning Platform</h1>
-        <h2>User Progress Report</h2>
+        <h1>Pycher Curso Interactivo</h1>
+        <h2>Reporte de Progreso</h2>
     </div>
 
     <div class="report-meta">
-        <p><strong>User:</strong> {{ report_data.first_name or '' }} {{ report_data.last_name or '' }} ({{ report_data.username }})</p>
-        <p><strong>Email:</strong> {{ report_data.email }}</p>
-        <p><strong>Report Generated:</strong> {{ report_data.report_generated_at.strftime('%B %d, %Y, %H:%M:%S UTC') }}</p>
+        <p><strong>Usuario:</strong> {{ report_data.first_name or '' }} {{ report_data.last_name or '' }} ({{
+            report_data.username }})</p>
+        <p><strong>Correo:</strong> {{ report_data.email }}</p>
+        <p><strong>Reporte generado:</strong> {{ report_data.report_generated_at.strftime('%d de %B de %Y, %H:%M:%S
+            UTC') }}</p>
     </div>
 
-    <h3 class="section-title">Course Enrollments</h3>
+    <div class="enrollments-wrapper">
+        <h3 class="section-title">Cursos Inscritos</h3>
 
-    {% if report_data.courses %}
-        {% for course in report_data.courses %}
+        {% if report_data.courses %}
+        {# Ordenar cursos por nivel (básico, intermedio, avanzado) #}
+        {% set course_levels = {
+        'Básico': 1,
+        'Intermedio': 2,
+        'Avanzado': 3
+        } %}
+
+        {% set sorted_courses = report_data.courses|sort(attribute='title') %}
+        {% set level_sorted_courses = [] %}
+
+        {# Primero añadir cursos básicos #}
+        {% for course in sorted_courses %}
+        {% if 'Básico' in course.title %}
+        {% set _ = level_sorted_courses.append(course) %}
+        {% endif %}
+        {% endfor %}
+
+        {# Luego añadir cursos intermedios #}
+        {% for course in sorted_courses %}
+        {% if 'Intermedio' in course.title %}
+        {% set _ = level_sorted_courses.append(course) %}
+        {% endif %}
+        {% endfor %}
+
+        {# Finalmente añadir cursos avanzados #}
+        {% for course in sorted_courses %}
+        {% if 'Avanzado' in course.title %}
+        {% set _ = level_sorted_courses.append(course) %}
+        {% endif %}
+        {% endfor %}
+
+        {# Añadir cualquier otro curso que no tenga nivel específico #}
+        {% for course in sorted_courses %}
+        {% if 'Básico' not in course.title and 'Intermedio' not in course.title and 'Avanzado' not in course.title %}
+        {% set _ = level_sorted_courses.append(course) %}
+        {% endif %}
+        {% endfor %}
+
+        {% for course in level_sorted_courses %}
         <div class="course-section">
-            <h4 class="course-title">{{ course.title }}</h4>
+            <h4 class="course-title">
+                {{ course.title }}
+                {% if 'Básico' in course.title %}
+                <span class="course-level level-basico">Básico</span>
+                {% elif 'Intermedio' in course.title %}
+                <span class="course-level level-intermedio">Intermedio</span>
+                {% elif 'Avanzado' in course.title %}
+                <span class="course-level level-avanzado">Avanzado</span>
+                {% endif %}
+            </h4>
             <p class="course-summary">
-                Enrolled: {{ course.enrollment_date.strftime('%Y-%m-%d') }} |
-                Status: <span class="status {{ 'status-completed' if course.is_completed else 'status-inprogress' }}">
-                    {{ "Completed" if course.is_completed else "In Progress" }}
-                </span> |
-                Progress: <span class="status">{{ "%.1f"|format(course.progress_percentage) }}%</span>
+                Inscrito: {{ course.enrollment_date.strftime('%d-%m-%Y') }} |
+                Estado: <span class="status {{ 'status-completed' if course.is_completed else 'status-inprogress' }}">
+                    {{ "Completado" if course.is_completed else "En progreso" }}
+                </span>
             </p>
 
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: {{ course.progress_percentage }}%;">
+                    {{ "%.0f"|format(course.progress_percentage) }}%
+                </div>
+            </div>
+
             {% if course.modules %}
-                <h5>Modules:</h5>
-                {% for module in course.modules %}
-                <div class="module-section">
-                    <h6 class="module-title">{{ module.title }}</h6>
-                    <p><small>
-                        Status: <span class="status {{ 'status-completed' if module.is_completed else 'status-inprogress' }}">
-                            {{ "Completed" if module.is_completed else "In Progress" }}
+            <h5>Módulos</h5>
+            {% for module in course.modules %}
+            <div class="module-section">
+                <p class="module-title">{{ module.title }}</p>
+                <p><small>
+                        Estado: <span
+                            class="status {{ 'status-completed' if module.is_completed else 'status-inprogress' }}">
+                            {{ "Completado" if module.is_completed else "En progreso" }}
                         </span>
-                        {% if module.started_at %} | Started: {{ module.started_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
-                        {% if module.completed_at %} | Completed: {{ module.completed_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+                        {% if module.started_at %} | Iniciado: {{ module.started_at.strftime('%d-%m-%Y') }}{% endif %}
+                        {% if module.completed_at %} | Completado: {{ module.completed_at.strftime('%d-%m-%Y') }}{%
+                        endif %}
                     </small></p>
 
-                    {% if module.lessons %}
-                        <p><small><strong>Lessons:</strong></small></p>
-                        {% for lesson in module.lessons %}
-                        <div class="lesson-section">
-                            <p class="lesson-title">{{ lesson.title }} -
-                                <span class="status {{ 'status-completed' if lesson.is_completed else 'status-inprogress' }}">
-                                    {{ "Completed" if lesson.is_completed else "In Progress" }}
-                                </span>
-                            </p>
-                            {% if lesson.exercises %}
-                                <p><small>Exercises:</small></p>
-                                <ul class="exercise-list">
-                                    {% for exercise in lesson.exercises %}
-                                    <li class="exercise-item">
-                                        {{ exercise.title }}:
-                                        {% if exercise.submitted_at is not none %}
-                                            <span class="status {{ 'status-completed' if exercise.is_correct else 'status-failed' if exercise.is_correct is not none else 'status-inprogress' }}">
-                                            {{ "Correct" if exercise.is_correct else "Incorrect" if exercise.is_correct is not none else "Attempted" }}</span>
-                                            (Attempts: {{ exercise.attempts }},
-                                            Score: {{ "%.1f"|format(exercise.score) if exercise.score is not none else 'N/A' }})
-                                            <small>Last attempt: {{ exercise.submitted_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                                        {% else %}
-                                            <span class="no-data">Not Attempted</span>
-                                        {% endif %}
-                                    </li>
-                                    {% endfor %}
-                                </ul>
+                {% if module.lessons %}
+                {% for lesson in module.lessons %}
+                <div class="lesson-section">
+                    <p class="lesson-title">{{ lesson.title }} -
+                        <span class="status {{ 'status-completed' if lesson.is_completed else 'status-inprogress' }}">
+                            {{ "Completado" if lesson.is_completed else "En progreso" }}
+                        </span>
+                    </p>
+                    {% if lesson.exercises %}
+                    <ul class="exercise-list">
+                        {% for exercise in lesson.exercises %}
+                        <li class="exercise-item">
+                            {{ exercise.title }}:
+                            {% if exercise.submitted_at is not none %}
+                            <span
+                                class="status {{ 'status-completed' if exercise.is_correct else 'status-failed' if exercise.is_correct is not none else 'status-inprogress' }}">
+                                {{ "Correcto" if exercise.is_correct else "Incorrecto" if exercise.is_correct is not
+                                none else "Intentado" }}</span>
+                            <small> ({{ exercise.submitted_at.strftime('%d-%m-%Y') }})</small>
                             {% else %}
-                                <p class="no-data"><small>No exercises in this lesson.</small></p>
+                            <span class="no-data">No intentado</span>
                             {% endif %}
-                        </div>
+                        </li>
                         {% endfor %}
-                    {% else %}
-                        <p class="no-data"><small>No lessons in this module.</small></p>
+                    </ul>
                     {% endif %}
                 </div>
                 {% endfor %}
-            {% else %}
-                <p class="no-data">No modules in this course.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
             {% endif %}
 
             {% if course.exams %}
-                <h5>Exams:</h5>
-                {% for exam in course.exams %}
-                <div class="exam-section">
-                    <h6 class="exam-title">{{ exam.title }}</h6>
-                    {% if exam.completed_at is not none %}
-                        <p><small>
-                           Score: <span class="status">{{ "%.1f"|format(exam.score) if exam.score is not none else 'N/A' }}%</span> |
-                           Status: <span class="status {{ 'status-passed' if exam.passed else 'status-failed' if exam.passed is not none else '' }}">
-                               {{ "Passed" if exam.passed else "Failed" if exam.passed is not none else "Not Graded" }}
-                           </span> |
-                           Completed: {{ exam.completed_at.strftime('%Y-%m-%d %H:%M') }}
-                        </small></p>
-                    {% else %}
-                        <p class="no-data"><small>Not Attempted or In Progress</small></p>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="no-data">No exams associated with this course.</p>
+            <h5>Exámenes</h5>
+            {% for exam in course.exams %}
+            <div class="exam-section">
+                <p class="exam-title">{{ exam.title }}</p>
+                {% if exam.completed_at is not none %}
+                <p><small>
+                        Estado: <span
+                            class="status {{ 'status-passed' if exam.passed else 'status-failed' if exam.passed is not none else '' }}">
+                            {{ "Aprobado" if exam.passed else "Reprobado" if exam.passed is not none else "Sin
+                            calificar" }}
+                        </span> |
+                        Completado: {{ exam.completed_at.strftime('%d-%m-%Y') }}
+                    </small></p>
+                {% else %}
+                <p class="no-data"><small>No intentado</small></p>
+                {% endif %}
+            </div>
+            {% endfor %}
             {% endif %}
         </div>
         {% endfor %}
-    {% else %}
-        <p class="no-data">No active course enrollments found for this user.</p>
-    {% endif %}
+        {% else %}
+        <p class="no-data">Este usuario no tiene cursos activos.</p>
+        {% endif %}
+    </div>
 
 </body>
+
 </html>

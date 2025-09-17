@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { X, Send } from "lucide-react";
 import { streamChat } from "@/services/aiService";
 import { useAutoScroll } from "@/components/ui/chat/hooks/useAutoScroll";
+import { getEditorContent } from "@/utils/editorContext";
 
 export default function LessonChatDrawer({
   lessonContent,
@@ -53,8 +54,12 @@ export default function LessonChatDrawer({
     try {
       let text = "";
       for await (const chunk of streamChat({
+        query: input,
         code: input,
-        instruction: exercisePrompt || lessonContent || ""
+        editorCode: getEditorContent(), // Get current editor content from our utility
+        lessonContext: lessonContent,
+        starterCode: exercisePrompt,
+        instruction: ""
       })) {
         text += chunk;
         setStreamingMsg(text);

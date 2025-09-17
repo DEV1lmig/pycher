@@ -8,7 +8,7 @@ Base = declarative_base()
 # Import all models to register them with Base
 # The order of these imports can sometimes matter if there are complex dependencies
 # not resolvable by string-based relationship definitions, but usually SQLAlchemy handles it.
-from .content import Course, Module, Lesson, Exercise, CourseExam, UserExamAttempt, CourseRating, UserCourseEnrollment, UserModuleProgress, UserLessonProgress
+from .content import Course, Module, Lesson, Exercise, CourseExam, UserExamAttempt, CourseRating, UserCourseEnrollment, UserModuleProgress, UserLessonProgress, ExamQuestion
 from .user import User, Progress, UserExerciseSubmission
 
 # Database connection (optional, for standalone scripts that might use these models directly)

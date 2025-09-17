@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 import routes
 from database import engine, Base
@@ -18,6 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(routes.router, prefix="/api/v1/content")
+
 
 @app.get("/health")
 async def health_check():

@@ -1,7 +1,5 @@
 import { apiClient } from './api';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 // --- Course Enrollment & Progress ---
 export const enrollInCourse = async (courseId) => {
   const response = await apiClient.post(`/api/v1/users/courses/${courseId}/enroll`);
@@ -28,7 +26,6 @@ export const getLastAccessed = async () => {
 
 export const getCourseProgressSummary = async (courseId) => {
   const response = await apiClient.get(`/api/v1/users/courses/${courseId}/progress-summary`);
-  console.log("Course Progress Summary Response:", response.data);
   return response.data;
 };
 
@@ -38,14 +35,8 @@ export const startModule = async (moduleId) => {
   return response.data;
 };
 
-export const completeModule = async (moduleId) => {
-  const response = await apiClient.post(`/api/v1/users/modules/${moduleId}/complete`);
-  return response.data;
-};
-
 export const getModuleProgress = async (moduleId) => {
   const response = await apiClient.get(`/api/v1/users/modules/${moduleId}/progress`);
-  console.log("Module Progress Response:", response.data);
   return response.data;
 };
 
@@ -60,13 +51,9 @@ export const startLesson = async (lessonId) => {
   return response.data;
 };
 
-export const completeLesson = async (lessonId) => {
-  const response = await apiClient.post(`/api/v1/users/lessons/${lessonId}/complete`);
-  return response.data;
-};
-
 export const getLessonProgress = async (lessonId) => {
   const response = await apiClient.get(`/api/v1/users/lessons/${lessonId}/progress`);
+  console.log('Lesson progress response:', response);
   return response.data;
 };
 
@@ -84,6 +71,22 @@ export const submitExercise = async (exerciseId, submittedCode, userInputData) =
 export const getCourseExam = async (courseId) => {
   const response = await apiClient.get(`/api/v1/users/courses/${courseId}/exam`);
   return response.data;
+};
+
+/**
+ * Gets the user's current, persistent exam exercise for a course.
+ * If the user fails 5 times, a new one will be assigned.
+ * @param {number} courseId The ID of the course.
+ * @returns {Promise<Object>} The exam exercise object.
+ */
+export const getCurrentCourseExam = async (courseId) => {
+  try {
+    const response = await apiClient.get(`/api/v1/users/me/courses/${courseId}/current-exam`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching current course exam:", error);
+    throw new Error(error.response?.data?.detail || "Failed to fetch current exam.");
+  }
 };
 
 export const startExamAttempt = async (examId) => {
@@ -112,7 +115,6 @@ export const getBatchModuleProgress = async (moduleIds) => {
   const response = await apiClient.post(`/api/v1/users/modules/progress/batch`, {
     module_ids: moduleIds,
   });
-  console.log(response.data)
   return response.data.progress;
 };
 
@@ -130,17 +132,18 @@ const progressService = {
   getLastAccessed,
   getCourseProgressSummary,
   startModule,
-  completeModule,
   getModuleProgress,
   startLesson,
-  completeLesson,
   getLessonProgress,
   submitExercise,
   getCourseExam,
+  getCurrentCourseExam,
   startExamAttempt,
   submitExamAttempt,
   getUserExamAttempts,
   getBatchModuleProgress,
+  getBatchLessonProgress,
+  getCompletedExercisesCount,
 };
 
 export default progressService;

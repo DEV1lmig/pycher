@@ -1,7 +1,6 @@
 import { apiClient } from './api';
-import axios from "axios";
 
-const API_URL = "/api/v1/users"; // Adjust as needed
+const API_URL = "/api/v1/users";
 
 export async function updateUsername(newUsername) {
     const response = await apiClient.post(`${API_URL}/change-username`, {
@@ -18,9 +17,8 @@ export async function updatePassword(currentPassword, newPassword) {
     return response.data;
 }
 
-
 export const registerUser = async (payload) => {
-  const response = await apiClient.post('/api/v1/users/register', payload);
+  const response = await apiClient.post(`${API_URL}/register`, payload);
   return response.data;
 };
 
@@ -29,7 +27,7 @@ export const loginUser = async (credentials) => {
   formData.append('username', credentials.username);
   formData.append('password', credentials.password);
 
-  const response = await apiClient.post('/api/v1/users/token', formData, {
+  const response = await apiClient.post(`${API_URL}/token`, formData, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
@@ -41,191 +39,176 @@ export const loginUser = async (credentials) => {
 
 export const logoutUser = async () => {
   const token = localStorage.getItem('token');
-
-  // Always clear the token first, regardless of API call success
   localStorage.removeItem('token');
-
-  // Only try to call the logout endpoint if we have a token
   if (token) {
     try {
-      await apiClient.post('/api/v1/users/logout', {}, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      await apiClient.post(`${API_URL}/logout`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
     } catch (e) {
-      // Don't throw here - logout should always succeed locally
       console.error('Server logout failed (but local logout succeeded):', e);
     }
   }
 };
 
-export const getUserProgress = async (userId, moduleId) => {
-  const response = await apiClient.get(`/api/v1/users/progress/${userId}/${moduleId}`);
-  return response.data;
-};
-
-export const updateLessonProgress = async (progressData) => {
-  const response = await apiClient.post('/api/v1/users/progress', progressData);
-  return response.data;
-};
-
 export const getUserProfile = async () => {
-  const response = await apiClient.get('/api/v1/users/me');
+  const response = await apiClient.get(`${API_URL}/me`);
   return response.data;
 };
 
 export const updateUserProfile = async (userData) => {
-  const response = await apiClient.put('/api/v1/users/me', userData);
+  const response = await apiClient.put(`${API_URL}/me`, userData);
   return response.data;
 };
-
-export const enrollInCourse = async (courseId) => {
-  const response = await apiClient.post(`/api/v1/users/courses/${courseId}/enroll`);
-  return response.data;
-};
-
-export const getUserEnrollments = async () => {
-  const response = await apiClient.get('/api/v1/users/users/me/enrollments');
-  return response.data;
-};
-
-export const getCourseProgressSummary = async (courseId) => {
-  const response = await apiClient.get(`/api/v1/users/courses/${courseId}/progress-summary`);
-  return response.data;
-};
-
-export const checkCourseAccess = async (courseId) => {
-  try {
-    const enrollments = await getUserEnrollments();
-    const userProgress = enrollments.find(e => e.course_id === parseInt(courseId));
-
-    // Basic course (ID 1) is always accessible
-    if (courseId === 1 || courseId === "1") {
-      return { hasAccess: true, reason: null };
-    }
-
-    // For other courses, check if previous course is completed
-    const previousCourseId = courseId - 1;
-    const previousCourseProgress = enrollments.find(e => e.course_id === previousCourseId);
-
-    if (!previousCourseProgress || !previousCourseProgress.is_completed) {
-      return {
-        hasAccess: false,
-        reason: `Debes completar el curso anterior primero.`
-      };
-    }
-
-    return { hasAccess: true, reason: null };
-  } catch (error) {
-    console.error("Error checking course access:", error);
-    // Fallback: if there's an error, deny access by default or handle as appropriate
-    return { hasAccess: false, reason: "Error al verificar el acceso al curso." };
-  }
-}; // Make sure this function is properly closed if it was the last one
 
 export const unenrollFromCourse = async (courseId) => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    throw new Error("User not authenticated. Cannot unenroll.");
-  }
-  const response = await apiClient.delete(`/api/v1/users/courses/${courseId}/unenroll`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await apiClient.delete(`${API_URL}/courses/${courseId}/unenroll`);
   return response;
 };
 
-// --- New Progress Related Service Functions ---
-
 /**
- * Marks a lesson as started for the current user.
- * @param {number} lessonId - The ID of the lesson to start.
- * @returns {Promise<object>} The response data from the API.
+ * Helper function to download progress report with modal notifications
+ * This function integrates with the useDownloadNotification hook
+ * 
+ * @param {Object} notificationHook - The useDownloadNotification hook object
+ * @returns {Promise<Object>} Download result
  */
-export const startLesson = async (lessonId) => {
-  const response = await apiClient.post(`/api/v1/users/lessons/${lessonId}/start`);
-  return response.data; // Assuming backend returns UserLessonProgress or similar
-};
+export const downloadProgressReportWithNotification = async (notificationHook) => {
+  if (!notificationHook) {
+    throw new Error('notificationHook is required. Please provide the useDownloadNotification hook.');
+  }
 
-/**
- * Submits an exercise attempt for the current user.
- * @param {number} exerciseId - The ID of the exercise.
- * @param {string} submittedCode - The code submitted by the user.
- * @returns {Promise<object>} The submission result from the API.
- */
-export const submitExerciseAttempt = async (exerciseId, submittedCode) => {
-  // The backend's complete_exercise service expects:
-  // user_id (from token), exercise_id, submitted_code, is_correct, output
-  // The frontend will send submitted_code. The backend should evaluate it.
-  // Let's assume the endpoint /submit handles this and then calls complete_exercise.
-  const response = await apiClient.post(`/api/v1/users/exercises/${exerciseId}/submit`, {
-    submitted_code: submittedCode,
-    // is_correct and output will be determined by the backend after evaluation
+  const { showSuccess, showError } = notificationHook;
+
+  return downloadProgressReport({
+    onSuccess: (filename, message) => {
+      showSuccess(filename, message);
+    },
+    onError: (filename, message) => {
+      showError(filename, message);
+    },
+    useNotifications: true
   });
-  return response.data; // Should return the UserExerciseSubmission and potentially updated lesson status
 };
 
-/**
- * Gets detailed progress for a specific lesson for the current user.
- * This includes the lesson's completion status and the status of its exercises.
- * @param {number} lessonId - The ID of the lesson.
- * @returns {Promise<object>} Detailed progress for the lesson.
- */
-export const getLessonDetailedProgress = async (lessonId) => {
-  const response = await apiClient.get(`/api/v1/users/lessons/${lessonId}/progress`);
-  return response.data; // Expects format like the example in the plan
-};
-
-export const downloadProgressReport = async () => {
+export const downloadProgressReport = async (options = {}) => {
+  const { onSuccess, onError, useNotifications = false } = options;
+  
   try {
     const token = localStorage.getItem('token');
     if (!token) {
-      // Handle case where user is not authenticated or token is missing
-      // You might want to redirect to login or show an error
-      console.error("No token found. User might not be authenticated.");
       throw new Error("Authentication required to download the report.");
     }
-
+    
     const response = await apiClient.get('/api/v1/users/me/progress/report/pdf', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      responseType: 'blob', // Important for handling file downloads
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob',
     });
-
-    // Extract filename from content-disposition header if available, otherwise fallback
+    
+    // Extract filename from response headers
     const contentDisposition = response.headers['content-disposition'];
-    let filename = 'Pycher_Progress_Report.pdf'; // Default filename
+    let filename = 'Pycher_Progress_Report.pdf';
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
       if (filenameMatch && filenameMatch.length > 1) {
         filename = filenameMatch[1];
       }
     }
-
-    // Create a URL for the blob
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    
+    // Create download link and open in new tab
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    
+    // Open PDF in new tab without switching focus (background tab)
+    const newTab = window.open();
+    if (newTab) {
+      newTab.location.href = url;
+      // Immediately return focus to current window
+      window.focus();
+    }
+    
+    // Also create a download link as fallback and for accessibility
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', filename); // Use the extracted or default filename
+    link.setAttribute('download', filename);
+    link.style.display = 'none'; // Hide the link
+    link.target = '_blank'; // Ensure it opens in new tab if clicked
     document.body.appendChild(link);
     link.click();
-
-    // Clean up by removing the link and revoking the object URL
     link.parentNode.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    
+    // Clean up the blob URL after a delay to ensure the new tab loads
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+    }, 1000);
+    
+    const result = { success: true, filename };
 
-    return { success: true, filename };
-  } catch (error) {
-    console.error('Error downloading progress report:', error);
-    // Try to parse error response if it's a JSON blob (some errors might be returned as JSON)
-    if (error.response && error.response.data instanceof Blob && error.response.data.type === "application/json") {
-      const errorText = await error.response.data.text();
-      const errorJson = JSON.parse(errorText);
-      throw new Error(errorJson.detail || 'Failed to download progress report.');
+    // Call success callback if provided (for new modal system)
+    if (onSuccess && typeof onSuccess === 'function') {
+      onSuccess(filename, `${filename} se ha descargado exitosamente`);
     }
-    throw new Error(error.message || 'Failed to download progress report.');
+
+    return result;
+  } catch (error) {
+    console.error("Error downloading progress report:", error);
+    
+    // Enhanced error handling with better user feedback
+    let errorMessage = "Error al descargar el reporte de progreso. Por favor, inténtalo de nuevo.";
+    let filename = 'Pycher_Progress_Report.pdf'; // Default filename for error display
+    
+    if (error.response) {
+      // Handle blob error responses (JSON in blob format)
+      if (error.response.data instanceof Blob && error.response.data.type === "application/json") {
+        try {
+          const errorText = await error.response.data.text();
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.detail || errorMessage;
+        } catch (parseError) {
+          console.error("Error parsing blob error response:", parseError);
+        }
+      }
+      // Server responded with error status
+      else if (error.response.status === 401) {
+        errorMessage = "Sesión expirada. Por favor, inicia sesión nuevamente.";
+      } else if (error.response.status === 403) {
+        errorMessage = "No tienes permisos para descargar este reporte.";
+      } else if (error.response.status === 404) {
+        errorMessage = "El reporte solicitado no se encontró. Por favor, contacta al soporte.";
+      } else if (error.response.status >= 500) {
+        errorMessage = "Error del servidor. Por favor, inténtalo más tarde.";
+      } else if (error.response.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+    } else if (error.request) {
+      // Network error
+      errorMessage = "Error de conexión. Verifica tu conexión a internet e inténtalo de nuevo.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    // Call error callback if provided (for new modal system)
+    if (onError && typeof onError === 'function') {
+      onError(filename, errorMessage);
+    }
+
+    // For backward compatibility, still throw the error
+    const enhancedError = new Error(errorMessage);
+    enhancedError.originalError = error;
+    enhancedError.filename = filename;
+    throw enhancedError;
   }
 };
+
+// --- REMOVED FUNCTIONS ---
+// The following functions have been removed from userService.js to consolidate
+// all progress-related logic into progressService.js.
+// - getUserProgress
+// - updateLessonProgress
+// - enrollInCourse
+// - getUserEnrollments
+// - getCourseProgressSummary
+// - checkCourseAccess (client-side logic, should be handled by hooks)
+// - startLesson
+// - submitExerciseAttempt
+// - getLessonDetailedProgress
+// - isNextCourseUnlocked (client-side logic, should be handled by hooks)
