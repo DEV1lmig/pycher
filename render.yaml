@@ -59,11 +59,12 @@ envVarGroups:
 
 
 services:
-  - type: static_site
+  - type: web
     name: frontend
+    runtime: static
     rootDir: frontend
     buildCommand: "pnpm install && pnpm build"
-    staticPublishPath: "dist"
+    publishDirectory: "dist"
     routes:
       - type: rewrite
         source: "/*"
