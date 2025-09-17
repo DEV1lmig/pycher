@@ -1,0 +1,114 @@
+
+# render.yaml
+# This file is used by Render to deploy the services for the pycher project.
+# It defines the services, databases, and environment variables needed to run the application.
+# The services are deployed from a monorepo, so the rootDir property is used to specify the location of each service.
+# The services are a mix of web services, private services, and a static site.
+# The backend services are Dockerized Python applications, and the frontend is a React application built with pnpm.
+# The databases are a PostgreSQL database and a Redis instance, both managed by Render.
+# The environment variables are managed using an environment group.
+
+databases:
+  - name: pycher-db
+    databaseName: pycher
+    user: pycher_user
+    plan: free
+  - name: pycher-redis
+    plan: free
+
+environmentGroups:
+  - name: pycher-env
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pycher-db
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: pycher-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: EXECUTION_SERVICE_URL
+        fromService:
+          type: pserv
+          name: execution-service
+          property: hostport
+      - key: CONTENT_SERVICE_URL
+        fromService:
+          type: pserv
+          name: content-service
+          property: hostport
+      - key: USER_SERVICE_URL
+        fromService:
+          type: pserv
+          name: user-service
+          property: hostport
+      - key: AI_SERVICE_URL
+        fromService:
+          type: pserv
+          name: ai-service
+          property: hostport
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: api-gateway
+          property: hostport
+
+
+services:
+  - type: web
+    name: frontend
+    rootDir: frontend
+    plan: free
+    buildCommand: "pnpm install && pnpm build"
+    publishPath: "dist"
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+    envVars:
+      - fromGroup: pycher-env
+
+  - type: web
+    name: api-gateway
+    rootDir: backend/api-gateway
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - fromGroup: pycher-env
+
+  - type: pserv
+    name: content-service
+    rootDir: backend/content-service
+    plan: free
+    dockerfilePath: ./Dockerfile
+    preDeployCommand: "alembic -c /app/shared/alembic.ini upgrade head && python /app/shared/seed_db.py"
+    envVars:
+      - fromGroup: pycher-env
+
+  - type: pserv
+    name: user-service
+    rootDir: backend/user-service
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - fromGroup: pycher-env
+
+  - type: pserv
+    name: execution-service
+    rootDir: backend/execution-service
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - fromGroup: pycher-env
+
+  - type: pserv
+    name: ai-service
+    rootDir: backend/ai-service
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - fromGroup: pycher-env
