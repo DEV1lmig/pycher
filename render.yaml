@@ -16,7 +16,7 @@ databases:
   - name: pycher-redis
     plan: free
 
-environmentGroups:
+envVarGroups:
   - name: pycher-env
     envVars:
       - key: DATABASE_URL
@@ -59,18 +59,15 @@ environmentGroups:
 
 
 services:
-  - type: web
+  - type: static_site
     name: frontend
     rootDir: frontend
-    plan: free
     buildCommand: "pnpm install && pnpm build"
-    publishPath: "dist"
+    staticPublishPath: "dist"
     routes:
       - type: rewrite
         source: "/*"
         destination: "/index.html"
-    envVars:
-      - fromGroup: pycher-env
 
   - type: web
     name: api-gateway
