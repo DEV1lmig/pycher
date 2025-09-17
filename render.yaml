@@ -12,7 +12,7 @@ services:
     runtime: static
     rootDir: frontend
     buildCommand: "pnpm install && pnpm build"
-    publishDirectory: "dist"
+    staticPublishPathstaticPublishPath: "dist"
     routes:
       - type: rewrite
         source: "/*"
